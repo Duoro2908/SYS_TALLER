@@ -180,6 +180,8 @@ def transform_query_sqlite(query):
     q = re.sub(r'\bOUTPUT\s+INSERTED\.(\w+)\b', r'RETURNING \1', q, flags=re.IGNORECASE)
 
     # 8. Eliminar comandos exclusivos de SQL Server
+    q = re.sub(r'IF\s+EXISTS\s*\([^\)]*sys\.check_constraints[^\)]*\)\s*ALTER\s+TABLE[^\;]*\;?', 'SELECT 1;', q, flags=re.IGNORECASE)
+    q = re.sub(r'\bALTER\s+TABLE\s+\w+\s+DROP\s+CONSTRAINT\s+\w+\s*;?', 'SELECT 1;', q, flags=re.IGNORECASE)
     q = re.sub(r'\bSET\s+NOCOUNT\s+ON\s*;?', '', q, flags=re.IGNORECASE)
     q = re.sub(r'\bSELECT\s+SCOPE_IDENTITY\(\)\s*;?', '', q, flags=re.IGNORECASE)
 
