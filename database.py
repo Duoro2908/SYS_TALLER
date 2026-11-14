@@ -13,6 +13,58 @@ except ImportError:
     HAS_PYODBC = False
 
 
+class SQLiteRow:
+    def __init__(self, desc, values):
+        self._values = tuple(values) if values is not None else ()
+        self._mapping = {}
+        self._fields = []
+        if desc:
+            for idx, col in enumerate(desc):
+                name = col[0]
+                self._fields.append(name)
+                self._mapping[name] = idx
+                self._mapping[name.lower()] = idx
+
+    def __getitem__(self, item):
+        if isinstance(item, (int, slice)):
+            return self._values[item]
+        if isinstance(item, str):
+            idx = self._mapping.get(item)
+            if idx is None:
+                idx = self._mapping.get(item.lower())
+            if idx is not None:
+                return self._values[idx]
+        raise KeyError(item)
+
+    def __getattr__(self, name):
+        if name.startswith('_'):
+            return super().__getattribute__(name)
+        idx = self._mapping.get(name)
+        if idx is None:
+            idx = self._mapping.get(name.lower())
+        if idx is not None:
+            return self._values[idx]
+        raise AttributeError(f"Row has no attribute '{name}'")
+
+    def __len__(self):
+        return len(self._values)
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __repr__(self):
+        return repr(self._values)
+
+    def keys(self):
+        return self._fields
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except (KeyError, IndexError):
+            return default
+
+
 class SQLiteCursorWrapper:
     def __init__(self, cursor):
         self._cur = cursor
@@ -30,7 +82,6 @@ class SQLiteCursorWrapper:
             return query
         q = query
         # Reemplazar TOP N
-        # SELECT TOP 1 -> SELECT ... LIMIT 1
         top_match = re.search(r'\bSELECT\s+TOP\s+(\d+)\b', q, re.IGNORECASE)
         if top_match:
             limit_val = top_match.group(1)
@@ -56,21 +107,32 @@ class SQLiteCursorWrapper:
                     return self._cur.execute(transformed, (params,))
             return self._cur.execute(transformed)
         except Exception as e:
-            # Reintento por si había punto y coma o sintaxis
             return self._cur.execute(query, params or ())
 
     def executemany(self, query, seq_of_params):
         transformed = self._transform_query(query)
         return self._cur.executemany(transformed, seq_of_params)
 
+    def _wrap(self, row):
+        if row is None:
+            return None
+        return SQLiteRow(self._cur.description, row)
+
     def fetchone(self):
-        return self._cur.fetchone()
+        r = self._cur.fetchone()
+        return self._wrap(r)
 
     def fetchall(self):
-        return self._cur.fetchall()
+        rows = self._cur.fetchall()
+        return [self._wrap(r) for r in rows]
 
     def fetchmany(self, size=None):
-        return self._cur.fetchmany(size)
+        rows = self._cur.fetchmany(size) if size else self._cur.fetchmany()
+        return [self._wrap(r) for r in rows]
+
+    def __iter__(self):
+        for r in self._cur:
+            yield self._wrap(r)
 
     def close(self):
         return self._cur.close()
@@ -99,9 +161,11 @@ def get_sqlite_connection():
     if not os.path.exists(db_file):
         return None
     conn = sqlite3.connect(db_file, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
     conn.create_function("GETDATE", 0, lambda: datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     conn.create_function("ISNULL", 2, lambda a, b: b if a is None else a)
+    conn.create_function("YEAR", 1, lambda d: int(str(d)[:4]) if d else None)
+    conn.create_function("MONTH", 1, lambda d: int(str(d)[5:7]) if d else None)
+    conn.create_function("DAY", 1, lambda d: int(str(d)[8:10]) if d else None)
     return SQLiteConnectionWrapper(conn)
 
 
