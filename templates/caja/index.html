@@ -1,0 +1,696 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Órdenes del Taller
+<!-- Modal Confirmación Eliminar Orden de Caja -->
+<div id="modalConfirmarDelOrden" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 18px; max-width: 440px; width: 100%; padding: 26px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center;">
+        <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.6rem; border: 1px solid rgba(239, 68, 68, 0.3);">
+            <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <h3 style="margin: 0 0 8px 0; color: var(--text-primary); font-size: 1.3rem; font-weight: 800;">¿Eliminar Orden de Trabajo?</h3>
+        <p id="delOrdenModalDesc" style="color: var(--text-secondary); font-size: 0.92rem; margin: 0 0 22px 0; line-height: 1.5;"></p>
+        <form id="formEliminarOrdenCaja" method="POST" action="" style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" onclick="cerrarModalDelOrden()" style="flex: 1; padding: 11px 18px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-weight: 600; cursor: pointer;">Cancelar</button>
+            <button type="submit" style="flex: 1; padding: 11px 18px; border-radius: 10px; border: none; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(239,68,68,0.4);"><i class="fa-solid fa-trash-can"></i> Sí, Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmarEliminarOrdenCaja(ordenId) {
+    const modal = document.getElementById('modalConfirmarDelOrden');
+    const form = document.getElementById('formEliminarOrdenCaja');
+    const desc = document.getElementById('delOrdenModalDesc');
+    form.action = '/caja/eliminar_orden/' + ordenId;
+    desc.innerText = '¿Estás seguro de eliminar permanentemente la Orden #' + ordenId + ' de la Caja? La motocicleta y sus detalles serán removidos de la lista de cobro.';
+    modal.style.display = 'flex';
+}
+function cerrarModalDelOrden() {
+    const modal = document.getElementById('modalConfirmarDelOrden');
+    if (modal) modal.style.display = 'none';
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<style>
+    .cashier-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .cashier-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .cashier-icon-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: rgba(2, 132, 199, 0.12);
+        border: 1px solid rgba(2, 132, 199, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--apple-blue);
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    .cashier-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.4px;
+        margin: 0;
+    }
+
+    .cashier-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+        margin-top: 3px;
+    }
+
+    .caja-status-pill {
+        padding: 8px 18px;
+        border-radius: 30px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: 0.3px;
+    }
+
+    .caja-status-pill.abierta {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .caja-status-pill.cerrada {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* Telemetry KPI Ribbon para Caja */
+    .caja-kpi-ribbon {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .caja-kpi-item {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .caja-kpi-meta span {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+    }
+
+    .caja-kpi-meta strong {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+
+    .caja-kpi-ico {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    /* Empty state styling — Banner Horizontal Alargado y Alineado */
+    .empty-orders-box {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 24px 28px;
+        background: linear-gradient(135deg, rgba(22, 27, 38, 0.94) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(16, 185, 129, 0.28);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+        margin: 8px 0 24px 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.25s ease;
+    }
+
+    .empty-orders-box::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: linear-gradient(180deg, #10b981 0%, #0ea5e9 100%);
+    }
+
+    .empty-orders-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .empty-orders-icon-wrap {
+        width: 58px;
+        height: 58px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(14, 165, 233, 0.12) 100%);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #10b981;
+        font-size: 1.55rem;
+        flex-shrink: 0;
+        box-shadow: 0 6px 18px rgba(16, 185, 129, 0.14);
+    }
+
+    .empty-orders-text {
+        text-align: left;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .empty-orders-title {
+        color: var(--text-primary);
+        font-size: 1.18rem;
+        font-weight: 800;
+        margin: 0 0 5px 0;
+        letter-spacing: -0.3px;
+    }
+
+    .empty-orders-desc {
+        color: var(--text-secondary);
+        font-size: 0.90rem;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Orders Grid - Filas horizontales alargadas */
+    .orders-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .order-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-left: 4px solid #f59e0b;
+        border-radius: 16px;
+        padding: 18px 24px;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        display: grid;
+        grid-template-columns: 155px minmax(200px, 1.25fr) minmax(180px, 1fr) 170px minmax(280px, 1.15fr);
+        align-items: center;
+        gap: 18px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    @media (max-width: 1200px) {
+        .order-card {
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+    }
+
+    @media (max-width: 680px) {
+        .order-card {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+        border-color: rgba(2, 132, 199, 0.45);
+    }
+
+    .order-header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+
+    .order-id {
+        font-weight: 800;
+        color: var(--text-primary);
+        font-size: 1.18rem;
+        letter-spacing: -0.3px;
+    }
+
+    .badge-pend {
+        background: rgba(245, 158, 11, 0.14);
+        color: #f59e0b;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        white-space: nowrap;
+    }
+
+    .order-detail-col {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .order-detail {
+        margin-bottom: 0;
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .order-detail span {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--text-muted);
+    }
+
+    .order-detail strong {
+        color: var(--text-primary);
+        font-weight: 700;
+        font-size: 0.94rem;
+    }
+
+    .order-total-box {
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .order-total-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .order-total-val {
+        font-size: 1.32rem;
+        font-weight: 800;
+        color: var(--accent-green);
+    }
+
+    .order-pay-form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .select-metodo-pago {
+        width: 100%;
+        padding: 10px 12px;
+        margin-bottom: 0;
+        border-radius: 10px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 0.86rem;
+        font-weight: 600;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .select-metodo-pago:focus {
+        border-color: var(--apple-blue);
+    }
+
+    .btn-facturar {
+        width: auto;
+        white-space: nowrap;
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: white;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+    }
+
+    .btn-facturar:hover:not(:disabled) {
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+        box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
+        transform: translateY(-2px);
+    }
+
+        .btn-del-orden-caja {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.32);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .btn-del-orden-caja:hover {
+        background: #ef4444;
+        color: #ffffff;
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+        transform: translateY(-2px);
+    }
+    [data-theme="light"] .btn-del-orden-caja {
+        background: #fee2e2 !important;
+        border-color: #fca5a5 !important;
+        color: #dc2626 !important;
+    }
+    [data-theme="light"] .btn-del-orden-caja:hover {
+        background: #dc2626 !important;
+        color: #ffffff !important;
+    }
+.btn-facturar:disabled {
+        background: var(--bg-tertiary) !important;
+        color: var(--text-muted) !important;
+        cursor: not-allowed;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    /* Light Theme Support */
+    [data-theme="light"] .cashier-title {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .cashier-subtitle {
+        color: #64748b !important;
+    }
+
+    [data-theme="light"] .cashier-header {
+        border-bottom-color: #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .caja-kpi-item,
+    body.light-theme .caja-kpi-item {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+    }
+
+    [data-theme="light"] .caja-kpi-meta strong,
+    body.light-theme .caja-kpi-meta strong {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .empty-orders-box,
+    body.light-theme .empty-orders-box {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+    }
+
+    [data-theme="light"] .empty-orders-icon-wrap,
+    body.light-theme .empty-orders-icon-wrap {
+        background: #f0fdf4 !important;
+        border-color: #bbf7d0 !important;
+        color: #16a34a !important;
+        box-shadow: 0 6px 18px rgba(22, 163, 74, 0.1) !important;
+    }
+
+    [data-theme="light"] .empty-orders-title,
+    body.light-theme .empty-orders-title {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .empty-orders-desc,
+    body.light-theme .empty-orders-desc {
+        color: #475569 !important;
+    }
+
+    [data-theme="light"] .order-card {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    [data-theme="light"] .order-card:hover {
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    [data-theme="light"] .order-header {
+        border-bottom-color: #f1f5f9 !important;
+    }
+
+    [data-theme="light"] .order-id {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .badge-pend {
+        background: #fffbeb !important;
+        color: #b45309 !important;
+        border-color: #fde68a !important;
+    }
+
+    [data-theme="light"] .order-detail {
+        color: #64748b !important;
+    }
+
+    [data-theme="light"] .order-detail strong {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .order-total-box {
+        background: #f0fdf4 !important;
+        border-color: #dcfce7 !important;
+    }
+
+    [data-theme="light"] .order-total-label {
+        color: #475569 !important;
+    }
+
+    [data-theme="light"] .order-total-val {
+        color: #16a34a !important;
+    }
+
+    [data-theme="light"] .select-metodo-pago {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+</style>
+
+<div class="cashier-header">
+    <div class="cashier-title-wrap">
+        <div class="cashier-icon-badge">
+            <i class="fa-solid fa-receipt"></i>
+        </div>
+        <div>
+            <h1 class="cashier-title">Órdenes Pendientes de Facturar</h1>
+            <div class="cashier-subtitle">Control de cobro y emisión fiscal de órdenes finalizadas por el taller</div>
+        </div>
+    </div>
+    <div>
+        {% if caja_abierta %}
+            <span class="caja-status-pill abierta">
+                <i class="fa-solid fa-circle-check"></i> Turno de Caja Abierto
+            </span>
+        {% else %}
+            <span class="caja-status-pill cerrada">
+                <i class="fa-solid fa-lock"></i> Turno de Caja Cerrado
+            </span>
+        {% endif %}
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; background: {% if category == 'success' %}rgba(16, 185, 129, 0.12){% else %}rgba(239, 68, 68, 0.12){% endif %}; border: 1px solid {% if category == 'success' %}rgba(16, 185, 129, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %}; color: {% if category == 'success' %}#10b981{% else %}#ef4444{% endif %};">
+                <i class="fa-solid {% if category == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="caja-kpi-ribbon">
+    <div class="caja-kpi-item">
+        <div class="caja-kpi-meta">
+            <span>Órdenes Pendientes de Cobro</span>
+            <strong>{{ ordenes|length }}</strong>
+        </div>
+        <div class="caja-kpi-ico" style="background: rgba(245, 158, 11, 0.14); color: #f59e0b;">
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+        </div>
+    </div>
+    <div class="caja-kpi-item">
+        <div class="caja-kpi-meta">
+            <span>Estado Estación Fiscal</span>
+            <strong>{{ 'Operativa / Abierta' if caja_abierta else 'Turno Cerrado' }}</strong>
+        </div>
+        <div class="caja-kpi-ico" style="background: rgba(16, 185, 129, 0.14); color: #10b981;">
+            <i class="fa-solid fa-cash-register"></i>
+        </div>
+    </div>
+    <div class="caja-kpi-item">
+        <div class="caja-kpi-meta">
+            <span>Moneda y Normativa</span>
+            <strong>Córdobas (C$) • POS</strong>
+        </div>
+        <div class="caja-kpi-ico" style="background: rgba(2, 132, 199, 0.14); color: #0ea5e9;">
+            <i class="fa-solid fa-shield-halved"></i>
+        </div>
+    </div>
+</div>
+
+{% if not ordenes %}
+    <div class="empty-orders-box">
+        <div class="empty-orders-left">
+            <div class="empty-orders-icon-wrap">
+                <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div class="empty-orders-text">
+                <h3 class="empty-orders-title">No hay órdenes pendientes de facturar</h3>
+                <p class="empty-orders-desc">Todas las órdenes de trabajo finalizadas ya fueron liquidadas en caja o las motocicletas continúan en proceso dentro de las bahías técnicas.</p>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="orders-grid">
+        {% for o in ordenes %}
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="order-id">Orden #{{ o[0] }}</span>
+                    <span class="badge-pend"><i class="fa-solid fa-clock"></i> Pendiente de Pago</span>
+                </div>
+                <div class="order-detail-col">
+                    <div class="order-detail">
+                        <span>Cliente</span>
+                        <strong>{{ o[1] }}</strong>
+                    </div>
+                </div>
+                <div class="order-detail-col">
+                    <div class="order-detail">
+                        <span>Motocicleta y Servicio</span>
+                        <strong>{{ o[2] }} ({{ o[3] }}cc) • {{ o[4] }}</strong>
+                    </div>
+                </div>
+                <div class="order-total-box">
+                    <span class="order-total-label">Total a Pagar</span>
+                    <span class="order-total-val">C$ {{ "{:,.2f}".format(o[5] if o[5] else 0) }}</span>
+                </div>
+
+                {% if caja_abierta %}
+                    <form action="{{ url_for('cashier.facturar', orden_id=o[0]) }}" method="POST" class="order-pay-form">
+                        <select name="metodo_pago" class="select-metodo-pago">
+                            <option value="Efectivo">💵 Efectivo (C$ / USD)</option>
+                            <option value="Tarjeta">💳 Tarjeta / POS</option>
+                            <option value="Transferencia">📲 Transferencia (BAC / Lafise)</option>
+                        </select>
+                        <button type="submit" class="btn-facturar">
+                            <i class="fa-solid fa-receipt"></i> Facturar
+                        </button>
+                        <button type="button" class="btn-del-orden-caja" title="Eliminar Orden #{{ o[0] }}" onclick="confirmarEliminarOrdenCaja('{{ o[0] }}')">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                {% else %}
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <button class="btn-facturar" disabled title="Debes abrir turno de caja para facturar" style="flex: 1;">
+                            <i class="fa-solid fa-lock"></i> Turno Cerrado
+                        </button>
+                        <button type="button" class="btn-del-orden-caja" title="Eliminar Orden #{{ o[0] }}" onclick="confirmarEliminarOrdenCaja('{{ o[0] }}')">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+
+<!-- Modal Confirmación Eliminar Orden de Caja -->
+<div id="modalConfirmarDelOrden" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 18px; max-width: 440px; width: 100%; padding: 26px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center;">
+        <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.6rem; border: 1px solid rgba(239, 68, 68, 0.3);">
+            <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <h3 style="margin: 0 0 8px 0; color: var(--text-primary); font-size: 1.3rem; font-weight: 800;">¿Eliminar Orden de Trabajo?</h3>
+        <p id="delOrdenModalDesc" style="color: var(--text-secondary); font-size: 0.92rem; margin: 0 0 22px 0; line-height: 1.5;"></p>
+        <form id="formEliminarOrdenCaja" method="POST" action="" style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" onclick="cerrarModalDelOrden()" style="flex: 1; padding: 11px 18px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-weight: 600; cursor: pointer;">Cancelar</button>
+            <button type="submit" style="flex: 1; padding: 11px 18px; border-radius: 10px; border: none; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(239,68,68,0.4);"><i class="fa-solid fa-trash-can"></i> Sí, Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmarEliminarOrdenCaja(ordenId) {
+    const modal = document.getElementById('modalConfirmarDelOrden');
+    const form = document.getElementById('formEliminarOrdenCaja');
+    const desc = document.getElementById('delOrdenModalDesc');
+    form.action = '/caja/eliminar_orden/' + ordenId;
+    desc.innerText = '¿Estás seguro de eliminar permanentemente la Orden #' + ordenId + ' de la Caja? La motocicleta y sus detalles serán removidos de la lista de cobro.';
+    modal.style.display = 'flex';
+}
+function cerrarModalDelOrden() {
+    const modal = document.getElementById('modalConfirmarDelOrden');
+    if (modal) modal.style.display = 'none';
+}
+</script>
+{% endblock %}

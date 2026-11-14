@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Emisión de Factura / Venta Directa{% endblock %}
+
+{% block content %}
+<style>
+    .venta-container {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    .panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .panel h2 {
+        margin-top: 0;
+        margin-bottom: 24px;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        letter-spacing: -0.3px;
+    }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; color: var(--text-secondary); }
+    .form-control {
+        width: 100%; padding: 12px 16px; border-radius: 8px;
+        background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-primary);
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); transition: all 0.2s ease;
+        box-sizing: border-box; font-size: 0.95rem;
+    }
+    .form-control:focus {
+        outline: none; border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(100, 100, 100, 0.15);
+    }
+    
+    .productos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+        max-height: 550px;
+        overflow-y: auto;
+        padding-right: 12px;
+    }
+
+    .producto-card {
+        background: var(--bg-color); border: 1px solid var(--border-color);
+        padding: 16px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;
+        display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .producto-card:hover { border-color: var(--accent-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-2px); }
+    
+    .cart-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .cart-table th, .cart-table td { padding: 12px 10px; border-bottom: 1px solid var(--border-color); text-align: left; }
+    .cart-table th { color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .totales { margin-top: 24px; border-top: 1px dashed var(--border-color); padding-top: 20px; }
+    .total-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1.05rem; font-weight: 500; color: var(--text-secondary); }
+    .total-row.grand-total { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin-top: 15px; }
+    
+    .btn-submit {
+        width: 100%; padding: 16px; border-radius: 12px; border: none;
+        background: var(--accent-red); color: white; font-size: 1.1rem; font-weight: 600;
+        cursor: pointer; transition: all 0.2s ease; margin-top: 24px;
+        box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+    }
+    .btn-submit:hover { background: var(--accent-red-hover); transform: translateY(-1px); box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3); }
+
+    .search-bar {
+        width: 100%; padding: 14px 40px 14px 16px; border-radius: 12px;
+        background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-primary);
+        margin-bottom: 20px; box-sizing: border-box; font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+    .search-bar:focus {
+        outline: none; border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(100, 100, 100, 0.15);
+    }
+    
+    .btn-remove {
+        background: rgba(239, 68, 68, 0.1); color: var(--accent-red); border: none;
+        padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-remove:hover { background: rgba(239, 68, 68, 0.2); }
+    
+    /* Scrollbar minimalista para la grilla */
+    .productos-grid::-webkit-scrollbar { width: 6px; }
+    .productos-grid::-webkit-scrollbar-track { background: transparent; }
+    .productos-grid::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+</style>
+
+<div class="venta-container">
+    <!-- Panel de Productos -->
+    <div class="panel">
+        <h2>Catálogo de Productos</h2>
+        <input type="text" class="search-bar" id="searchProductos" placeholder="Buscar producto por nombre o SKU..." onkeyup="filtrarProductos()">
+        
+        <div class="productos-grid" id="productosList">
+            {% for p in productos %}
+            <div class="producto-card" data-nombre="{{ p[2] | lower }}" data-sku="{{ p[1] | lower }}" 
+                 onclick="agregarAlCarrito({{ p[0] }}, '{{ p[2] }}', {{ p[3] }})">
+                <div style="font-size: 0.8rem; color: var(--text-muted);">{{ p[1] }}</div>
+                <div style="font-weight: 600; margin-bottom: 10px;">{{ p[2] }}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--accent-green); font-weight: 700;">C$ {{ "{:,.2f}".format(p[3]) }}</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Stock: {{ p[4] }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Panel de Venta -->
+    <div class="panel">
+        <h2>Detalle de Venta</h2>
+        <form id="ventaForm" action="{{ url_for('cashier.emision_factura') }}" method="POST">
+            
+            <div class="form-group">
+                <label>Tipo de Cliente</label>
+                <select class="form-control" id="tipoCliente" onchange="toggleClienteInput()">
+                    <option value="fijo">Cliente Fijo (Top 5 = 1% Desc)</option>
+                    <option value="paso">Cliente de Paso</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="groupClienteFijo">
+                <label>Seleccionar Cliente Fijo</label>
+                <select class="form-control" name="cliente_id" id="clienteId" onchange="calcularTotales()">
+                    <option value="">-- Seleccione un cliente --</option>
+                    {% for c in clientes %}
+                    <option value="{{ c[0] }}" data-top5="{% if c[0] in top_5_ids %}true{% else %}false{% endif %}">
+                        {{ c[1] }} {% if c[0] in top_5_ids %}⭐ (Top 5){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" id="groupClientePaso" style="display: none;">
+                <label>Nombre del Cliente</label>
+                <input type="text" class="form-control" name="nombre_paso" placeholder="Ej. Juan Pérez">
+            </div>
+
+            <div class="form-group" id="groupClientePasoRuc" style="display: none;">
+                <label>RUC / Cédula DGI (Opcional)</label>
+                <input type="text" class="form-control" name="ruc_paso" placeholder="Ej. J0310000000000 ó 001-120590-0012A">
+            </div>
+
+            <div class="form-group">
+                <label>Descuento Adicional Manual (%)</label>
+                <input type="number" class="form-control" name="descuento_manual" id="descuentoManual" 
+                       min="0" max="20" placeholder="0 - 20%" onchange="calcularTotales()" onkeyup="calcularTotales()">
+                <small style="color: var(--text-muted); font-size: 0.8rem;">Opcional. Máximo 20%.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Método de Pago</label>
+                <select class="form-control" name="metodo_pago">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                </select>
+            </div>
+
+            <h3 style="margin-top: 20px; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Carrito</h3>
+            <table class="cart-table" id="cartTable">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th width="70">Cant.</th>
+                        <th width="80">Precio</th>
+                        <th width="40"></th>
+                    </tr>
+                </thead>
+                <tbody id="cartBody">
+                    <!-- Filas dinámicas -->
+                </tbody>
+            </table>
+
+            <div class="totales">
+                <div class="total-row">
+                    <span>Subtotal Bruto:</span>
+                    <span id="lblSubtotal">C$ 0.00</span>
+                </div>
+                <div class="total-row" id="rowDescuento" style="display: none; color: var(--accent-primary);">
+                    <span>Desc. Top 5 (1%):</span>
+                    <span id="lblDescuento">- C$ 0.00</span>
+                </div>
+                <div class="total-row" id="rowDescuentoManual" style="display: none; color: var(--accent-primary);">
+                    <span>Desc. Manual (<span id="lblPctManual">0</span>%):</span>
+                    <span id="lblDescuentoManual">- C$ 0.00</span>
+                </div>
+                <div class="total-row" id="rowIva">
+                    <span>IVA (15% DGI Incluido):</span>
+                    <span id="lblIva" style="color: var(--accent-orange, #ff9f0a); font-weight: 600;">C$ 0.00</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Total a Pagar:</span>
+                    <span id="lblTotal">C$ 0.00</span>
+                </div>
+            </div>
+
+            {% if caja_abierta %}
+                <button type="submit" class="btn-submit"><i class="fa-solid fa-file-invoice"></i> Emitir Factura</button>
+            {% else %}
+                <div style="background: rgba(255,69,58,0.1); color: #ff453a; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; font-weight: 600;">
+                    Caja Cerrada - No se puede facturar
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+    let carrito = [];
+
+    function filtrarProductos() {
+        let input = document.getElementById('searchProductos').value.toLowerCase();
+        let cards = document.querySelectorAll('.producto-card');
+        cards.forEach(card => {
+            let nombre = card.getAttribute('data-nombre');
+            let sku = card.getAttribute('data-sku');
+            if(nombre.includes(input) || sku.includes(input)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function toggleClienteInput() {
+        let tipo = document.getElementById('tipoCliente').value;
+        let groupRuc = document.getElementById('groupClientePasoRuc');
+        if(tipo === 'fijo') {
+            document.getElementById('groupClienteFijo').style.display = 'block';
+            document.getElementById('groupClientePaso').style.display = 'none';
+            if (groupRuc) groupRuc.style.display = 'none';
+        } else {
+            document.getElementById('groupClienteFijo').style.display = 'none';
+            document.getElementById('groupClientePaso').style.display = 'block';
+            if (groupRuc) groupRuc.style.display = 'block';
+            document.getElementById('clienteId').value = ""; // Clear selection
+        }
+        calcularTotales();
+    }
+
+    function agregarAlCarrito(id, nombre, precio) {
+        let existente = carrito.find(p => p.id === id);
+        if(existente) {
+            existente.cantidad += 1;
+        } else {
+            carrito.push({id: id, nombre: nombre, precio: precio, cantidad: 1});
+        }
+        renderizarCarrito();
+    }
+
+    function eliminarDelCarrito(index) {
+        carrito.splice(index, 1);
+        renderizarCarrito();
+    }
+
+    function updateCantidad(index, val) {
+        let cant = parseInt(val);
+        if(cant > 0) {
+            carrito[index].cantidad = cant;
+            renderizarCarrito();
+        }
+    }
+
+    function updatePrecio(index, val) {
+        let prec = parseFloat(val);
+        if(prec >= 0) {
+            carrito[index].precio = prec;
+            renderizarCarrito();
+        }
+    }
+
+    function renderizarCarrito() {
+        let tbody = document.getElementById('cartBody');
+        tbody.innerHTML = '';
+        
+        carrito.forEach((prod, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div style="font-size: 0.9rem; font-weight: 500;">${prod.nombre}</div>
+                    <input type="hidden" name="producto_id[]" value="${prod.id}">
+                </td>
+                <td>
+                    <input type="number" name="cantidad[]" value="${prod.cantidad}" min="1" 
+                           class="form-control" style="padding: 5px; text-align: center;" 
+                           onchange="updateCantidad(${index}, this.value)">
+                </td>
+                <td>
+                    <input type="number" step="0.01" name="precio[]" value="${prod.precio}" min="0" 
+                           class="form-control" style="padding: 5px; text-align: right;"
+                           onchange="updatePrecio(${index}, this.value)">
+                </td>
+                <td>
+                    <button type="button" class="btn-remove" onclick="eliminarDelCarrito(${index})"><i class="fa-solid fa-times"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        calcularTotales();
+    }
+
+    function calcularTotales() {
+        let subtotal = 0;
+        carrito.forEach(prod => {
+            subtotal += (prod.cantidad * prod.precio);
+        });
+        
+        let descuentoTop5 = 0;
+        let esTop5 = false;
+        
+        let tipo = document.getElementById('tipoCliente').value;
+        if(tipo === 'fijo') {
+            let select = document.getElementById('clienteId');
+            if(select.selectedIndex > 0) {
+                let option = select.options[select.selectedIndex];
+                if(option.getAttribute('data-top5') === 'true') {
+                    esTop5 = true;
+                    descuentoTop5 = subtotal * 0.01;
+                }
+            }
+        }
+        
+        // Descuento Manual
+        let descManualInput = document.getElementById('descuentoManual');
+        let descManualVal = parseFloat(descManualInput.value) || 0;
+        
+        // Limitar descuento manual a 20% visualmente
+        if (descManualVal > 20) {
+            descManualVal = 20;
+            descManualInput.value = 20;
+        } else if (descManualVal < 0) {
+            descManualVal = 0;
+            descManualInput.value = 0;
+        }
+        
+        let descuentoManualMonto = subtotal * (descManualVal / 100);
+        
+        let descuentoTotal = descuentoTop5 + descuentoManualMonto;
+        let total = Math.max(0, subtotal - descuentoTotal);
+        let subtotalNeto = total / 1.15;
+        let iva = total - subtotalNeto;
+        
+        document.getElementById('lblSubtotal').innerText = "C$ " + subtotal.toLocaleString('es-NI', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const lblIva = document.getElementById('lblIva');
+        if (lblIva) {
+            lblIva.innerText = "C$ " + iva.toLocaleString('es-NI', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        document.getElementById('lblTotal').innerText = "C$ " + total.toLocaleString('es-NI', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        let rowDesc = document.getElementById('rowDescuento');
+        if(esTop5 && descuentoTop5 > 0) {
+            rowDesc.style.display = 'flex';
+            document.getElementById('lblDescuento').innerText = "- C$ " + descuentoTop5.toLocaleString('es-NI', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        } else {
+            rowDesc.style.display = 'none';
+        }
+        
+        let rowDescMan = document.getElementById('rowDescuentoManual');
+        if(descuentoManualMonto > 0) {
+            rowDescMan.style.display = 'flex';
+            document.getElementById('lblPctManual').innerText = descManualVal;
+            document.getElementById('lblDescuentoManual').innerText = "- C$ " + descuentoManualMonto.toLocaleString('es-NI', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        } else {
+            rowDescMan.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

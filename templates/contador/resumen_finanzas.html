@@ -1,0 +1,1197 @@
+{% extends "base.html" %}
+
+{% block title %}Resumen Financiero Automatizado - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Resumen Financiero del Taller{% endblock %}
+
+{% block content %}
+<style>
+    /* ==========================================================================
+       ESTILOS CORPORATIVOS: RESUMEN FINANCIERO AUTOMATIZADO MIPYME
+       ========================================================================== */
+    .finanzas-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding-bottom: 50px;
+    }
+
+    /* BARRA SUPERIOR DE CONTROL Y SELECTOR DE PERÍODO */
+    .control-toolbar {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 18px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-title h2 {
+        margin: 0;
+        font-size: 1.32rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .toolbar-title p {
+        margin: 3px 0 0 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .period-form-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg-primary);
+        padding: 5px 8px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .period-select {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .btn-period-arrow {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-period-arrow:hover {
+        background: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+    }
+
+    .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-nav-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s;
+    }
+
+    .btn-nav-action:hover {
+        background: var(--bg-primary);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+    }
+
+    .btn-nav-action.primary {
+        background: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+    }
+
+    .btn-nav-action.primary:hover {
+        background: #1d4ed8;
+    }
+
+    /* BANNERS DE ESTADO CONTABLE */
+    .cert-banner {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-left: 5px solid #10b981;
+        border-radius: 14px;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-primary);
+        font-size: 0.88rem;
+    }
+
+    .simulation-banner {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-left: 5px solid #3b82f6;
+        border-radius: 14px;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-primary);
+        font-size: 0.88rem;
+    }
+
+    .unclosed-period-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.04) 0%, rgba(15, 23, 42, 0.08) 100%);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-left: 5px solid #f59e0b;
+        border-radius: 16px;
+        padding: 20px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        box-shadow: var(--shadow-sm);
+    }
+    [data-theme="dark"] .unclosed-period-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%);
+        border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .unclosed-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .unclosed-title-box {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .unclosed-icon-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+    .unclosed-title-box h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .unclosed-title-box p {
+        margin: 3px 0 0 0;
+        font-size: 0.84rem;
+        color: var(--text-secondary);
+        line-height: 1.45;
+    }
+
+    .unclosed-checklist {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+    }
+    .unclosed-item {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+    .unclosed-item-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .unclosed-item-name {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .unclosed-item-sub {
+        font-size: 0.74rem;
+        color: var(--text-secondary);
+    }
+
+    .btn-goto-cierre {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: #2563eb;
+        text-decoration: none;
+        padding: 5px 10px;
+        border-radius: 8px;
+        background: rgba(37, 99, 235, 0.08);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        transition: all 0.2s;
+    }
+    .btn-goto-cierre:hover {
+        background: #2563eb;
+        color: white;
+    }
+
+    .badge-status-closed {
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.12);
+        padding: 4px 9px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .badge-status-open {
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #f59e0b;
+        background: rgba(245, 158, 11, 0.12);
+        padding: 4px 9px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-sim-mode {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #3b82f6;
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.08);
+        transition: all 0.2s;
+    }
+    .btn-sim-mode:hover {
+        background: #3b82f6;
+        color: white;
+    }
+    .btn-sim-mode.active {
+        background: #f59e0b;
+        color: white;
+        border-color: #f59e0b;
+    }
+
+    /* GRID DE KPIS EJECUTIVOS AUTOMATIZADOS */
+    .kpi-main-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    .kpi-stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 10px;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .kpi-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: transparent;
+    }
+    .kpi-stat-card.card-ventas::before { background: #10b981; }
+    .kpi-stat-card.card-costos::before { background: #f59e0b; }
+    .kpi-stat-card.card-utilidad-bruta::before { background: #06b6d4; }
+    .kpi-stat-card.card-gastos::before { background: #ef4444; }
+    .kpi-stat-card.card-utilidad-neta::before { background: #3b82f6; }
+    .kpi-stat-card.card-equilibrio::before { background: #8b5cf6; }
+    .kpi-stat-card.card-caja::before { background: #14b8a6; }
+    .kpi-stat-card.card-inventario::before { background: #ec4899; }
+
+    .kpi-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .kpi-card-label {
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--text-secondary);
+    }
+
+    .kpi-card-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .kpi-card-val {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.5px;
+        line-height: 1.1;
+    }
+
+    .kpi-card-sub {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    /* BARRA DE PUNTO DE EQUILIBRIO */
+    .progress-bar-container {
+        width: 100%;
+        height: 7px;
+        background: var(--bg-primary);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 6px;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.4s ease;
+    }
+
+    /* SECCIÓN DE RAZONES EN EL RESUMEN */
+    .ratios-section-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .section-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-header-row h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-header-row p {
+        margin: 2px 0 0 0;
+        font-size: 0.84rem;
+        color: var(--text-secondary);
+    }
+
+    .ratios-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 16px;
+    }
+
+    .ratio-summary-box {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+        transition: border-color 0.2s;
+    }
+
+    .ratio-summary-box:hover {
+        border-color: var(--accent-primary);
+    }
+
+    .ratio-box-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .ratio-box-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .ratio-box-category {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        display: block;
+        margin-top: 2px;
+    }
+
+    .ratio-box-val {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
+    }
+
+    .ratio-box-formula {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.74rem;
+        color: var(--text-secondary);
+        background: rgba(0, 0, 0, 0.03);
+        padding: 5px 8px;
+        border-radius: 6px;
+        border: 1px dashed var(--border-color);
+    }
+    [data-theme="dark"] .ratio-box-formula {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .ratio-box-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    /* BADGES */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .status-badge.badge-success { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    .status-badge.badge-warning { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+    .status-badge.badge-danger { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+    .status-badge.badge-pending { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+
+    /* TABLA RESUMEN */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+    }
+
+    .custom-table th {
+        text-align: left;
+        padding: 12px 14px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .custom-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .custom-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+</style>
+
+<div class="finanzas-wrapper">
+    <!-- BARRA SUPERIOR: SELECTOR MENSUAL Y BOTONES DE ACCIÓN -->
+    <div class="control-toolbar">
+        <div class="toolbar-left">
+            <div class="toolbar-title">
+                <h2>
+                    <i class="fa-solid fa-coins" style="color: #f59e0b;"></i> 
+                    Resumen Financiero Automatizado
+                </h2>
+                <p>Consolidación ejecutiva en tiempo real y variables analíticas para Taller y Lubricantes CR (MiPyME)</p>
+            </div>
+
+            <!-- Selector de Período -->
+            <form method="GET" action="{{ url_for('contador.resumen_finanzas') }}" id="periodFilterForm" class="period-form-container">
+                {% set meses_nombres = {
+                    1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+                    5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+                    9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+                } %}
+                
+                {% set prev_mes = 12 if mes_seleccionado == 1 else mes_seleccionado - 1 %}
+                {% set prev_anio = anio_seleccionado - 1 if mes_seleccionado == 1 else anio_seleccionado %}
+                {% set next_mes = 1 if mes_seleccionado == 12 else mes_seleccionado + 1 %}
+                {% set next_anio = anio_seleccionado + 1 if mes_seleccionado == 12 else anio_seleccionado %}
+                
+                <a href="{{ url_for('contador.resumen_finanzas', mes=prev_mes, anio=prev_anio) }}" class="btn-period-arrow" title="Mes Anterior">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+
+                <select name="mes" class="period-select" onchange="document.getElementById('periodFilterForm').submit();">
+                    {% for m_num in range(1, 13) %}
+                    <option value="{{ m_num }}" {% if m_num == mes_seleccionado %}selected{% endif %}>
+                        {{ meses_nombres[m_num] }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <select name="anio" class="period-select" onchange="document.getElementById('periodFilterForm').submit();">
+                    {% for y in range(2024, 2028) %}
+                    <option value="{{ y }}" {% if y == anio_seleccionado %}selected{% endif %}>
+                        {{ y }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <a href="{{ url_for('contador.resumen_finanzas', mes=next_mes, anio=next_anio) }}" class="btn-period-arrow" title="Mes Siguiente">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </form>
+        </div>
+
+        <div class="toolbar-actions">
+            {% if not ambos_cerrados %}
+                {% if ver_simulacion %}
+                <a href="{{ url_for('contador.resumen_finanzas', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-sim-mode active" title="Volver al modo estricto oficial">
+                    <i class="fa-solid fa-lock"></i> Cifras Oficiales (Razones en 0)
+                </a>
+                {% else %}
+                <a href="{{ url_for('contador.resumen_finanzas', mes=mes_seleccionado, anio=anio_seleccionado, ver_simulacion=1) }}" class="btn-sim-mode" title="Ver simulación estimada de razones">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Simulación Preliminar
+                </a>
+                {% endif %}
+            {% endif %}
+
+            <a href="{{ url_for('contador.razones', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-nav-action primary">
+                <i class="fa-solid fa-percent"></i> Ver Razones Financieras
+            </a>
+            <a href="{{ url_for('contador.balance', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-nav-action">
+                <i class="fa-solid fa-scale-balanced" style="color: #3b82f6;"></i> Balance General
+            </a>
+            <a href="{{ url_for('contador.estado_resultados', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-nav-action">
+                <i class="fa-solid fa-receipt" style="color: #10b981;"></i> Estado de Resultados
+            </a>
+            <button type="button" onclick="window.print();" class="btn-nav-action">
+                <i class="fa-solid fa-print"></i> Imprimir Resumen
+            </button>
+        </div>
+    </div>
+
+    <!-- BANNER DE ESTADO CONTABLE DEL PERÍODO -->
+    {% if ambos_cerrados %}
+    <div class="cert-banner">
+        <div>
+            <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 1.15rem; margin-right: 8px;"></i>
+            <strong>Cierre Contable Certificado:</strong> Estados financieros y razones del mes de <strong>{{ meses_nombres[mes_seleccionado] }} {{ anio_seleccionado }}</strong> sellados oficialmente por <strong>{{ info_cierre.autor_cierre }}</strong> el {{ info_cierre.fecha_cierre_str }}.
+        </div>
+        <span class="status-badge badge-success"><i class="fa-solid fa-lock"></i> Período Cerrado</span>
+    </div>
+    {% elif ver_simulacion %}
+    <div class="simulation-banner">
+        <div>
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: #3b82f6; font-size: 1.15rem; margin-right: 8px;"></i>
+            <strong>Simulación Preliminar en Vivo:</strong> Mostrando proyección operativa preliminar. Por normativa MiPyME, las razones oficiales permanecen en 0 hasta sellar el cierre contable.
+        </div>
+        <a href="{{ url_for('contador.resumen_finanzas', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-goto-cierre">
+            <i class="fa-solid fa-lock"></i> Volver a Modo Oficial (En 0)
+        </a>
+    </div>
+    {% else %}
+    <div class="unclosed-period-card">
+        <div class="unclosed-header">
+            <div class="unclosed-title-box">
+                <div class="unclosed-icon-avatar">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+                <div>
+                    <h3>Automatización Financiera en Vivo • Período Operativo en Curso</h3>
+                    <p>
+                        Las variables operativas (ventas, compras, caja y gastos) se consolidan <strong>automáticamente en tiempo real</strong>. Según la normativa contable del taller, las <strong>razones financieras permanecen en 0</strong> hasta el cierre oficial de mes al sellar el Balance y Estado de Resultados.
+                    </p>
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('contador.resumen_finanzas', mes=mes_seleccionado, anio=anio_seleccionado, ver_simulacion=1) }}" class="btn-sim-mode">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Activar Modo Simulación
+                </a>
+            </div>
+        </div>
+
+        <div class="unclosed-checklist">
+            <div class="unclosed-item">
+                <div class="unclosed-item-info">
+                    <span class="unclosed-item-name">
+                        <i class="fa-solid fa-scale-balanced" style="color: #3b82f6;"></i> Cierre de Balance General
+                    </span>
+                    <span class="unclosed-item-sub">Activo, pasivo y patrimonio neto</span>
+                </div>
+                <div>
+                    {% if info_cierre.balance_cerrado %}
+                    <span class="badge-status-closed"><i class="fa-solid fa-circle-check"></i> Sellado</span>
+                    {% else %}
+                    <span class="badge-status-open"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                    <a href="{{ url_for('contador.balance', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-goto-cierre">Sellar <i class="fa-solid fa-arrow-right"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="unclosed-item">
+                <div class="unclosed-item-info">
+                    <span class="unclosed-item-name">
+                        <i class="fa-solid fa-receipt" style="color: #10b981;"></i> Cierre Estado de Resultados
+                    </span>
+                    <span class="unclosed-item-sub">Ventas, costos de repuestos y gastos</span>
+                </div>
+                <div>
+                    {% if info_cierre.estado_cerrado %}
+                    <span class="badge-status-closed"><i class="fa-solid fa-circle-check"></i> Sellado</span>
+                    {% else %}
+                    <span class="badge-status-open"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                    <a href="{{ url_for('contador.estado_resultados', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-goto-cierre">Sellar <i class="fa-solid fa-arrow-right"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SECCIÓN 1: KPIS OPERATIVOS CONSOLIDADOS DEL TALLER (MIPYME) -->
+    <div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-gauge-high" style="color: #3b82f6;"></i> Variables e Insumos Operativos del Taller
+        </h3>
+        
+        <div class="kpi-main-grid">
+            <!-- 1. Ventas Netas Totales -->
+            <div class="kpi-stat-card card-ventas">
+                <div class="kpi-card-head">
+                    <span class="kpi-card-label">Facturación Neta Total</span>
+                    <div class="kpi-card-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                </div>
+                <div class="kpi-card-val" style="color: #10b981;">C$ {{ "{:,.2f}".format(fin.ventas_netas) }}</div>
+                <div class="kpi-card-sub">
+                    <span>M. Obra: <strong>C$ {{ "{:,.0f}".format(fin.mano_obra_mes) }}</strong> ({{ kpis.pct_mano_obra }}%)</span> •
+                    <span>Repuestos: <strong>C$ {{ "{:,.0f}".format(fin.repuestos_mes) }}</strong></span>
+                </div>
+            </div>
+
+            <!-- 2. Costo de Ventas -->
+            <div class="kpi-stat-card card-costos">
+                <div class="kpi-card-head">
+                    <span class="kpi-card-label">Costo de Ventas Directo</span>
+                    <div class="kpi-card-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
+                        <i class="fa-solid fa-boxes-packing"></i>
+                    </div>
+                </div>
+                <div class="kpi-card-val">C$ {{ "{:,.2f}".format(fin.costo_ventas) }}</div>
+                <div class="kpi-card-sub">
+                    Insumos instalados en taller y compras de lubricantes
+                </div>
+            </div>
+
+            <!-- 3. Utilidad Bruta -->
+            <div class="kpi-stat-card card-utilidad-bruta">
+                <div class="kpi-card-head">
+                    <span class="kpi-card-label">Utilidad Bruta Directa</span>
+                    <div class="kpi-card-icon" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                    </div>
+                </div>
+                <div class="kpi-card-val" style="color: #06b6d4;">C$ {{ "{:,.2f}".format(fin.utilidad_bruta) }}</div>
+                <div class="kpi-card-sub">
+                    <span class="status-badge badge-success">Margen Bruto: {{ fin.margen_bruto_pct }}%</span>
+                </div>
+            </div>
+
+            <!-- 4. Gastos Operativos -->
+            <div class="kpi-stat-card card-gastos">
+                <div class="kpi-card-head">
+                    <span class="kpi-card-label">Gastos Operativos (Fijos)</span>
+                    <div class="kpi-card-icon" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+                        <i class="fa-solid fa-money-bill-transfer"></i>
+                    </div>
+                </div>
+                <div class="kpi-card-val" style="color: #ef4444;">C$ {{ "{:,.2f}".format(fin.gastos_operativos) }}</div>
+                <div class="kpi-card-sub">
+                    <span>Nómina: C$ {{ "{:,.0f}".format(fin.gastos_nomina_total) }}</span> •
+                    <span>Alquiler/Servicios: C$ {{ "{:,.0f}".format(fin.gastos_alquiler + fin.gastos_servicios_basicos) }}</span>
+                </div>
+            </div>
+
+            <!-- 5. Utilidad Neta Final -->
+            <div class="kpi-stat-card card-utilidad-neta">
+                <div class="kpi-card-head">
+                    <span class="kpi-card-label">Utilidad Neta del Mes</span>
+                    <div class="kpi-card-icon" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="kpi-card-val" style="color: #3b82f6;">C$ {{ "{:,.2f}".format(fin.utilidad_neta) }}</div>
+                <div class="kpi-card-sub">
+                    <span class="status-badge {% if fin.utilidad_neta > 0 %}badge-success{% else %}badge-danger{% endif %}">
+                        Margen Neto: {{ fin.margen_neto_pct }}%
+                    </span>
+                </div>
+            </div>
+
+            <!-- 6. Punto de Equilibrio Mensual -->
+            <div class="kpi-stat-card card-equilibrio">
+                <div class="kpi-card-head">
+                    <span class="kpi-card-label">Punto de Equilibrio (Meta)</span>
+                    <div class="kpi-card-icon" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                </div>
+                <div class="kpi-card-val">C$ {{ "{:,.2f}".format(kpis.punto_equilibrio_cordobas) }}</div>
+                <div>
+                    <div class="kpi-card-sub">
+                        <span>Alcanzado: <strong>{{ kpis.pct_punto_equilibrio_alcanzado }}%</strong></span>
+                        {% if kpis.supero_punto_equilibrio %}
+                        <span style="color: #10b981; font-weight: 700;">(Superado)</span>
+                        {% else %}
+                        <span style="color: #f59e0b; font-weight: 700;">(Faltan C$ {{ "{:,.0f}".format(-kpis.diferencia_equilibrio) }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: {{ [kpis.pct_punto_equilibrio_alcanzado, 100]|min }}%; background: {% if kpis.supero_punto_equilibrio %}#10b981{% else %}#f59e0b{% endif %};"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Efectivo en Cajas y Bancos -->
+            <div class="kpi-stat-card card-caja">
+                <div class="kpi-card-head">
+                    <span class="kpi-card-label">Efectivo Disponible en Caja</span>
+                    <div class="kpi-card-icon" style="background: rgba(20, 184, 166, 0.12); color: #14b8a6;">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                </div>
+                <div class="kpi-card-val" style="color: #14b8a6;">C$ {{ "{:,.2f}".format(fin.efectivo_caja) }}</div>
+                <div class="kpi-card-sub">
+                    Liquidez inmediata disponible para pagos de caja chica
+                </div>
+            </div>
+
+            <!-- 8. Stock de Inventario en Bodega -->
+            <div class="kpi-stat-card card-inventario">
+                <div class="kpi-card-head">
+                    <span class="kpi-card-label">Inventario en Bodega (Costo)</span>
+                    <div class="kpi-card-icon" style="background: rgba(236, 72, 153, 0.12); color: #ec4899;">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                </div>
+                <div class="kpi-card-val">C$ {{ "{:,.2f}".format(fin.inventario_costo) }}</div>
+                <div class="kpi-card-sub">
+                    <span>{{ fin.articulos_inventario }} productos activos en catálogo</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 2: CÁLCULOS DETALLADOS DE RAZONES FINANCIERAS CLAVE -->
+    <div class="ratios-section-card">
+        <div class="section-header-row">
+            <div>
+                <h3>
+                    <i class="fa-solid fa-percent" style="color: #2563eb;"></i> 
+                    Razones Financieras Clave del Taller
+                </h3>
+                <p>
+                    {% if ratios_activos %}
+                    Indicadores computados a partir del cierre oficial contable de {{ meses_nombres[mes_seleccionado] }} {{ anio_seleccionado }}.
+                    {% else %}
+                    Indicadores en <strong>0</strong>: Se calculan automáticamente al cerrar el Estado de Resultados y el Balance General.
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('contador.razones', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-nav-action primary">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Motor Completo (20 Razones)
+                </a>
+            </div>
+        </div>
+
+        <div class="ratios-summary-grid">
+            <!-- 1. Razón Circulante -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Razón Circulante (Corriente)</span>
+                        <span class="ratio-box-category">Liquidez General</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}{% if ratios.razon_circulante >= 1.5 %}badge-success{% elif ratios.razon_circulante >= 1.0 %}badge-warning{% else %}badge-danger{% endif %}{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{% if ratios.razon_circulante >= 1.5 %}Óptimo{% elif ratios.razon_circulante >= 1.0 %}Aceptable{% else %}Alerta{% endif %}{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val">{{ ratios.razon_circulante }}x</div>
+                <div class="ratio-box-formula">Activo Circulante / Pasivo Circulante</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    El taller cuenta con C$ {{ ratios.razon_circulante }} de activos líquidos por cada C$ 1.00 de pasivo corriente.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- 2. Prueba Ácida -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Prueba Ácida (Quick Ratio)</span>
+                        <span class="ratio-box-category">Liquidez Inmediata</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}{% if ratios.prueba_acida >= 1.0 %}badge-success{% elif ratios.prueba_acida >= 0.7 %}badge-warning{% else %}badge-danger{% endif %}{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{% if ratios.prueba_acida >= 1.0 %}Óptimo{% elif ratios.prueba_acida >= 0.7 %}Aceptable{% else %}Bajo{% endif %}{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val">{{ ratios.prueba_acida }}x</div>
+                <div class="ratio-box-formula">(Activo Circ. - Inventarios) / Pasivo Circ.</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    Capacidad inmediata de liquidar compromisos sin depender de la venta o instalación de repuestos.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- 3. Capital de Trabajo -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Capital de Trabajo Neto</span>
+                        <span class="ratio-box-category">Fondo de Maniobra</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}{% if ratios.capital_trabajo > 0 %}badge-success{% else %}badge-danger{% endif %}{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{% if ratios.capital_trabajo > 0 %}Positivo{% else %}Déficit{% endif %}{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val" style="color: #10b981;">C$ {{ "{:,.2f}".format(ratios.capital_trabajo) }}</div>
+                <div class="ratio-box-formula">Activo Circulante - Pasivo Circulante</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    Remanente operativo para compras de lubricantes, repuestos y operaciones diarias.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- 4. Margen Bruto -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Margen Bruto de Utilidad</span>
+                        <span class="ratio-box-category">Rentabilidad Directa</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}{% if ratios.margen_bruto >= 35 %}badge-success{% else %}badge-warning{% endif %}{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{{ ratios.margen_bruto }}%{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val" style="color: #10b981;">{{ ratios.margen_bruto }}%</div>
+                <div class="ratio-box-formula">(Utilidad Bruta / Ventas Netas) * 100</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    Porcentaje remanente de cada córdoba vendido tras cubrir el costo de repuestos y compras.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- 5. Margen Neto -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Margen Neto de Utilidad</span>
+                        <span class="ratio-box-category">Rentabilidad Neta</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}{% if ratios.margen_neto >= 10 %}badge-success{% elif ratios.margen_neto > 0 %}badge-warning{% else %}badge-danger{% endif %}{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{{ ratios.margen_neto }}%{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val" style="color: #3b82f6;">{{ ratios.margen_neto }}%</div>
+                <div class="ratio-box-formula">(Utilidad Neta / Ventas Netas) * 100</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    Ganancia líquida final tras deducir todos los sueldos, alquileres y gastos del taller.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- 6. Nivel de Endeudamiento -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Nivel de Endeudamiento</span>
+                        <span class="ratio-box-category">Solvencia y Estructura</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}{% if ratios.endeudamiento <= 45 %}badge-success{% elif ratios.endeudamiento <= 65 %}badge-warning{% else %}badge-danger{% endif %}{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{{ ratios.endeudamiento }}%{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val">{{ ratios.endeudamiento }}%</div>
+                <div class="ratio-box-formula">(Pasivo Total / Activo Total) * 100</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    Proporción de los activos totales del taller financiada por proveedores o acreedores.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- 7. Rotación de Inventarios -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Rotación de Inventario</span>
+                        <span class="ratio-box-category">Eficiencia de Stock</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}badge-success{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{{ ratios.rotacion_inventario }}x{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val">{{ ratios.rotacion_inventario }}x</div>
+                <div class="ratio-box-formula">Costo de Ventas / Inventario Bodega</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    Veces que el stock de repuestos y lubricantes se renovó en el período seleccionado.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- 8. Días de Inventario -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Días Promedio de Inventario</span>
+                        <span class="ratio-box-category">Permanencia en Bodega</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}badge-success{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{{ "{:.0f}".format(ratios.dias_inventario) }} días{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val" style="font-size: 1.7rem;">{{ "{:.0f}".format(ratios.dias_inventario) }} días</div>
+                <div class="ratio-box-formula">365 / Rotación de Inventario</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    Tiempo promedio que un repuesto o lubricante pasa en estantería antes de consumirse.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- 9. Retorno sobre Activos (ROA) -->
+            <div class="ratio-summary-box">
+                <div class="ratio-box-head">
+                    <div>
+                        <span class="ratio-box-title">Retorno sobre Activos (ROA)</span>
+                        <span class="ratio-box-category">Productividad del Capital</span>
+                    </div>
+                    <span class="status-badge {% if ratios_activos %}{% if ratios.roa >= 3 %}badge-success{% else %}badge-warning{% endif %}{% else %}badge-pending{% endif %}">
+                        {% if ratios_activos %}{{ ratios.roa }}%{% else %}<i class="fa-solid fa-clock"></i> Pendiente{% endif %}
+                    </span>
+                </div>
+                <div class="ratio-box-val" style="color: #8b5cf6;">{{ ratios.roa }}%</div>
+                <div class="ratio-box-formula">(Utilidad Neta / Activos Totales) * 100</div>
+                <p class="ratio-box-desc">
+                    {% if ratios_activos %}
+                    Efectividad del capital total invertido en herramientas, rampas e inventario del taller.
+                    {% else %}
+                    Este indicador se calculará automáticamente al final del mes tras sellar el Balance y Estado de Resultados.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 3: MATRIZ DE REFERENCIA Y DIAGNÓSTICO FINANCIERO MIPYME -->
+    <div class="ratios-section-card">
+        <div class="section-header-row">
+            <div>
+                <h3>
+                    <i class="fa-solid fa-table-list" style="color: #3b82f6;"></i> 
+                    Matriz de Diagnóstico y Parámetros del Taller
+                </h3>
+                <p>Guía de análisis financiero estándar para la toma de decisiones gerenciales en la MiPyME</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Indicador Financiero</th>
+                        <th>Fórmula Aplicada</th>
+                        <th style="text-align: center;">Valor Calculado</th>
+                        <th style="text-align: center;">Meta Ideal MiPyME</th>
+                        <th style="text-align: center;">Semáforo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Razón Circulante</strong></td>
+                        <td>Activo Circulante / Pasivo Circulante</td>
+                        <td style="text-align: center; font-weight: 700;">{{ ratios.razon_circulante }}x</td>
+                        <td style="text-align: center; color: var(--text-secondary);">1.5x a 2.5x</td>
+                        <td style="text-align: center;">
+                            {% if ratios_activos %}
+                            <span class="status-badge {% if ratios.razon_circulante >= 1.5 %}badge-success{% elif ratios.razon_circulante >= 1.0 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {% if ratios.razon_circulante >= 1.5 %}Óptimo{% elif ratios.razon_circulante >= 1.0 %}Aceptable{% else %}Alerta{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Prueba Ácida</strong></td>
+                        <td>(Activo Circulante - Inventario) / Pasivo Circulante</td>
+                        <td style="text-align: center; font-weight: 700;">{{ ratios.prueba_acida }}x</td>
+                        <td style="text-align: center; color: var(--text-secondary);">&gt;= 1.0x</td>
+                        <td style="text-align: center;">
+                            {% if ratios_activos %}
+                            <span class="status-badge {% if ratios.prueba_acida >= 1.0 %}badge-success{% elif ratios.prueba_acida >= 0.7 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {% if ratios.prueba_acida >= 1.0 %}Óptimo{% elif ratios.prueba_acida >= 0.7 %}Aceptable{% else %}Bajo{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Margen Bruto</strong></td>
+                        <td>(Utilidad Bruta / Ventas Netas) * 100</td>
+                        <td style="text-align: center; font-weight: 700; color: #10b981;">{{ ratios.margen_bruto }}%</td>
+                        <td style="text-align: center; color: var(--text-secondary);">&gt;= 30%</td>
+                        <td style="text-align: center;">
+                            {% if ratios_activos %}
+                            <span class="status-badge {% if ratios.margen_bruto >= 30 %}badge-success{% else %}badge-warning{% endif %}">
+                                {% if ratios.margen_bruto >= 30 %}Saludable{% else %}Moderado{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Margen Neto</strong></td>
+                        <td>(Utilidad Neta / Ventas Netas) * 100</td>
+                        <td style="text-align: center; font-weight: 700; color: #3b82f6;">{{ ratios.margen_neto }}%</td>
+                        <td style="text-align: center; color: var(--text-secondary);">&gt;= 8%</td>
+                        <td style="text-align: center;">
+                            {% if ratios_activos %}
+                            <span class="status-badge {% if ratios.margen_neto >= 8 %}badge-success{% elif ratios.margen_neto > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {% if ratios.margen_neto >= 8 %}Saludable{% elif ratios.margen_neto > 0 %}Aceptable{% else %}Déficit{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nivel de Endeudamiento</strong></td>
+                        <td>(Pasivo Total / Activo Total) * 100</td>
+                        <td style="text-align: center; font-weight: 700;">{{ ratios.endeudamiento }}%</td>
+                        <td style="text-align: center; color: var(--text-secondary);">&lt;= 50%</td>
+                        <td style="text-align: center;">
+                            {% if ratios_activos %}
+                            <span class="status-badge {% if ratios.endeudamiento <= 50 %}badge-success{% elif ratios.endeudamiento <= 65 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {% if ratios.endeudamiento <= 50 %}Bajo Riesgo{% else %}Precaución{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1257 @@
+{% extends 'base.html' %}
+{% block title %}Citas Programadas - Taller{% endblock %}
+
+{% block header_title %}Citas Programadas{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .dashboard-title {
+        color: var(--primary);
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.5rem;
+    }
+
+    .citas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    .cita-card {
+        background: rgba(30, 30, 35, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cita-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        border-color: rgba(37, 211, 102, 0.4);
+    }
+
+    .cita-time-block {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .time-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        background: rgba(242, 192, 41, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .time-text h4 {
+        margin: 0;
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    .time-text p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .detail-row {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+    }
+
+    .detail-row i {
+        width: 25px;
+        color: var(--text-muted);
+        margin-top: 3px;
+    }
+
+    .detail-content strong {
+        color: #fff;
+        display: block;
+    }
+
+    .detail-content span {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .badge-service {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+
+    .service-preventivo { color: #0A84FF; border: 1px solid rgba(10, 132, 255, 0.3); background: rgba(10, 132, 255, 0.1); }
+    .service-general { color: #BF5AF2; border: 1px solid rgba(191, 90, 242, 0.3); background: rgba(191, 90, 242, 0.1); }
+
+    .btn-action {
+        margin-top: auto;
+        padding-top: 15px;
+    }
+
+    .btn-start {
+        width: 100%;
+        background: rgba(37, 211, 102, 0.1);
+        color: #25D366;
+        border: 1px solid rgba(37, 211, 102, 0.3);
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-start:hover {
+        background: #25D366;
+        color: #000;
+        transform: scale(1.02);
+    }
+
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 20px;
+        background: rgba(255,255,255,0.02);
+        border-radius: 16px;
+        border: 1px dashed rgba(255,255,255,0.1);
+    }
+    .btn-action {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .btn-start {
+        width: 100%;
+        padding: 12px;
+        background: var(--accent-primary);
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-start:hover {
+        background: var(--accent-primary-hover);
+        transform: translateY(-2px);
+    }
+
+    /* Modal Styles - Top Tier Workshop Luxury */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    
+    .modal-content {
+        background: #16161a;
+        width: 100%;
+        max-width: 780px;
+        border-radius: 20px;
+        padding: 30px 35px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        max-height: 92vh;
+        overflow-y: auto;
+        overflow-x: hidden !important;
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(242, 192, 41, 0.15);
+        box-sizing: border-box;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #fff;
+        font-size: 1.35rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .modal-header h3 i {
+        color: var(--accent-primary, #f2c029);
+    }
+
+    .modal-close-btn {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .modal-close-btn:hover {
+        background: rgba(255, 69, 58, 0.2);
+        color: #ff453a;
+        border-color: rgba(255, 69, 58, 0.4);
+    }
+
+    /* Vehicle & Service Briefing Card */
+    .briefing-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 14px;
+        padding: 16px 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 22px;
+    }
+
+    .brief-col {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .brief-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(242, 192, 41, 0.1);
+        border: 1px solid rgba(242, 192, 41, 0.25);
+        color: var(--accent-primary, #f2c029);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .brief-icon-box.service {
+        background: rgba(10, 132, 255, 0.1);
+        border-color: rgba(10, 132, 255, 0.25);
+        color: #0A84FF;
+    }
+
+    .brief-meta span {
+        display: block;
+        font-size: 0.76rem;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 3px;
+        font-weight: 600;
+    }
+
+    .brief-meta strong {
+        font-size: 1.05rem;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    /* Form Fields */
+    .modal-field {
+        margin-bottom: 22px;
+    }
+
+    .modal-field-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #c7c7cc;
+        margin-bottom: 8px;
+    }
+
+    .price-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .currency-symbol {
+        position: absolute;
+        left: 16px;
+        font-weight: 700;
+        color: var(--accent-primary, #f2c029);
+        font-size: 1.05rem;
+        pointer-events: none;
+    }
+
+    .price-input-styled {
+        width: 100%;
+        padding: 13px 16px 13px 48px;
+        background: #202025;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        color: #fff;
+        font-size: 1.15rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .price-input-styled:focus {
+        border-color: var(--accent-primary, #f2c029);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(242, 192, 41, 0.2);
+    }
+
+    /* Repuestos Section & Grid */
+    .repuestos-header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .repuestos-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+
+    .repuestos-table-headers {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 95px 115px 44px;
+        gap: 12px;
+        padding: 0 14px 8px 14px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #8e8e93;
+    }
+
+    .repuesto-row {
+        background: #1c1c21;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    .repuesto-row:hover {
+        border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .repuesto-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 95px 115px 44px;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .modal-select-item {
+        width: 100%;
+        min-width: 0;
+        padding: 12px 14px;
+        background: #25252b;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.92rem;
+        cursor: pointer;
+        outline: none;
+        box-sizing: border-box;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .modal-select-item:focus {
+        border-color: var(--accent-primary, #f2c029);
+    }
+
+    .modal-qty-input {
+        width: 100%;
+        padding: 12px 8px;
+        background: #25252b;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+        text-align: center;
+        box-sizing: border-box;
+        outline: none;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .modal-qty-input:focus {
+        border-color: var(--accent-primary, #f2c029);
+    }
+
+    .row-subtotal-box {
+        text-align: right;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+        padding: 0 4px;
+    }
+
+    .btn-remove-row {
+        width: 44px;
+        height: 42px;
+        background: rgba(255, 69, 58, 0.1);
+        border: 1px solid rgba(255, 69, 58, 0.25);
+        color: #ff453a;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+
+    .btn-remove-row:hover {
+        background: #ff453a;
+        color: #fff;
+    }
+
+    .btn-add-repuesto {
+        background: rgba(242, 192, 41, 0.05);
+        color: var(--accent-primary, #f2c029);
+        border: 1.5px dashed rgba(242, 192, 41, 0.4);
+        padding: 13px;
+        border-radius: 10px;
+        cursor: pointer;
+        width: 100%;
+        font-weight: 600;
+        font-size: 0.92rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+        margin-top: 6px;
+    }
+
+    .btn-add-repuesto:hover {
+        background: rgba(242, 192, 41, 0.12);
+        border-color: var(--accent-primary, #f2c029);
+    }
+
+    /* Live Telemetry Breakdown Bar */
+    .order-totals-bar {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(20, 20, 24, 0.95) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        padding: 16px 22px;
+        margin: 24px 0 20px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+    }
+
+    .total-metric {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .metric-label {
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        color: #8e8e93;
+        letter-spacing: 0.6px;
+        font-weight: 600;
+    }
+
+    .metric-val {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .metric-symbol {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    .grand-total-metric .metric-label {
+        color: #30d158;
+    }
+
+    .grand-total-metric .metric-val {
+        color: #30d158;
+        font-size: 1.35rem;
+        font-weight: 800;
+    }
+
+    .btn-confirm-order {
+        width: 100%;
+        padding: 16px;
+        background: #30d158;
+        color: #000;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 6px 20px rgba(48, 209, 88, 0.25);
+    }
+
+    .btn-confirm-order:hover {
+        background: #34c759;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(48, 209, 88, 0.35);
+    }
+
+    .agenda-empty-box {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 24px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 18px;
+        border: 2px dashed rgba(255, 255, 255, 0.12);
+    }
+    .agenda-icon-wrap {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 18px auto;
+        border-radius: 50%;
+        background: rgba(245, 158, 11, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .agenda-icon {
+        font-size: 2.4rem;
+        color: #f59e0b;
+    }
+    .agenda-title {
+        color: var(--text-primary, #ffffff);
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+    }
+    .agenda-desc {
+        color: var(--text-secondary, #94a3b8);
+        font-size: 0.95rem;
+        max-width: 440px;
+        margin: 0 auto;
+        line-height: 1.5;
+    }
+    .badge-mantenimientos {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    [data-theme="light"] .dashboard-title,
+    body.light-theme .dashboard-title {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .agenda-empty-box,
+    body.light-theme .agenda-empty-box {
+        background: #f8fafc !important;
+        border: 2px dashed #cbd5e1 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02) !important;
+    }
+    [data-theme="light"] .agenda-title,
+    body.light-theme .agenda-title {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .agenda-desc,
+    body.light-theme .agenda-desc {
+        color: #475569 !important;
+    }
+    [data-theme="light"] .badge-mantenimientos,
+    body.light-theme .badge-mantenimientos {
+        background: #fef3c7 !important;
+        color: #b45309 !important;
+        border: 1px solid #fde68a !important;
+    }
+    [data-theme="light"] .cita-card,
+    body.light-theme .cita-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06) !important;
+    }
+    [data-theme="light"] .cita-card:hover,
+    body.light-theme .cita-card:hover {
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1) !important;
+        border-color: #d97706 !important;
+    }
+    [data-theme="light"] .cita-time-block,
+    body.light-theme .cita-time-block {
+        border-bottom-color: #f1f5f9 !important;
+    }
+    [data-theme="light"] .time-icon,
+    body.light-theme .time-icon {
+        background: rgba(245, 158, 11, 0.14) !important;
+        color: #b45309 !important;
+    }
+    [data-theme="light"] .time-text h4,
+    body.light-theme .time-text h4 {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .time-text p,
+    body.light-theme .time-text p {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .detail-row i,
+    body.light-theme .detail-row i {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .detail-content strong,
+    body.light-theme .detail-content strong {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .detail-content span,
+    body.light-theme .detail-content span {
+        color: #475569 !important;
+    }
+    [data-theme="light"] .service-preventivo,
+    body.light-theme .service-preventivo {
+        color: #0369a1 !important;
+        background: #e0f2fe !important;
+        border-color: #bae6fd !important;
+    }
+    [data-theme="light"] .service-general,
+    body.light-theme .service-general {
+        color: #7e22ce !important;
+        background: #f3e8ff !important;
+        border-color: #e9d5ff !important;
+    }
+    [data-theme="light"] .btn-action,
+    body.light-theme .btn-action {
+        border-top-color: #f1f5f9 !important;
+    }
+    [data-theme="light"] .btn-start,
+    body.light-theme .btn-start {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25) !important;
+    }
+    [data-theme="light"] .btn-start:hover,
+    body.light-theme .btn-start:hover {
+        background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+        color: #ffffff !important;
+    }
+    [data-theme="light"] .modal-content,
+    body.light-theme .modal-content {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .modal-header,
+    body.light-theme .modal-header {
+        background: #f8fafc !important;
+        border-bottom-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .modal-header h3,
+    body.light-theme .modal-header h3,
+    [data-theme="light"] .repuestos-title,
+    body.light-theme .repuestos-title,
+    [data-theme="light"] .row-subtotal-box,
+    body.light-theme .row-subtotal-box {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .modal-field-label,
+    body.light-theme .modal-field-label {
+        color: #334155 !important;
+    }
+    [data-theme="light"] .price-input-styled,
+    body.light-theme .price-input-styled,
+    [data-theme="light"] .modal-select-item,
+    body.light-theme .modal-select-item,
+    [data-theme="light"] .modal-qty-input,
+    body.light-theme .modal-qty-input,
+    [data-theme="light"] .repuesto-row,
+    body.light-theme .repuesto-row {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] #ordenModal .modal-content,
+    body.light-theme #ordenModal .modal-content {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18) !important;
+    }
+    [data-theme="light"] #ordenModal .modal-header,
+    body.light-theme #ordenModal .modal-header {
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    [data-theme="light"] .modal-close-btn,
+    body.light-theme .modal-close-btn {
+        background: #f1f5f9 !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+    }
+    [data-theme="light"] .modal-close-btn:hover,
+    body.light-theme .modal-close-btn:hover {
+        background: rgba(239, 68, 68, 0.12) !important;
+        color: #dc2626 !important;
+        border-color: rgba(239, 68, 68, 0.35) !important;
+    }
+    [data-theme="light"] .briefing-card,
+    body.light-theme .briefing-card {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    [data-theme="light"] .brief-meta span,
+    body.light-theme .brief-meta span {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .brief-meta strong,
+    body.light-theme .brief-meta strong {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .currency-symbol,
+    body.light-theme .currency-symbol {
+        color: #b45309 !important;
+    }
+    [data-theme="light"] .repuestos-header-bar,
+    body.light-theme .repuestos-header-bar {
+        border-bottom-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .btn-add-repuesto,
+    body.light-theme .btn-add-repuesto {
+        background: rgba(245, 158, 11, 0.08) !important;
+        color: #b45309 !important;
+        border-color: rgba(217, 119, 6, 0.45) !important;
+    }
+    [data-theme="light"] .order-totals-bar,
+    body.light-theme .order-totals-bar {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    [data-theme="light"] .metric-label,
+    body.light-theme .metric-label {
+        color: #475569 !important;
+    }
+    [data-theme="light"] .metric-val,
+    body.light-theme .metric-val {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .metric-symbol,
+    body.light-theme .metric-symbol {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .grand-total-metric .metric-label,
+    body.light-theme .grand-total-metric .metric-label {
+        color: #15803d !important;
+    }
+    [data-theme="light"] .grand-total-metric .metric-val,
+    body.light-theme .grand-total-metric .metric-val {
+        color: #16a34a !important;
+    }
+
+</style>
+
+<div class="dashboard-header">
+    <h2 class="dashboard-title">Mi Agenda de Hoy</h2>
+    <div>
+        <span class="badge badge-mantenimientos" style="padding: 10px 15px; font-size: 0.9rem;">
+            <i class="fa-solid fa-clipboard-list"></i> {{ citas|length }} Mantenimientos
+        </span>
+    </div>
+</div>
+
+<div class="citas-grid">
+    {% for cita in citas %}
+    <div class="cita-card">
+        <div class="cita-time-block">
+            <div class="time-icon">
+                <i class="fa-regular fa-clock"></i>
+            </div>
+            <div class="time-text">
+                <h4>{{ cita[8].strftime('%I:%M %p') }}</h4>
+                <p>{{ cita[8].strftime('%d/%m/%Y') }}</p>
+            </div>
+        </div>
+
+        <div class="detail-row">
+            <i class="fa-solid fa-user"></i>
+            <div class="detail-content">
+                <strong>{{ cita[2] }}</strong>
+                <span><i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> {{ cita[3] }}</span>
+            </div>
+        </div>
+
+        <div class="detail-row">
+            <i class="fa-solid fa-motorcycle"></i>
+            <div class="detail-content">
+                <strong>{{ cita[5] }} {{ cita[6] }}</strong>
+                <span class="badge-service {{ 'service-preventivo' if cita[9] == 'Preventivo' else 'service-general' }}">
+                    {{ cita[9] }}
+                </span>
+            </div>
+        </div>
+
+        <div class="btn-action">
+            <button onclick="openModal('{{ cita[0] }}', '{{ cita[4] }}', '{{ cita[5] }} {{ cita[6] }} (Placa: {{ cita[7] }})', '{{ cita[9] }}')" class="btn-start">
+                <i class="fa-solid fa-play"></i> Iniciar Mantenimiento
+            </button>
+        </div>
+
+    </div>
+    {% else %}
+    <div class="empty-state agenda-empty-box">
+        <div class="agenda-icon-wrap">
+            <i class="fa-solid fa-mug-hot agenda-icon"></i>
+        </div>
+        <h3 class="agenda-title">Agenda Libre</h3>
+        <p class="agenda-desc">No tienes citas o mantenimientos programados para hoy. ¡Disfruta tu tiempo o revisa el taller!</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal para Generar Orden -->
+<div id="ordenModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-wrench"></i> Generar Orden de Trabajo</h3>
+            <button type="button" class="modal-close-btn" onclick="closeModal()">×</button>
+        </div>
+        <form action="{{ url_for('mechanic.crear_orden') }}" method="POST" id="ordenForm" onsubmit="return validarOrdenForm(event)">
+            <input type="hidden" name="next_endpoint" value="{{ next_endpoint|default('mechanic.citas_programadas') }}">
+            <input type="hidden" name="moto_id" id="modal_moto_id">
+            <input type="hidden" name="mantenimiento_id" id="modal_mantenimiento_id">
+            <input type="hidden" name="cita_id" id="modal_cita_id">
+            <input type="hidden" name="precio_final" id="precio_final_hidden">
+
+            <!-- Alerta interactiva interna del modal -->
+            <div id="modal-alert-box" class="modal-alert-danger"></div>
+
+            <!-- Briefing Card del Vehículo y Servicio -->
+            <div class="briefing-card">
+                <div class="brief-col">
+                    <div class="brief-icon-box"><i class="fa-solid fa-motorcycle"></i></div>
+                    <div class="brief-meta">
+                        <span>Vehículo Asignado</span>
+                        <strong id="lbl-vehiculo">-</strong>
+                    </div>
+                </div>
+                <div class="brief-col">
+                    <div class="brief-icon-box service"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                    <div class="brief-meta">
+                        <span>Tipo de Mantenimiento</span>
+                        <strong id="lbl-servicio">-</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monto Mano de Obra -->
+            <div class="modal-field">
+                <label class="modal-field-label">Monto Mano de Obra / Servicio:</label>
+                <div class="price-input-wrapper">
+                    <span class="currency-symbol">C$</span>
+                    <input type="number" id="precio_custom" class="price-input-styled" placeholder="0.00" step="0.01" min="0" required oninput="actualizarPrecioLabor(this)">
+                </div>
+            </div>
+
+            <!-- Repuestos Utilizados -->
+            <div style="margin-top: 25px; margin-bottom: 20px;">
+                <div class="repuestos-header-bar">
+                    <h4 class="repuestos-title">
+                        <i class="fa-solid fa-boxes-stacked" style="color: var(--accent-primary, #f2c029);"></i> 
+                        Repuestos e Insumos Utilizados
+                    </h4>
+                    <span style="font-size: 0.8rem; color: #8e8e93;">Deducción automática de inventario</span>
+                </div>
+
+                <div class="repuestos-table-headers">
+                    <span>Repuesto / Insumo</span>
+                    <span style="text-align: center;">Cantidad</span>
+                    <span style="text-align: right;">Subtotal</span>
+                    <span style="text-align: center;">Quitar</span>
+                </div>
+
+                <div id="repuestos-container">
+                    <div class="repuesto-row">
+                        <div class="repuesto-grid">
+                            <select name="producto_id[]" class="modal-select-item repuesto-select" onchange="actualizarFilaStock(this)">
+                                <option value="">-- Sin repuestos adicionales --</option>
+                                {% for p in productos %}
+                                    {% if p[4] > 0 %}
+                                    <option value="{{ p[0] }}" data-stock="{{ p[4] }}" data-nombre="{{ p[1] }}" data-price="{{ p[5] }}">
+                                        {{ p[1] }} ({{ p[2] }}) • C$ {{ "{:,.2f}".format(p[5]) }} [Stock: {{ p[4] }}]
+                                    </option>
+                                    {% else %}
+                                    <option value="{{ p[0] }}" data-stock="0" data-nombre="{{ p[1] }}" data-price="{{ p[5] }}" disabled style="color: #ff453a; background: #261515;">
+                                        ⛔ [SIN STOCK] {{ p[1] }} • C$ {{ "{:,.2f}".format(p[5]) }} (Agotado - 0 disp.)
+                                    </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <input type="number" name="cantidad[]" class="modal-qty-input repuesto-cantidad" value="1" min="1" oninput="actualizarFilaStock(this)">
+                            <div class="row-subtotal-box repuesto-subtotal">C$ 0.00</div>
+                            <button type="button" class="btn-remove-row" onclick="eliminarFilaRepuesto(this)" title="Quitar repuesto"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                        <div class="row-stock-indicator" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-add-repuesto" onclick="addRepuestoRow()">
+                    <i class="fa-solid fa-plus"></i> Agregar Otro Repuesto a la Orden
+                </button>
+            </div>
+
+            <!-- Barra de Totales en Tiempo Real -->
+            <div class="order-totals-bar">
+                <div class="total-metric">
+                    <span class="metric-label">Mano de Obra</span>
+                    <span class="metric-val" id="metric-labor">C$ 0.00</span>
+                </div>
+                <div class="metric-symbol">+</div>
+                <div class="total-metric">
+                    <span class="metric-label">Repuestos</span>
+                    <span class="metric-val" id="metric-parts">C$ 0.00</span>
+                </div>
+                <div class="metric-symbol">=</div>
+                <div class="total-metric grand-total-metric">
+                    <span class="metric-label">Total Orden Estimado</span>
+                    <span class="metric-val" id="metric-total">C$ 0.00</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-confirm-order" id="btn-submit-orden">
+                <i class="fa-solid fa-circle-check"></i> Procesar y Enviar Orden a Caja
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const manteIds = {
+        {% for m in mantenimientos %}
+        "{{ m[1] }}": "{{ m[0] }}",
+        {% endfor %}
+    };
+
+    const mantePrecios = {
+        {% for m in mantenimientos %}
+        "{{ m[1] }}": {{ m[2] if m[2] else 0.0 }},
+        {% endfor %}
+    };
+
+    const productosOptions = `
+        <option value="">-- Sin repuestos adicionales --</option>
+        {% for p in productos %}
+            {% if p[4] > 0 %}
+            <option value="{{ p[0] }}" data-stock="{{ p[4] }}" data-nombre="{{ p[1] }}" data-price="{{ p[5] }}">
+                {{ p[1] }} ({{ p[2] }}) • C$ {{ "{:,.2f}".format(p[5]) }} [Stock: {{ p[4] }}]
+            </option>
+            {% else %}
+            <option value="{{ p[0] }}" data-stock="0" data-nombre="{{ p[1] }}" data-price="{{ p[5] }}" disabled style="color: #ff453a; background: #261515;">
+                ⛔ [SIN STOCK] {{ p[1] }} • C$ {{ "{:,.2f}".format(p[5]) }} (Agotado - 0 disp.)
+            </option>
+            {% endif %}
+        {% endfor %}
+    `;
+
+    function openModal(citaId, motoId, vehiculoDesc, servicioName) {
+        document.getElementById('modal_cita_id').value = citaId;
+        document.getElementById('modal_moto_id').value = motoId;
+        
+        let mId = manteIds[servicioName];
+        if(!mId) mId = 1; // Fallback
+        
+        document.getElementById('modal_mantenimiento_id').value = mId;
+        document.getElementById('lbl-vehiculo').innerText = vehiculoDesc;
+        document.getElementById('lbl-servicio').innerText = servicioName;
+        
+        // Asignar precio sugerido si no tiene uno puesto
+        const precioCustom = document.getElementById('precio_custom');
+        const precioSugerido = mantePrecios[servicioName] || 0.0;
+        if (precioSugerido > 0) {
+            precioCustom.value = precioSugerido.toFixed(2);
+        } else {
+            precioCustom.value = '1000.00';
+        }
+        document.getElementById('precio_final_hidden').value = precioCustom.value;
+        
+        // Limpiar alertas previas
+        const alertBox = document.getElementById('modal-alert-box');
+        alertBox.style.display = 'none';
+        alertBox.innerHTML = '';
+        
+        // Actualizar totales iniciales
+        actualizarTotalesOrden();
+        
+        document.getElementById('ordenModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('ordenModal').style.display = 'none';
+    }
+
+    function actualizarPrecioLabor(input) {
+        document.getElementById('precio_final_hidden').value = input.value;
+        actualizarTotalesOrden();
+    }
+
+    function actualizarFilaStock(el) {
+        const row = el.closest('.repuesto-row');
+        if (!row) return;
+
+        const sel = row.querySelector('.repuesto-select');
+        const cantInput = row.querySelector('.repuesto-cantidad');
+        const subtotalBox = row.querySelector('.repuesto-subtotal');
+        const indicator = row.querySelector('.row-stock-indicator');
+
+        if (!sel || !cantInput || !indicator) return;
+
+        const opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.value) {
+            indicator.style.display = 'none';
+            indicator.innerHTML = '';
+            cantInput.classList.remove('input-stock-error');
+            cantInput.removeAttribute('max');
+            if (subtotalBox) subtotalBox.innerText = 'C$ 0.00';
+            actualizarTotalesOrden();
+            return;
+        }
+
+        const stock = parseInt(opt.getAttribute('data-stock') || '0', 10);
+        const precioUnitario = parseFloat(opt.getAttribute('data-price') || '0.0');
+        const nombre = opt.getAttribute('data-nombre') || 'Repuesto';
+        const cant = parseInt(cantInput.value || '1', 10);
+
+        // Actualizar subtotal de la fila
+        const rowTotal = (cant > 0 ? cant : 0) * precioUnitario;
+        if (subtotalBox) {
+            subtotalBox.innerText = 'C$ ' + rowTotal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Evaluar stock
+        if (stock <= 0) {
+            indicator.style.display = 'block';
+            indicator.innerHTML = `<span class="stock-pill stock-error"><i class="fa-solid fa-ban"></i> <strong>Sin stock disponible:</strong> "${nombre}" está agotado en inventario (Stock: 0). Es necesario agregar nuevo stock de este producto en el módulo de Bodega.</span>`;
+            cantInput.classList.add('input-stock-error');
+            cantInput.max = 0;
+        } else if (cant > stock) {
+            indicator.style.display = 'block';
+            indicator.innerHTML = `<span class="stock-pill stock-warning"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Stock insuficiente:</strong> Solicitaste ${cant} unidad(es) de "${nombre}", pero actualmente solo hay <strong>${stock} disponible(s)</strong>. Es necesario agregar nuevo stock de este producto en Bodega.</span>`;
+            cantInput.classList.add('input-stock-error');
+            cantInput.max = stock;
+        } else {
+            indicator.style.display = 'block';
+            indicator.innerHTML = `<span class="stock-pill in-stock"><i class="fa-solid fa-circle-check"></i> Stock disponible: <strong>${stock}</strong> unidad(es) en inventario</span>`;
+            cantInput.classList.remove('input-stock-error');
+            cantInput.max = stock;
+        }
+
+        verificarErroresGenerales();
+        actualizarTotalesOrden();
+    }
+
+    function actualizarTotalesOrden() {
+        const laborInput = document.getElementById('precio_custom');
+        const laborVal = parseFloat(laborInput && laborInput.value ? laborInput.value : 0.0);
+
+        let partsTotal = 0.0;
+        const rows = document.querySelectorAll('.repuesto-row');
+        rows.forEach(row => {
+            const sel = row.querySelector('.repuesto-select');
+            const cantInput = row.querySelector('.repuesto-cantidad');
+            if (sel && sel.value) {
+                const opt = sel.options[sel.selectedIndex];
+                const price = parseFloat(opt.getAttribute('data-price') || '0.0');
+                const cant = parseInt(cantInput && cantInput.value ? cantInput.value : 0, 10);
+                if (cant > 0) {
+                    partsTotal += (cant * price);
+                }
+            }
+        });
+
+        const grandTotal = laborVal + partsTotal;
+
+        const metricLabor = document.getElementById('metric-labor');
+        const metricParts = document.getElementById('metric-parts');
+        const metricTotal = document.getElementById('metric-total');
+
+        if (metricLabor) metricLabor.innerText = 'C$ ' + laborVal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (metricParts) metricParts.innerText = 'C$ ' + partsTotal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (metricTotal) metricTotal.innerText = 'C$ ' + grandTotal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function verificarErroresGenerales() {
+        const alertBox = document.getElementById('modal-alert-box');
+        const rows = document.querySelectorAll('.repuesto-row');
+        let hayError = false;
+
+        rows.forEach(row => {
+            const sel = row.querySelector('.repuesto-select');
+            const cantInput = row.querySelector('.repuesto-cantidad');
+            if (sel && sel.value) {
+                const opt = sel.options[sel.selectedIndex];
+                const stock = parseInt(opt.getAttribute('data-stock') || '0', 10);
+                const cant = parseInt(cantInput.value || '1', 10);
+                if (stock <= 0 || cant > stock) {
+                    hayError = true;
+                }
+            }
+        });
+
+        if (!hayError && alertBox) {
+            alertBox.style.display = 'none';
+            alertBox.innerHTML = '';
+        }
+    }
+
+    function eliminarFilaRepuesto(btn) {
+        const container = document.getElementById('repuestos-container');
+        const rows = container.querySelectorAll('.repuesto-row');
+        if (rows.length > 1) {
+            btn.closest('.repuesto-row').remove();
+        } else {
+            // Si solo queda una fila, reiniciar selección
+            const row = rows[0];
+            row.querySelector('.repuesto-select').value = '';
+            row.querySelector('.repuesto-cantidad').value = '1';
+            row.querySelector('.repuesto-subtotal').innerText = 'C$ 0.00';
+            row.querySelector('.row-stock-indicator').style.display = 'none';
+        }
+        verificarErroresGenerales();
+        actualizarTotalesOrden();
+    }
+
+    function addRepuestoRow() {
+        const container = document.getElementById('repuestos-container');
+        const row = document.createElement('div');
+        row.className = 'repuesto-row';
+        row.innerHTML = `
+            <div class="repuesto-grid">
+                <select name="producto_id[]" class="modal-select-item repuesto-select" onchange="actualizarFilaStock(this)">
+                    ${productosOptions}
+                </select>
+                <input type="number" name="cantidad[]" class="modal-qty-input repuesto-cantidad" value="1" min="1" oninput="actualizarFilaStock(this)">
+                <div class="row-subtotal-box repuesto-subtotal">C$ 0.00</div>
+                <button type="button" class="btn-remove-row" onclick="eliminarFilaRepuesto(this)" title="Quitar repuesto"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+            <div class="row-stock-indicator" style="display: none;"></div>
+        `;
+        container.appendChild(row);
+        actualizarTotalesOrden();
+    }
+
+    function validarOrdenForm(event) {
+        const rows = document.querySelectorAll('.repuesto-row');
+        const alertBox = document.getElementById('modal-alert-box');
+        let errorMsg = null;
+        let primerInputErroneo = null;
+
+        for (const row of rows) {
+            const sel = row.querySelector('.repuesto-select');
+            const cantInput = row.querySelector('.repuesto-cantidad');
+            if (sel && sel.value) {
+                const opt = sel.options[sel.selectedIndex];
+                const stock = parseInt(opt.getAttribute('data-stock') || '0', 10);
+                const nombre = opt.getAttribute('data-nombre') || 'Repuesto';
+                const cant = parseInt(cantInput.value || '1', 10);
+
+                if (stock <= 0) {
+                    errorMsg = `<strong>Sin stock disponible:</strong> El repuesto "<strong>${nombre}</strong>" está agotado en inventario (Stock actual: 0).<br><span style="font-size:0.85rem; color:#ffd54f;">👉 Es necesario agregar nuevo stock de este producto en el módulo de Bodega/Inventario para poder procesar la orden.</span>`;
+                    primerInputErroneo = cantInput;
+                    break;
+                }
+
+                if (cant > stock) {
+                    errorMsg = `<strong>Stock insuficiente:</strong> Solicitaste ${cant} unidad(es) del repuesto "<strong>${nombre}</strong>", pero actualmente solo hay <strong>${stock} disponible(s)</strong> en inventario.<br><span style="font-size:0.85rem; color:#ffd54f;">👉 Es necesario agregar nuevo stock de este producto en el módulo de Bodega/Inventario para utilizar esta cantidad.</span>`;
+                    primerInputErroneo = cantInput;
+                    break;
+                }
+            }
+        }
+
+        if (errorMsg) {
+            event.preventDefault();
+            alertBox.style.display = 'flex';
+            alertBox.innerHTML = `
+                <div style="background: rgba(255, 179, 0, 0.2); color: #ffb300; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; border: 1px solid rgba(255, 179, 0, 0.35);">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 700; color: #ffb300; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.8px; margin-bottom: 3px;">
+                        Advertencia de Stock en Taller
+                    </div>
+                    <div style="color: #f5f5f7; font-size: 0.9rem; line-height: 1.45;">
+                        ${errorMsg}
+                    </div>
+                </div>
+            `;
+            if (primerInputErroneo) {
+                primerInputErroneo.focus();
+                primerInputErroneo.classList.add('input-stock-error');
+            }
+            alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return false;
+        }
+
+        return true;
+    }
+</script>
+{% endblock %}

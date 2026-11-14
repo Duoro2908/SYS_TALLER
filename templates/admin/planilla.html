@@ -1,0 +1,2937 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Recursos Humanos - Planilla de Pago y DGI
+<!-- ============================================================================== -->
+<!-- MODAL INTEGRADO EN EL SISTEMA: CONFIRMAR PAGAR TODOS / RESTABLECER PLANILLA     -->
+<!-- ============================================================================== -->
+<div id="modalConfirmarLotePlanilla" class="dgi-modal" onclick="if(event.target===this) cerrarModalConfirmarLote()">
+    <div class="dgi-modal-content" style="max-width: 480px; text-align: center; padding: 30px 24px; border-radius: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.7);">
+        <div id="modalLoteIconBox" style="width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="fa-solid fa-money-bill-transfer" id="modalLoteIcon"></i>
+        </div>
+        <h3 id="modalLoteTitle" style="font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; color: var(--text-primary, #ffffff);">
+            ¿Procesar Pago Global de Planilla?
+        </h3>
+        <p id="modalLoteMessage" style="font-size: 0.94rem; color: var(--text-secondary, #94a3b8); margin-bottom: 24px; line-height: 1.5;">
+            ¿Deseas procesar el pago y calcular el salario neto con todas las deducciones de TODOS los colaboradores?
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" class="btn-action-sm btn-sec-sm" onclick="cerrarModalConfirmarLote()" style="padding: 10px 22px; font-size: 0.9rem; border-radius: 10px; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i> Cancelar
+            </button>
+            <button type="button" id="btnConfirmarLoteEjecutar" onclick="ejecutarPagoTodosConfirmado()" class="btn-action-sm btn-estado-pagar" style="padding: 10px 24px; font-size: 0.9rem; border-radius: 10px; cursor: pointer; border: none; font-weight: 700;">
+                <i class="fa-solid fa-check"></i> <span id="btnConfirmarLoteTexto">Aceptar y Pagar Todos</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block content %}
+<style>
+    .rh-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .rh-badge-legal {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(10, 132, 255, 0.12);
+        border: 1px solid rgba(10, 132, 255, 0.3);
+        color: #0A84FF;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .rh-badge-dgi {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(48, 209, 88, 0.12);
+        border: 1px solid rgba(48, 209, 88, 0.3);
+        color: #30D158;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    /* Resumen de KPIs Principales */
+    .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 25px;
+    }
+
+    .kpi-card-rh {
+        background: var(--bg-surface);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 18px 20px;
+        transition: all 0.25s ease;
+    }
+
+    .kpi-card-rh:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .kpi-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .kpi-val {
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    /* Pestañas de Navegación */
+    .rh-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .rh-tab-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        font-weight: 600;
+        padding: 8px 18px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .rh-tab-btn:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .rh-tab-btn.active {
+        color: #0A84FF;
+        background: rgba(10, 132, 255, 0.15);
+        border: 1px solid rgba(10, 132, 255, 0.3);
+    }
+
+    .tab-content-panel {
+        display: none;
+    }
+    .tab-content-panel.active {
+        display: block;
+    }
+
+    /* Contenedor de Tablas */
+    .rh-box {
+        background: var(--bg-surface);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        padding: 22px;
+        margin-bottom: 30px;
+        overflow-x: auto;
+    }
+
+    .rh-box-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .rh-box-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .rh-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.88rem;
+    }
+
+    .rh-table th {
+        background: var(--bg-secondary);
+        padding: 12px 14px;
+        text-align: left;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .rh-table td {
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .rh-table tbody tr:hover {
+        background: var(--bg-primary);
+    }
+
+    .rh-table tfoot td {
+        padding: 14px;
+        background: var(--bg-secondary);
+        font-weight: 700;
+        border-top: 2px solid var(--border-color);
+    }
+
+    .val-deduction {
+        color: #FF453A;
+        font-weight: 600;
+    }
+
+    .val-neto {
+        color: #30D158;
+        font-weight: 700;
+        font-size: 0.98rem;
+    }
+
+    .badge-tramo-dgi {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(255, 159, 10, 0.15);
+        color: #FF9F0A;
+        border: 1px solid rgba(255, 159, 10, 0.3);
+    }
+
+    .badge-tramo-exento {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(142, 142, 147, 0.15);
+        color: #8E8E93;
+        border: 1px solid rgba(142, 142, 147, 0.3);
+    }
+
+    .btn-action-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary-sm {
+        background: rgba(10, 132, 255, 0.18);
+        color: #0A84FF;
+        border: 1px solid rgba(10, 132, 255, 0.4);
+    }
+    .btn-primary-sm:hover {
+        background: #0A84FF;
+        color: var(--text-primary);
+    }
+
+    .btn-sec-sm {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    .btn-sec-sm:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-action-dgi {
+        background: rgba(255, 159, 10, 0.12) !important;
+        color: #FF9F0A !important;
+        border: 1px solid rgba(255, 159, 10, 0.35) !important;
+        cursor: pointer;
+        position: relative;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .btn-action-dgi:hover {
+        background: #FF9F0A !important;
+        color: #000 !important;
+        box-shadow: 0 4px 14px rgba(255, 159, 10, 0.4);
+        transform: translateY(-1px);
+    }
+    .btn-action-dgi:active {
+        transform: translateY(0);
+    }
+
+    /* Modal Desglose DGI - Executive Luxury Aesthetic */
+    .dgi-modal {
+        display: none;
+        position: fixed;
+        z-index: 99999;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.82);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+        opacity: 0;
+        transition: opacity 0.22s ease-in-out;
+    }
+    .dgi-modal.active {
+        display: flex !important;
+        opacity: 1;
+    }
+    .dgi-modal-content {
+        background: linear-gradient(155deg, #181a24 0%, #101117 100%);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 22px;
+        max-width: 720px;
+        width: 100%;
+        padding: 28px 30px;
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 35px rgba(255, 159, 10, 0.08);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dgi-modal.active .dgi-modal-content {
+        transform: scale(1);
+    }
+
+    @media print {
+        body * {
+            visibility: hidden !important;
+        }
+        #modalDesgloseDGI, #modalDesgloseDGI * {
+            visibility: visible !important;
+        }
+        #modalDesgloseDGI {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: none !important;
+            padding: 0 !important;
+        }
+        #modalDesgloseDGI .dgi-modal-content {
+            background: #fff !important;
+            color: #000 !important;
+            border: 1px solid #ccc !important;
+            box-shadow: none !important;
+            max-width: 100% !important;
+            padding: 15px !important;
+        }
+        #modalDesgloseDGI button {
+            display: none !important;
+        }
+    }
+
+    /* Bloque Explicativo DGI */
+    .dgi-info-banner {
+        background: rgba(48, 209, 88, 0.08);
+        border: 1px solid rgba(48, 209, 88, 0.25);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 22px;
+        font-size: 0.88rem;
+        line-height: 1.5;
+        color: #e5fbe9;
+    }
+
+    /* Clasificación de Personal - Estilo Taller de Clase Mundial */
+    .badge-planta {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(10, 132, 255, 0.12);
+        border: 1px solid rgba(10, 132, 255, 0.35);
+        color: #0A84FF;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.70rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .badge-asesor {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(255, 159, 10, 0.14);
+        border: 1px solid rgba(255, 159, 10, 0.4);
+        color: #FF9F0A;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.70rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .badge-pago-unico {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(191, 90, 242, 0.14);
+        border: 1px solid rgba(191, 90, 242, 0.35);
+        color: #BF5AF2;
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 0.68rem;
+        font-weight: 700;
+    }
+
+    .category-filter-bar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .filter-pill {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 7px 16px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 0.84rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+    }
+    .filter-pill:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+    }
+    .filter-pill.active {
+        background: rgba(10, 132, 255, 0.2);
+        border-color: #0A84FF;
+        color: var(--text-primary);
+        box-shadow: 0 0 15px rgba(10, 132, 255, 0.25);
+    }
+    .filter-pill.active.pill-asesor {
+        background: rgba(255, 159, 10, 0.2);
+        border-color: #FF9F0A;
+        box-shadow: 0 0 15px rgba(255, 159, 10, 0.25);
+    }
+    .pill-counter {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    /* Executive Split Cards */
+    .executive-split-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 25px;
+    }
+    @media (max-width: 900px) {
+        .executive-split-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .split-card {
+        background: rgba(25, 25, 32, 0.75);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-radius: 16px;
+        padding: 18px 22px;
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.25s ease;
+    }
+    .split-card:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .split-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+    }
+    .split-card-planta::before {
+        background: #0A84FF;
+    }
+    .split-card-asesor::before {
+        background: #FF9F0A;
+    }
+
+    .group-header-row td {
+        padding: 11px 16px !important;
+        font-size: 0.82rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.6px !important;
+        text-transform: uppercase !important;
+    }
+    .group-header-planta td {
+        background: rgba(10, 132, 255, 0.08) !important;
+        color: #0A84FF !important;
+        border-top: 1px solid rgba(10, 132, 255, 0.25) !important;
+        border-bottom: 1px solid rgba(10, 132, 255, 0.15) !important;
+    }
+    .group-header-asesor td {
+        background: rgba(255, 159, 10, 0.08) !important;
+        color: #FF9F0A !important;
+        border-top: 2px solid rgba(255, 159, 10, 0.3) !important;
+        border-bottom: 1px solid rgba(255, 159, 10, 0.15) !important;
+    }
+
+    .subtotal-row td {
+        background: rgba(255, 255, 255, 0.035) !important;
+        font-weight: 700 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .btn-edit-sm {
+        background: rgba(255, 159, 10, 0.14);
+        border: 1px solid rgba(255, 159, 10, 0.35);
+        color: #FF9F0A;
+        padding: 5px 11px;
+        border-radius: 8px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s ease;
+    }
+    .btn-edit-sm:hover {
+        background: rgba(255, 159, 10, 0.28);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 159, 10, 0.25);
+    }
+
+    /* Estilos del Botón de Pago Interactivo (Pagar / No Pagar) */
+    .btn-pagar-action {
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.25s ease;
+        border: none;
+        outline: none;
+    }
+
+    .btn-estado-pagar {
+        background: linear-gradient(135deg, #30D158 0%, #248A3D 100%);
+        color: var(--text-primary);
+        box-shadow: 0 4px 12px rgba(48, 209, 88, 0.28);
+        border: 1px solid rgba(48, 209, 88, 0.4);
+    }
+
+    .btn-estado-pagar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(48, 209, 88, 0.45);
+        filter: brightness(1.1);
+    }
+
+    .btn-estado-nopagar {
+        background: rgba(255, 69, 58, 0.12);
+        color: #FF453A;
+        border: 1px solid rgba(255, 69, 58, 0.35);
+    }
+
+    .btn-estado-nopagar:hover {
+        background: rgba(255, 69, 58, 0.25);
+        color: var(--text-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 69, 58, 0.35);
+    }
+
+    /* Badges de Estado de Pago */
+    .badge-status-pago {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.70rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    .status-pagado {
+        background: rgba(48, 209, 88, 0.15);
+        color: #30D158;
+        border: 1px solid rgba(48, 209, 88, 0.3);
+    }
+
+    .status-pendiente {
+        background: rgba(142, 142, 147, 0.15);
+        color: #8E8E93;
+        border: 1px solid rgba(142, 142, 147, 0.3);
+    }
+
+    /* Botones de acción en lote (Toolbar) */
+    .btn-batch-pago {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 14px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .btn-batch-pagar {
+        background: rgba(48, 209, 88, 0.15);
+        color: #30D158;
+        border: 1px solid rgba(48, 209, 88, 0.35);
+    }
+
+    .btn-batch-pagar:hover {
+        background: #30D158;
+        color: #000;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(48, 209, 88, 0.35);
+    }
+
+    .btn-batch-nopagar {
+        background: var(--bg-secondary);
+        color: #8E8E93;
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-batch-nopagar:hover {
+        background: rgba(255, 69, 58, 0.18);
+        color: #FF453A;
+        border-color: rgba(255, 69, 58, 0.35);
+        transform: translateY(-1px);
+    }
+
+    .dias-asistencia-tag {
+        font-size: 0.72rem;
+        color: #0A84FF;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* Resaltado dinámico al alternar pago */
+    .row-pago-highlight {
+        animation: rowFlash 1s ease-out;
+    }
+
+    @keyframes rowFlash {
+        0% { background: rgba(48, 209, 88, 0.25) !important; }
+        100% { background: transparent !important; }
+    }
+
+    /* Tipografía y Contraste de Colaboradores */
+    .colab-name {
+        color: var(--text-primary, #ffffff);
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: block;
+    }
+    .colab-cargo {
+        color: var(--text-primary, #ffffff);
+        font-weight: 600;
+        font-size: 0.92rem;
+        line-height: 1.3;
+    }
+
+    /* Adaptación para Modo Claro ([data-theme="light"]) */
+    [data-theme="light"] .colab-name,
+    body.light-theme .colab-name {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .colab-cargo,
+    body.light-theme .colab-cargo {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .split-card,
+    body.light-theme .split-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    }
+    [data-theme="light"] .split-card h3,
+    body.light-theme .split-card h3 {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .split-card p,
+    body.light-theme .split-card p {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .split-card div[style*="border-top"],
+    body.light-theme .split-card div[style*="border-top"] {
+        border-top-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] #kpiPlantaBruto,
+    [data-theme="light"] #kpiAsesorBruto,
+    body.light-theme #kpiPlantaBruto,
+    body.light-theme #kpiAsesorBruto {
+        color: #0f172a !important;
+    }
+    /* Salario Bruto visible y con contraste perfecto en Modo Claro ([data-theme="light"]) */
+    [data-theme="light"] span[id^="cellBruto_"],
+    body.light-theme span[id^="cellBruto_"],
+    [data-theme="light"] .cell-bruto-val,
+    body.light-theme .cell-bruto-val,
+    [data-theme="light"] #subtotPlantaBruto,
+    body.light-theme #subtotPlantaBruto,
+    [data-theme="light"] #subtotAsesorBruto,
+    body.light-theme #subtotAsesorBruto,
+    [data-theme="light"] #footSalarioBruto,
+    body.light-theme #footSalarioBruto {
+        color: #0f172a !important;
+        font-weight: 700 !important;
+    }
+    [data-theme="light"] .rh-box,
+    body.light-theme .rh-box {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+    }
+    [data-theme="light"] .rh-box-header [style*="color: #fff"],
+    body.light-theme .rh-box-header [style*="color: #fff"] {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .rh-table th,
+    body.light-theme .rh-table th {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border-bottom-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .rh-table td,
+    body.light-theme .rh-table td {
+        color: #0f172a !important;
+        border-bottom-color: #f1f5f9 !important;
+    }
+    [data-theme="light"] .rh-table tbody tr:hover,
+    body.light-theme .rh-table tbody tr:hover {
+        background: #f8fafc !important;
+    }
+    [data-theme="light"] .group-header-row td,
+    body.light-theme .group-header-row td {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+        border-top: 1px solid #cbd5e1 !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+    }
+    [data-theme="light"] .filter-pill,
+    body.light-theme .filter-pill {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #475569 !important;
+    }
+    [data-theme="light"] .filter-pill.active,
+    body.light-theme .filter-pill.active {
+        background: #0284c7 !important;
+        border-color: #0284c7 !important;
+        color: #ffffff !important;
+    }
+    [data-theme="light"] .pill-counter,
+    body.light-theme .pill-counter {
+        background: rgba(0,0,0,0.08) !important;
+        color: inherit !important;
+    }
+    [data-theme="light"] .kpi-card-rh,
+    body.light-theme .kpi-card-rh {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.03) !important;
+    }
+
+
+    .input-buscador-planilla {
+        padding: 8px 16px;
+        border-radius: 20px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        font-size: 0.85rem;
+        width: 220px;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .input-buscador-planilla:focus {
+        border-color: #0A84FF;
+        box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
+    }
+    [data-theme="light"] .input-buscador-planilla,
+    body.light-theme .input-buscador-planilla {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.04) !important;
+    }
+    [data-theme="light"] .input-buscador-planilla::placeholder,
+    body.light-theme .input-buscador-planilla::placeholder {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .input-buscador-planilla:focus,
+    body.light-theme .input-buscador-planilla:focus {
+        background: #ffffff !important;
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+    }
+
+    /* Pestaña DGI y Modales: Estilos base (Modo Oscuro) y Contraste Modo Claro */
+    .dgi-steps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 15px;
+        margin-top: 12px;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 14px;
+        border-radius: 10px;
+    }
+    .dgi-step-desc {
+        margin: 4px 0 0 0;
+        font-size: 0.82rem;
+        color: #a1a1aa;
+    }
+    .dgi-decl-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .dgi-highlight-val {
+        color: #ffffff;
+    }
+    .dgi-sim-input {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        margin-top: 4px;
+        box-sizing: border-box;
+        font-weight: 600;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .dgi-sim-result {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 12px 14px;
+        border-radius: 8px;
+    }
+    .dgi-sim-neto-row {
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.95rem;
+    }
+    .dgi-modal-divider-top {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dgi-modal-divider-bottom {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dgi-modal-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+    .dgi-modal-close {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        font-size: 1.1rem;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .dgi-modal-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 12px 16px;
+        border-radius: 12px;
+    }
+    .dgi-modal-input {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 9px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        box-sizing: border-box;
+    }
+    .dgi-preview-box {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+    }
+    .dgi-preview-cell {
+        background: rgba(255, 255, 255, 0.03);
+        padding: 8px;
+        border-radius: 8px;
+    }
+
+    [data-theme="light"] .dgi-info-banner,
+    body.light-theme .dgi-info-banner {
+        background: #ecfdf5 !important;
+        border-color: #a7f3d0 !important;
+        color: #064e3b !important;
+    }
+    [data-theme="light"] .dgi-steps-grid,
+    body.light-theme .dgi-steps-grid {
+        background: #ffffff !important;
+        border: 1px solid #d1fae5 !important;
+        color: #0f172a !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    }
+    [data-theme="light"] .dgi-step-desc,
+    body.light-theme .dgi-step-desc {
+        color: #475569 !important;
+    }
+    [data-theme="light"] .dgi-decl-row,
+    body.light-theme .dgi-decl-row {
+        border-bottom-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .dgi-highlight-val,
+    body.light-theme .dgi-highlight-val {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .dgi-sim-input,
+    body.light-theme .dgi-sim-input,
+    [data-theme="light"] .dgi-modal-input,
+    body.light-theme .dgi-modal-input {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .dgi-sim-input:focus,
+    body.light-theme .dgi-sim-input:focus,
+    [data-theme="light"] .dgi-modal-input:focus,
+    body.light-theme .dgi-modal-input:focus {
+        background: #ffffff !important;
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+    }
+    [data-theme="light"] .dgi-sim-result,
+    body.light-theme .dgi-sim-result,
+    [data-theme="light"] .dgi-preview-box,
+    body.light-theme .dgi-preview-box {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .dgi-sim-neto-row,
+    body.light-theme .dgi-sim-neto-row {
+        border-top-color: #cbd5e1 !important;
+    }
+    [data-theme="light"] .dgi-modal-content,
+    body.light-theme .dgi-modal-content {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #0f172a !important;
+        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18) !important;
+    }
+    [data-theme="light"] .dgi-modal-title,
+    body.light-theme .dgi-modal-title {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .dgi-modal-close,
+    body.light-theme .dgi-modal-close {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #334155 !important;
+    }
+    [data-theme="light"] .dgi-modal-divider-top,
+    body.light-theme .dgi-modal-divider-top,
+    [data-theme="light"] .dgi-modal-divider-bottom,
+    body.light-theme .dgi-modal-divider-bottom {
+        border-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .dgi-modal-card,
+    body.light-theme .dgi-modal-card,
+    [data-theme="light"] .dgi-preview-cell,
+    body.light-theme .dgi-preview-cell {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .dgi-modal-content table,
+    body.light-theme .dgi-modal-content table {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .dgi-modal-content td,
+    body.light-theme .dgi-modal-content td {
+        border-bottom-color: #e2e8f0 !important;
+    }
+
+</style>
+
+<!-- Encabezado Principal de Recursos Humanos -->
+<div class="rh-header">
+    <div>
+        <h1 style="font-size: 1.85rem; font-weight: 700; color: var(--text-primary); margin: 0 0 6px 0;">
+            <i class="fa-solid fa-file-invoice-dollar" style="color: #0A84FF; margin-right: 8px;"></i> Planilla de Pago y Nómina Laboral
+        </h1>
+        <p style="color: var(--text-muted); margin: 0; font-size: 0.92rem;">
+            Taller y Lubricantes CR • Nómina legal bajo la <strong>Ley 185 (Código del Trabajo)</strong> y retenciones fiscales <strong>DGI (Ley 822)</strong>.
+        </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <a href="{{ url_for('planilla.contratos') }}" class="btn-action-sm btn-primary-sm" style="padding: 9px 16px; font-size: 0.88rem;">
+            <i class="fa-solid fa-file-signature"></i> Ver Contratos de Trabajadores
+        </a>
+        <a href="{{ url_for('planilla.registro_mensual', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-action-sm btn-sec-sm" style="padding: 9px 16px; font-size: 0.88rem; background: rgba(255,159,10,0.12); border-color: rgba(255,159,10,0.35); color: #FF9F0A;">
+            <i class="fa-solid fa-calendar-check"></i> Registro Mensual (Cierres)
+        </a>
+    </div>
+</div>
+
+<!-- Grid de KPIs Ejecutivos Consolidados -->
+<div class="kpi-row">
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-money-bill-wave" style="color: #0A84FF;"></i> Salario Bruto Total</div>
+        <div class="kpi-val" id="kpiSalarioBruto">C$ {{ "{:,.2f}".format(totales.salario_bruto) }}</div>
+    </div>
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-hand-holding-dollar" style="color: #FF453A;"></i> INSS Laboral (7%)</div>
+        <div class="kpi-val" style="color: #FF453A;" id="kpiInssLaboral">- C$ {{ "{:,.2f}".format(totales.inss_laboral) }}</div>
+    </div>
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-building-columns" style="color: #FF9F0A;"></i> Retención IR DGI</div>
+        <div class="kpi-val" style="color: #FF9F0A;" id="kpiRetencionIr">- C$ {{ "{:,.2f}".format(totales.ir) }}</div>
+    </div>
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-circle-check" style="color: #30D158;"></i> Salario Neto a Pagar</div>
+        <div class="kpi-val" style="color: #30D158;" id="kpiSalarioNeto">C$ {{ "{:,.2f}".format(totales.salario_neto) }}</div>
+    </div>
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-briefcase" style="color: #BF5AF2;"></i> Costo Total Empresa</div>
+        <div class="kpi-val" style="color: #BF5AF2;" id="kpiCostoEmpresa">C$ {{ "{:,.2f}".format(totales.costo_total_empleador) }}</div>
+    </div>
+</div>
+
+<!-- Desglose Ejecutivo por Categoría de Colaboradores -->
+<div class="executive-split-grid">
+    <!-- Card Planta Permanente -->
+    <div class="split-card split-card-planta">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div>
+                <span class="badge-planta"><i class="fa-solid fa-building-user"></i> Personal Permanente de Planta</span>
+                <h3 style="margin: 8px 0 2px 0; font-size: 1.15rem; color: var(--text-primary);">Operaciones, Mecánica y Administración Diaria</h3>
+                <p style="margin: 0; font-size: 0.78rem; color: var(--text-muted);">Mecánicos, Bodega, Cajera, RRHH, Recepción y Dirección (Presencial Diario • 48 hrs/sem)</p>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 1.5rem; font-weight: 800; color: #0A84FF;" id="kpiPlantaCantidad">{{ totales_permanentes.cantidad_pagados }} / {{ totales_permanentes.cantidad }}</span>
+                <span style="font-size: 0.74rem; color: var(--text-secondary); display: block;">Pagados / Total</span>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Salario Bruto</span>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #fff;" id="kpiPlantaBruto">C$ {{ "{:,.2f}".format(totales_permanentes.salario_bruto) }}</div>
+            </div>
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Neto a Pagar</span>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #30D158;" id="kpiPlantaNeto">C$ {{ "{:,.2f}".format(totales_permanentes.salario_neto) }}</div>
+            </div>
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Costo Empresa</span>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #BF5AF2;" id="kpiPlantaCosto">C$ {{ "{:,.2f}".format(totales_permanentes.costo_total_empleador) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Asesores de Cierre Mensual -->
+    <div class="split-card split-card-asesor">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div>
+                <span class="badge-asesor"><i class="fa-solid fa-calendar-check"></i> Asesoría y Consultoría Externa</span>
+                <h3 style="margin: 8px 0 2px 0; font-size: 1.15rem; color: var(--text-primary);">Asesores de Cierre Mensual (1 Día al Mes)</h3>
+                <p style="margin: 0; font-size: 0.78rem; color: var(--text-muted);">Asesoría Senior en Finanzas, Contabilidad y Control Estadístico (Pago Único por Cierre de Mes)</p>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 1.5rem; font-weight: 800; color: #FF9F0A;" id="kpiAsesorCantidad">{{ totales_asesores.cantidad_pagados }} / {{ totales_asesores.cantidad }}</span>
+                <span style="font-size: 0.74rem; color: var(--text-secondary); display: block;">Pagados / Total</span>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Honorario Único</span>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #fff;" id="kpiAsesorBruto">C$ {{ "{:,.2f}".format(totales_asesores.salario_bruto) }}</div>
+            </div>
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Neto Liquidado</span>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #30D158;" id="kpiAsesorNeto">C$ {{ "{:,.2f}".format(totales_asesores.salario_neto) }}</div>
+            </div>
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase;">Costo de Cierre</span>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #BF5AF2;" id="kpiAsesorCosto">C$ {{ "{:,.2f}".format(totales_asesores.costo_total_empleador) }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pestañas Interactivas -->
+<div class="rh-tabs">
+    <button class="rh-tab-btn active" onclick="cambiarTabRH('tabNomina', this)">
+        <i class="fa-solid fa-list-check"></i> Planilla y Deducciones Salariales
+    </button>
+    <button class="rh-tab-btn" onclick="cambiarTabRH('tabPatronal', this)">
+        <i class="fa-solid fa-shield-halved"></i> Cargas Patronales y Provisiones (Ley 185)
+    </button>
+    <button class="rh-tab-btn" onclick="cambiarTabRH('tabDGI', this)">
+        <i class="fa-solid fa-receipt"></i> Cosas y Tablas de la DGI Utilizadas
+    </button>
+</div>
+
+<!-- ============================================================================== -->
+<!-- PESTAÑA 1: PLANILLA Y DEDUCCIONES SALARIALES -->
+<!-- ============================================================================== -->
+<div id="tabNomina" class="tab-content-panel active">
+    <div class="rh-box">
+        <div class="rh-box-header">
+            <div>
+                <div class="rh-box-title">
+                    <i class="fa-solid fa-users" style="color: #0A84FF;"></i> Detalle Individual de Pago a Trabajadores
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">
+                    Salarios base coherentes, deducción de INSS (7%) y cálculo progresivo del IR (DGI).
+                </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-batch-pago btn-batch-pagar" onclick="togglePagoTodos(true)" title="Calcular salario neto y procesar pago de todos los colaboradores">
+                    <i class="fa-solid fa-money-bill-transfer"></i> Pagar Todos
+                </button>
+                <button type="button" class="btn-batch-pago btn-batch-nopagar" onclick="togglePagoTodos(false)" title="Restablecer todos los montos a C$ 0.00 (No Pagar)">
+                    <i class="fa-solid fa-rotate-left"></i> Restablecer a C$ 0.00
+                </button>
+                <input type="text" id="buscadorPlanilla" class="input-buscador-planilla" onkeyup="filtrarTablaPlanilla()" placeholder="Buscar empleado o cargo...">
+            </div>
+        </div>
+
+        <!-- Barra de Filtros Rápidos por Categoría -->
+        <div class="category-filter-bar">
+            <button class="filter-pill active" id="pillTodos" onclick="filtrarCategoria('todos', this)">
+                <i class="fa-solid fa-users"></i> Todos los Colaboradores <span class="pill-counter">{{ totales_permanentes.cantidad + totales_asesores.cantidad }}</span>
+            </button>
+            <button class="filter-pill" id="pillPermanente" onclick="filtrarCategoria('permanente', this)">
+                <i class="fa-solid fa-building-user"></i> Planta Permanente Diaria <span class="pill-counter">{{ totales_permanentes.cantidad }}</span>
+            </button>
+            <button class="filter-pill pill-asesor" id="pillAsesor" onclick="filtrarCategoria('asesor', this)">
+                <i class="fa-solid fa-calendar-check"></i> Asesores de Cierre Mensual (1 Día/Mes) <span class="pill-counter" style="background: rgba(255,159,10,0.3); color: #FF9F0A;">{{ totales_asesores.cantidad }}</span>
+            </button>
+        </div>
+
+        <table class="rh-table" id="tablaPlanilla">
+            <thead>
+                <tr>
+                    <th>Empleado / Cédula</th>
+                    <th>Cargo / Puesto</th>
+                    <th style="text-align: right;">Salario Base</th>
+                    <th style="text-align: right;">Inasistencias / Faltas</th>
+                    <th style="text-align: right;">Bonos / Mecánicos</th>
+                    <th style="text-align: right;">Salario Bruto</th>
+                    <th style="text-align: right;">INSS Lab. (7%)</th>
+                    <th style="text-align: center;">Tramo DGI</th>
+                    <th style="text-align: right;">IR DGI (Mensual)</th>
+                    <th style="text-align: right;">Salario Neto</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- GRUPO 1: PERSONAL PERMANENTE DE PLANTA -->
+                <tr class="group-header-row group-header-planta" data-category="permanente">
+                    <td colspan="11">
+                        <i class="fa-solid fa-building-user" style="margin-right: 6px;"></i> Personal Permanente de Planta — {{ totales_permanentes.cantidad }} Colaboradores (Presencial Diario • Lunes a Sábado)
+                    </td>
+                </tr>
+                {% for p in planilla_permanentes %}
+                <tr class="row-colaborador" id="rowPlanilla_{{ p.id }}" data-category="permanente" data-id="{{ p.id }}" data-pagado="{{ '1' if p.pagado else '0' }}">
+                    <td>
+                        <strong class="colab-name">{{ p.nombre }}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            Céd: {{ p.cedula }} • Contrato: {{ p.num_contrato }}
+                        </div>
+                        <div style="margin-top: 4px;">
+                            <span class="badge-status-pago {{ 'status-pagado' if p.pagado else 'status-pendiente' }}" id="badgeStatus_{{ p.id }}">
+                                <i class="fa-solid {{ 'fa-circle-check' if p.pagado else 'fa-clock' }}"></i> {{ 'Pagado' if p.pagado else 'Pendiente (C$ 0.00)' }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="colab-cargo">{{ p.cargo }}</div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+                            <span style="font-size: 0.74rem; color: #0A84FF;">{{ p.depto }}</span>
+                            <span class="badge-planta"><i class="fa-solid fa-clock"></i> Presencial Diario</span>
+                        </div>
+                        <div class="dias-asistencia-tag" id="tagDias_{{ p.id }}">
+                            <i class="fa-solid fa-calendar-days" style="color: #30D158;"></i> Días trabajados: <strong>{{ p.dias_trabajados }}/30</strong> ({{ p.porcentaje_asistencia }}%)
+                        </div>
+                        {% if p.dias_faltados > 0 %}
+                            <div style="font-size: 0.70rem; color: #ff8b85;">{{ p.dias_faltados }} falta{{ 's' if p.dias_faltados > 1 else '' }} (-C$ {{ "{:,.2f}".format(p.calc_deduccion_faltas) }})</div>
+                        {% endif %}
+                    </td>
+                    <!-- Salario Base -->
+                    <td style="text-align: right; color: #d1d1d6; font-weight: 500;">
+                        C$ {{ "{:,.2f}".format(p.salario_base) }}
+                        <div style="font-size: 0.68rem; color: #8E8E93;">C$ {{ "{:,.2f}".format(p.salario_base / 30.0) }}/día</div>
+                    </td>
+                    <!-- Inasistencias y Deducciones -->
+                    <td style="text-align: right;">
+                        <span id="cellDeducciones_{{ p.id }}">
+                            {% if p.pagado and p.total_deducciones_ajustes > 0 %}
+                                <span style="color: #FF453A; font-weight: 600;">- C$ {{ "{:,.2f}".format(p.total_deducciones_ajustes) }}</span>
+                                {% if p.dias_faltados > 0 %}
+                                    <div style="font-size: 0.70rem; color: #ff8b85;">{{ p.dias_faltados }} día{{ 's' if p.dias_faltados > 1 else '' }} falta</div>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #8E8E93;">C$ 0.00</span>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <!-- Bonos de Productividad Mecánicos / Extras -->
+                    <td style="text-align: right;">
+                        <span id="cellBonos_{{ p.id }}">
+                            {% if p.pagado and p.total_bonos > 0 %}
+                                <span style="color: #30D158; font-weight: 700;">+ C$ {{ "{:,.2f}".format(p.total_bonos) }}</span>
+                                {% if p.bono_vehiculos > 0 %}
+                                    <div style="font-size: 0.70rem; color: #7bf79b;">{{ p.vehiculos_atendidos }} veh. (+C$ {{ "{:,.0f}".format(p.bono_vehiculos) }})</div>
+                                {% elif p.bonos_extras > 0 %}
+                                    <div style="font-size: 0.70rem; color: #7bf79b;">Bono extra</div>
+                                {% endif %}
+                            {% else %}
+                                {% if p.es_mecanico and p.pagado %}
+                                    <span style="color: #8E8E93; font-size: 0.74rem;">{{ p.vehiculos_atendidos }} veh. (0 bonos)</span>
+                                {% else %}
+                                    <span style="color: #8E8E93;">C$ 0.00</span>
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <!-- Salario Bruto Devengado -->
+                    <td style="text-align: right; font-weight: 700;">
+                        <span id="cellBruto_{{ p.id }}" class="cell-bruto-val" style="color: {{ 'var(--text-primary, #ffffff)' if p.pagado else '#8E8E93' }};">
+                            C$ {{ "{:,.2f}".format(p.salario_bruto) }}
+                        </span>
+                    </td>
+                    <!-- INSS Laboral (7%) -->
+                    <td style="text-align: right;">
+                        <span id="cellInssLab_{{ p.id }}" class="{{ 'val-deduction' if p.pagado else '' }}" style="{{ '' if p.pagado else 'color: #8E8E93;' }}">
+                            {{ ('- C$ ' ~ "{:,.2f}".format(p.inss_laboral)) if p.pagado else 'C$ 0.00' }}
+                        </span>
+                    </td>
+                    <!-- Tramo DGI -->
+                    <td style="text-align: center;">
+                        <span id="cellTramoDgi_{{ p.id }}">
+                            {% if p.pagado %}
+                                {% if p.ir > 0 %}
+                                    <span class="badge-tramo-dgi">Tramo {{ p.tramo_dgi }} ({{ p.tasa_dgi }}%)</span>
+                                {% else %}
+                                    <span class="badge-tramo-exento">Exento (0%)</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge-tramo-exento" style="opacity: 0.6;">Sin Pagar (0.00)</span>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <!-- IR DGI -->
+                    <td style="text-align: right;">
+                        <span id="cellIr_{{ p.id }}" class="{{ 'val-deduction' if (p.pagado and p.ir > 0) else '' }}" style="{{ '' if (p.pagado and p.ir > 0) else 'color: #8E8E93;' }}">
+                            {{ ('- C$ ' ~ "{:,.2f}".format(p.ir)) if (p.pagado and p.ir > 0) else 'C$ 0.00' }}
+                        </span>
+                    </td>
+                    <!-- Salario Neto -->
+                    <td style="text-align: right;">
+                        <span id="cellNeto_{{ p.id }}" class="{{ 'val-neto' if p.pagado else '' }}" style="{{ '' if p.pagado else 'color: #8E8E93; font-weight: 700;' }}">
+                            C$ {{ "{:,.2f}".format(p.salario_neto) }}
+                        </span>
+                    </td>
+                    <!-- Acciones -->
+                    <td style="text-align: center; white-space: nowrap;">
+                        <!-- BOTÓN PAGAR / NO PAGAR -->
+                        <button type="button" class="btn-action-sm btn-pagar-action {{ 'btn-estado-nopagar' if p.pagado else 'btn-estado-pagar' }}" id="btnTogglePago_{{ p.id }}" onclick="togglePagoEmpleado({{ p.id }}, {{ 'false' if p.pagado else 'true' }})" title="{{ 'Revertir desembolso y colocar montos en C$ 0.00' if p.pagado else 'Calcular salario neto y procesar pago' }}">
+                            <i class="fa-solid {{ 'fa-ban' if p.pagado else 'fa-money-bill-wave' }}"></i> {{ 'No Pagar' if p.pagado else 'Pagar' }}
+                        </button>
+                        <a href="{{ url_for('planilla.colilla', id=p.id) }}" class="btn-action-sm btn-primary-sm" title="Ver e Imprimir Colilla de Pago">
+                            <i class="fa-solid fa-receipt"></i> Colilla
+                        </a>
+                        <button type="button" data-id="{{ p.id }}" onclick="abrirModalDGI({{ p.id }})" class="btn-action-sm btn-sec-sm btn-action-dgi" title="Ver desglose paso a paso DGI">
+                            <i class="fa-solid fa-calculator" style="pointer-events: none;"></i> DGI
+                        </button>
+                        <button type="button" onclick="abrirModalAjusteNomina({{ p.id }})" class="btn-action-sm btn-edit-sm" title="Editar Salario Base, Inasistencias, Bonos de Vehículos y Deducciones">
+                            <i class="fa-solid fa-sliders"></i> Ajustar
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                <!-- SUBTOTAL PLANTA PERMANENTE -->
+                <tr class="subtotal-row" data-category="permanente">
+                    <td colspan="2" style="text-align: right; color: #0A84FF; font-size: 0.82rem;">
+                        <i class="fa-solid fa-calculator"></i> SUBTOTAL PLANTA PERMANENTE (<span id="subtotPlantaCant">{{ totales_permanentes.cantidad_pagados }}</span>/{{ totales_permanentes.cantidad }} pagados):
+                    </td>
+                    <td style="text-align: right; color: #d1d1d6;" id="subtotPlantaBase">C$ {{ "{:,.2f}".format(totales_permanentes.salario_base) }}</td>
+                    <td style="text-align: right; color: #FF453A;" id="subtotPlantaDed">- C$ {{ "{:,.2f}".format(totales_permanentes.deduccion_faltas + totales_permanentes.otras_deducciones) }}</td>
+                    <td style="text-align: right; color: #30D158;" id="subtotPlantaBonos">+ C$ {{ "{:,.2f}".format(totales_permanentes.bono_vehiculos + totales_permanentes.bonos_extras) }}</td>
+                    <td style="text-align: right; color: #fff; font-weight: 700;" id="subtotPlantaBruto">C$ {{ "{:,.2f}".format(totales_permanentes.salario_bruto) }}</td>
+                    <td style="text-align: right; color: #FF453A;" id="subtotPlantaInss">- C$ {{ "{:,.2f}".format(totales_permanentes.inss_laboral) }}</td>
+                    <td style="text-align: center; color: #8E8E93; font-size: 0.74rem;">Planta</td>
+                    <td style="text-align: right; color: #FF9F0A;" id="subtotPlantaIr">- C$ {{ "{:,.2f}".format(totales_permanentes.ir) }}</td>
+                    <td style="text-align: right; color: #30D158; font-weight: 800;" id="subtotPlantaNeto">C$ {{ "{:,.2f}".format(totales_permanentes.salario_neto) }}</td>
+                    <td></td>
+                </tr>
+
+                <!-- GRUPO 2: ASESORÍAS EXTERNAS Y CONSULTORES DE CIERRE MENSUAL -->
+                <tr class="group-header-row group-header-asesor" data-category="asesor">
+                    <td colspan="11">
+                        <i class="fa-solid fa-calendar-check" style="margin-right: 6px;"></i> Asesores Externos y Consultores de Cierre — {{ totales_asesores.cantidad }} Consultores (1 Día al Mes • Pago Único por Cierre)
+                    </td>
+                </tr>
+                {% for p in planilla_asesores %}
+                <tr class="row-colaborador" id="rowPlanilla_{{ p.id }}" data-category="asesor" data-id="{{ p.id }}" data-pagado="{{ '1' if p.pagado else '0' }}">
+                    <td>
+                        <strong class="colab-name">{{ p.nombre }}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            Céd: {{ p.cedula }} • Contrato: {{ p.num_contrato }}
+                        </div>
+                        <div style="margin-top: 4px;">
+                            <span class="badge-status-pago {{ 'status-pagado' if p.pagado else 'status-pendiente' }}" id="badgeStatus_{{ p.id }}">
+                                <i class="fa-solid {{ 'fa-circle-check' if p.pagado else 'fa-clock' }}"></i> {{ 'Pagado' if p.pagado else 'Pendiente (C$ 0.00)' }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="colab-cargo">{{ p.cargo }}</div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+                            <span style="font-size: 0.74rem; color: #FF9F0A;">{{ p.depto }}</span>
+                            <span class="badge-asesor"><i class="fa-solid fa-calendar-day"></i> 1 Día al Mes (Cierre)</span>
+                            <span class="badge-pago-unico"><i class="fa-solid fa-bolt"></i> Pago Único</span>
+                        </div>
+                        <div class="dias-asistencia-tag" id="tagDias_{{ p.id }}">
+                            <i class="fa-solid fa-calendar-days" style="color: #FF9F0A;"></i> Modalidad Cierre Mensual: <strong>1 Día/Mes</strong>
+                        </div>
+                    </td>
+                    <!-- Salario Base -->
+                    <td style="text-align: right; color: #d1d1d6; font-weight: 500;">
+                        C$ {{ "{:,.2f}".format(p.salario_base) }}
+                        <div style="font-size: 0.68rem; color: #8E8E93;">Honorario Pactado</div>
+                    </td>
+                    <!-- Inasistencias y Deducciones -->
+                    <td style="text-align: right;">
+                        <span id="cellDeducciones_{{ p.id }}">
+                            {% if p.pagado and p.total_deducciones_ajustes > 0 %}
+                                <span style="color: #FF453A; font-weight: 600;">- C$ {{ "{:,.2f}".format(p.total_deducciones_ajustes) }}</span>
+                            {% else %}
+                                <span style="color: #8E8E93;">C$ 0.00</span>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <!-- Bonos -->
+                    <td style="text-align: right;">
+                        <span id="cellBonos_{{ p.id }}">
+                            {% if p.pagado and p.total_bonos > 0 %}
+                                <span style="color: #30D158; font-weight: 700;">+ C$ {{ "{:,.2f}".format(p.total_bonos) }}</span>
+                            {% else %}
+                                <span style="color: #8E8E93;">C$ 0.00</span>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <!-- Salario Bruto Devengado -->
+                    <td style="text-align: right; font-weight: 700;">
+                        <span id="cellBruto_{{ p.id }}" class="cell-bruto-val" style="color: {{ 'var(--text-primary, #ffffff)' if p.pagado else '#8E8E93' }};">
+                            C$ {{ "{:,.2f}".format(p.salario_bruto) }}
+                        </span>
+                    </td>
+                    <!-- INSS Laboral (7%) -->
+                    <td style="text-align: right;">
+                        <span id="cellInssLab_{{ p.id }}" class="{{ 'val-deduction' if p.pagado else '' }}" style="{{ '' if p.pagado else 'color: #8E8E93;' }}">
+                            {{ ('- C$ ' ~ "{:,.2f}".format(p.inss_laboral)) if p.pagado else 'C$ 0.00' }}
+                        </span>
+                    </td>
+                    <!-- Tramo DGI -->
+                    <td style="text-align: center;">
+                        <span id="cellTramoDgi_{{ p.id }}">
+                            {% if p.pagado %}
+                                {% if p.ir > 0 %}
+                                    <span class="badge-tramo-dgi">Tramo {{ p.tramo_dgi }} ({{ p.tasa_dgi }}%)</span>
+                                {% else %}
+                                    <span class="badge-tramo-exento">Exento (0%)</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge-tramo-exento" style="opacity: 0.6;">Sin Pagar (0.00)</span>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <!-- IR DGI -->
+                    <td style="text-align: right;">
+                        <span id="cellIr_{{ p.id }}" class="{{ 'val-deduction' if (p.pagado and p.ir > 0) else '' }}" style="{{ '' if (p.pagado and p.ir > 0) else 'color: #8E8E93;' }}">
+                            {{ ('- C$ ' ~ "{:,.2f}".format(p.ir)) if (p.pagado and p.ir > 0) else 'C$ 0.00' }}
+                        </span>
+                    </td>
+                    <!-- Salario Neto -->
+                    <td style="text-align: right;">
+                        <span id="cellNeto_{{ p.id }}" class="{{ 'val-neto' if p.pagado else '' }}" style="{{ '' if p.pagado else 'color: #8E8E93; font-weight: 700;' }}">
+                            C$ {{ "{:,.2f}".format(p.salario_neto) }}
+                        </span>
+                    </td>
+                    <!-- Acciones -->
+                    <td style="text-align: center; white-space: nowrap;">
+                        <!-- BOTÓN PAGAR / NO PAGAR -->
+                        <button type="button" class="btn-action-sm btn-pagar-action {{ 'btn-estado-nopagar' if p.pagado else 'btn-estado-pagar' }}" id="btnTogglePago_{{ p.id }}" onclick="togglePagoEmpleado({{ p.id }}, {{ 'false' if p.pagado else 'true' }})" title="{{ 'Revertir desembolso y colocar montos en C$ 0.00' if p.pagado else 'Calcular honorario neto y procesar pago' }}">
+                            <i class="fa-solid {{ 'fa-ban' if p.pagado else 'fa-money-bill-wave' }}"></i> {{ 'No Pagar' if p.pagado else 'Pagar' }}
+                        </button>
+                        <a href="{{ url_for('planilla.colilla', id=p.id) }}" class="btn-action-sm btn-primary-sm" title="Ver e Imprimir Colilla de Pago">
+                            <i class="fa-solid fa-receipt"></i> Colilla
+                        </a>
+                        <button type="button" data-id="{{ p.id }}" onclick="abrirModalDGI({{ p.id }})" class="btn-action-sm btn-sec-sm btn-action-dgi" title="Ver desglose paso a paso DGI">
+                            <i class="fa-solid fa-calculator" style="pointer-events: none;"></i> DGI
+                        </button>
+                        <button type="button" onclick="abrirModalAjusteNomina({{ p.id }})" class="btn-action-sm btn-edit-sm" title="Editar Salario Base, Inasistencias, Bonos de Vehículos y Deducciones">
+                            <i class="fa-solid fa-sliders"></i> Ajustar
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                <!-- SUBTOTAL ASESORÍAS DE CIERRE -->
+                <tr class="subtotal-row" data-category="asesor">
+                    <td colspan="2" style="text-align: right; color: #FF9F0A; font-size: 0.82rem;">
+                        <i class="fa-solid fa-calculator"></i> SUBTOTAL ASESORÍAS DE CIERRE (<span id="subtotAsesorCant">{{ totales_asesores.cantidad_pagados }}</span>/{{ totales_asesores.cantidad }} pagados):
+                    </td>
+                    <td style="text-align: right; color: #d1d1d6;" id="subtotAsesorBase">C$ {{ "{:,.2f}".format(totales_asesores.salario_base) }}</td>
+                    <td style="text-align: right; color: #FF453A;" id="subtotAsesorDed">- C$ {{ "{:,.2f}".format(totales_asesores.deduccion_faltas + totales_asesores.otras_deducciones) }}</td>
+                    <td style="text-align: right; color: #30D158;" id="subtotAsesorBonos">+ C$ {{ "{:,.2f}".format(totales_asesores.bono_vehiculos + totales_asesores.bonos_extras) }}</td>
+                    <td style="text-align: right; color: #fff; font-weight: 700;" id="subtotAsesorBruto">C$ {{ "{:,.2f}".format(totales_asesores.salario_bruto) }}</td>
+                    <td style="text-align: right; color: #FF453A;" id="subtotAsesorInss">- C$ {{ "{:,.2f}".format(totales_asesores.inss_laboral) }}</td>
+                    <td style="text-align: center; color: #8E8E93; font-size: 0.74rem;">Asesores</td>
+                    <td style="text-align: right; color: #FF9F0A;" id="subtotAsesorIr">- C$ {{ "{:,.2f}".format(totales_asesores.ir) }}</td>
+                    <td style="text-align: right; color: #30D158; font-weight: 800;" id="subtotAsesorNeto">C$ {{ "{:,.2f}".format(totales_asesores.salario_neto) }}</td>
+                    <td></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2" style="text-align: right; text-transform: uppercase;">TOTAL CONSOLIDADO GENERAL (<span id="totalesCantPagados">{{ totales.cantidad_pagados }}</span>/{{ totales.cantidad_pagados + totales.cantidad_pendientes }} pagados):</td>
+                    <td style="text-align: right; color: #d1d1d6; font-weight: 600;" id="footSalarioBase">C$ {{ "{:,.2f}".format(totales.salario_base) }}</td>
+                    <td style="text-align: right; color: #FF453A;" id="footDeducciones">- C$ {{ "{:,.2f}".format(totales.deduccion_faltas + totales.otras_deducciones) }}</td>
+                    <td style="text-align: right; color: #30D158;" id="footBonos">+ C$ {{ "{:,.2f}".format(totales.bono_vehiculos + totales.bonos_extras) }}</td>
+                    <td style="text-align: right; color: #fff; font-weight: 800;" id="footSalarioBruto">C$ {{ "{:,.2f}".format(totales.salario_bruto) }}</td>
+                    <td style="text-align: right; color: #FF453A;" id="footInssLaboral">- C$ {{ "{:,.2f}".format(totales.inss_laboral) }}</td>
+                    <td style="text-align: center; font-size: 0.78rem; color: #FF9F0A;" id="footGravados">{{ resumen_dgi.empleados_con_retencion }} gravados</td>
+                    <td style="text-align: right; color: #FF9F0A;" id="footIr">- C$ {{ "{:,.2f}".format(totales.ir) }}</td>
+                    <td style="text-align: right; color: #30D158; font-size: 1.05rem; font-weight: 800;" id="footSalarioNeto">C$ {{ "{:,.2f}".format(totales.salario_neto) }}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- ============================================================================== -->
+<!-- PESTAÑA 2: CARGAS PATRONALES Y PROVISIONES (LEY 185) -->
+<!-- ============================================================================== -->
+<div id="tabPatronal" class="tab-content-panel">
+    <div class="rh-box">
+        <div class="rh-box-header">
+            <div>
+                <div class="rh-box-title">
+                    <i class="fa-solid fa-shield-halved" style="color: #30D158;"></i> Aportes Patronales y Provisiones Laborales
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">
+                    Obligaciones de Taller y Lubricantes CR conforme al Código del Trabajo (Ley 185) y Seguridad Social.
+                </span>
+            </div>
+            <div style="font-size: 0.85rem; color: #a1a1aa;">
+                INSS Patronal: <strong>22.5%</strong> • INATEC: <strong>2.0%</strong> • Provisión Mensual: <strong>25%</strong>
+            </div>
+        </div>
+
+        <table class="rh-table" id="tablaPatronal">
+            <thead>
+                <tr>
+                    <th>Empleado / Modalidad</th>
+                    <th style="text-align: right;">Salario Bruto</th>
+                    <th style="text-align: right;">INSS Pat. (22.5%)</th>
+                    <th style="text-align: right;">INATEC (2%)</th>
+                    <th style="text-align: right;">Aguinaldo (8.33%)</th>
+                    <th style="text-align: right;">Vacaciones (8.33%)</th>
+                    <th style="text-align: right;">Indemnización (Art. 45)</th>
+                    <th style="text-align: right;">Costo Total Empresa</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- GRUPO 1 PATRONAL: PLANTA PERMANENTE -->
+                <tr class="group-header-row group-header-planta" data-category="permanente">
+                    <td colspan="8">
+                        <i class="fa-solid fa-building-user" style="margin-right: 6px;"></i> Cargas Patronales: Personal Permanente de Planta (9 Trabajadores Diarios)
+                    </td>
+                </tr>
+                {% for p in planilla_permanentes %}
+                <tr class="row-colaborador-patronal" id="rowPatronal_{{ p.id }}" data-category="permanente">
+                    <td>
+                        <strong class="colab-name">{{ p.nombre }}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            {{ p.cargo }} • <span class="badge-planta"><i class="fa-solid fa-clock"></i> Diario</span>
+                        </div>
+                    </td>
+                    <td style="text-align: right;" id="cellPatBruto_{{ p.id }}">C$ {{ "{:,.2f}".format(p.salario_bruto) }}</td>
+                    <td style="text-align: right; color: #0A84FF;" id="cellPatInssPat_{{ p.id }}">C$ {{ "{:,.2f}".format(p.inss_patronal) }}</td>
+                    <td style="text-align: right; color: #FF9F0A;" id="cellPatInatec_{{ p.id }}">C$ {{ "{:,.2f}".format(p.inatec) }}</td>
+                    <td style="text-align: right;" id="cellPatAguinaldo_{{ p.id }}">C$ {{ "{:,.2f}".format(p.aguinaldo) }}</td>
+                    <td style="text-align: right;" id="cellPatVacaciones_{{ p.id }}">C$ {{ "{:,.2f}".format(p.vacaciones) }}</td>
+                    <td style="text-align: right;" id="cellPatIndemnizacion_{{ p.id }}">C$ {{ "{:,.2f}".format(p.indemnizacion) }}</td>
+                    <td style="text-align: right; font-weight: 700; color: #BF5AF2;" id="cellPatCosto_{{ p.id }}">
+                        C$ {{ "{:,.2f}".format(p.costo_total_empleador) }}
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr class="subtotal-row" data-category="permanente">
+                    <td style="text-align: right; color: #0A84FF; font-size: 0.82rem;">
+                        SUBTOTAL PATRONAL PLANTA ({{ totales_permanentes.cantidad }}):
+                    </td>
+                    <td style="text-align: right;" id="subtotPatPlantaBruto">C$ {{ "{:,.2f}".format(totales_permanentes.salario_bruto) }}</td>
+                    <td style="text-align: right; color: #0A84FF;" id="subtotPatPlantaInss">C$ {{ "{:,.2f}".format(totales_permanentes.inss_patronal) }}</td>
+                    <td style="text-align: right; color: #FF9F0A;" id="subtotPatPlantaInatec">C$ {{ "{:,.2f}".format(totales_permanentes.inatec) }}</td>
+                    <td colspan="3" style="text-align: center; color: #30D158; font-size: 0.8rem;">
+                        Provisiones Planta: <strong id="subtotPatPlantaProvisiones">C$ {{ "{:,.2f}".format(totales_permanentes.provisiones_acumuladas) }}</strong>
+                    </td>
+                    <td style="text-align: right; color: #BF5AF2; font-weight: 800;" id="subtotPatPlantaCosto">
+                        C$ {{ "{:,.2f}".format(totales_permanentes.costo_total_empleador) }}
+                    </td>
+                </tr>
+
+                <!-- GRUPO 2 PATRONAL: ASESORÍAS DE CIERRE MENSUAL -->
+                <tr class="group-header-row group-header-asesor" data-category="asesor">
+                    <td colspan="8">
+                        <i class="fa-solid fa-calendar-check" style="margin-right: 6px;"></i> Cargas Patronales: Asesorías de Cierre Mensual ({{ totales_asesores.cantidad }} Consultores • 1 Día al Mes)
+                    </td>
+                </tr>
+                {% for p in planilla_asesores %}
+                <tr class="row-colaborador-patronal" id="rowPatronal_{{ p.id }}" data-category="asesor">
+                    <td>
+                        <strong class="colab-name">{{ p.nombre }}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            {{ p.cargo }} • <span class="badge-asesor"><i class="fa-solid fa-calendar-day"></i> Cierre 1 Día/Mes</span>
+                        </div>
+                    </td>
+                    <td style="text-align: right;" id="cellPatBruto_{{ p.id }}">C$ {{ "{:,.2f}".format(p.salario_bruto) }}</td>
+                    <td style="text-align: right; color: #0A84FF;" id="cellPatInssPat_{{ p.id }}">C$ {{ "{:,.2f}".format(p.inss_patronal) }}</td>
+                    <td style="text-align: right; color: #FF9F0A;" id="cellPatInatec_{{ p.id }}">C$ {{ "{:,.2f}".format(p.inatec) }}</td>
+                    <td style="text-align: right;" id="cellPatAguinaldo_{{ p.id }}">C$ {{ "{:,.2f}".format(p.aguinaldo) }}</td>
+                    <td style="text-align: right;" id="cellPatVacaciones_{{ p.id }}">C$ {{ "{:,.2f}".format(p.vacaciones) }}</td>
+                    <td style="text-align: right;" id="cellPatIndemnizacion_{{ p.id }}">C$ {{ "{:,.2f}".format(p.indemnizacion) }}</td>
+                    <td style="text-align: right; font-weight: 700; color: #BF5AF2;" id="cellPatCosto_{{ p.id }}">
+                        C$ {{ "{:,.2f}".format(p.costo_total_empleador) }}
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr class="subtotal-row" data-category="asesor">
+                    <td style="text-align: right; color: #FF9F0A; font-size: 0.82rem;">
+                        SUBTOTAL PATRONAL ASESORÍAS ({{ totales_asesores.cantidad }}):
+                    </td>
+                    <td style="text-align: right;" id="subtotPatAsesorBruto">C$ {{ "{:,.2f}".format(totales_asesores.salario_bruto) }}</td>
+                    <td style="text-align: right; color: #0A84FF;" id="subtotPatAsesorInss">C$ {{ "{:,.2f}".format(totales_asesores.inss_patronal) }}</td>
+                    <td style="text-align: right; color: #FF9F0A;" id="subtotPatAsesorInatec">C$ {{ "{:,.2f}".format(totales_asesores.inatec) }}</td>
+                    <td colspan="3" style="text-align: center; color: #30D158; font-size: 0.8rem;">
+                        Provisiones Cierre: <strong id="subtotPatAsesorProvisiones">C$ {{ "{:,.2f}".format(totales_asesores.provisiones_acumuladas) }}</strong>
+                    </td>
+                    <td style="text-align: right; color: #BF5AF2; font-weight: 800;" id="subtotPatAsesorCosto">
+                        C$ {{ "{:,.2f}".format(totales_asesores.costo_total_empleador) }}
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td style="text-align: right; text-transform: uppercase;">TOTALES PATRONALES CONSOLIDADOS:</td>
+                    <td style="text-align: right;" id="footPatSalarioBruto">C$ {{ "{:,.2f}".format(totales.salario_bruto) }}</td>
+                    <td style="text-align: right; color: #0A84FF;" id="footPatInssPat">C$ {{ "{:,.2f}".format(totales.inss_patronal) }}</td>
+                    <td style="text-align: right; color: #FF9F0A;" id="footPatInatec">C$ {{ "{:,.2f}".format(totales.inatec) }}</td>
+                    <td colspan="3" style="text-align: center; color: #30D158;">
+                        Total Provisiones Sociales Acumuladas: <strong id="footPatProvisiones">C$ {{ "{:,.2f}".format(totales.provisiones_acumuladas) }}</strong>
+                    </td>
+                    <td style="text-align: right; color: #BF5AF2; font-size: 1.05rem;" id="footPatCostoTotal">
+                        C$ {{ "{:,.2f}".format(totales.costo_total_empleador) }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- ============================================================================== -->
+<!-- PESTAÑA 3: COSAS Y TABLAS DE LA DGI UTILIZADAS -->
+<!-- ============================================================================== -->
+<div id="tabDGI" class="tab-content-panel">
+    <!-- Banner Informativo Oficial DGI -->
+    <div class="dgi-info-banner">
+        <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; color: #30D158;">
+            <i class="fa-solid fa-scale-balanced"></i> Base Legal y Parámetros Tributarios de la DGI Aplicados
+        </div>
+        <p style="margin: 0 0 10px 0;">
+            De conformidad con la <strong>Ley N° 822 (Ley de Concertación Tributaria)</strong>, publicada en La Gaceta N° 241, y el Decreto Ejecutivo N° 01-2013 (Reglamento de la LCT), el Impuesto sobre la Renta del Trabajo (IR Salarial) se aplica bajo el método de tarifa progresiva con deducción previa del aporte de seguridad social.
+        </p>
+        <div class="dgi-steps-grid">
+            <div>
+                <strong>1. Deducción INSS Laboral:</strong>
+                <p class="dgi-step-desc">
+                    El 7% correspondiente al INSS es deducible de la renta bruta antes de calcular el IR (Art. 19 numeral 1 LCT).
+                </p>
+            </div>
+            <div>
+                <strong>2. Proyección Anual:</strong>
+                <p class="dgi-step-desc">
+                    Renta Neta Mensual = (Salario Bruto - INSS 7%). Renta Anual Proyectada = Renta Neta Mensual × 12.
+                </p>
+            </div>
+            <div>
+                <strong>3. Retención en la Fuente:</strong>
+                <p class="dgi-step-desc">
+                    Impuesto Anual determinado según el tramo de la tabla ÷ 12 = Cuota mensual a retener y enterar a la DGI.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 25px;">
+        <!-- Tabla Oficial DGI -->
+        <div class="rh-box" style="margin-bottom: 0;">
+            <div class="rh-box-title" style="margin-bottom: 15px;">
+                <i class="fa-solid fa-table-list" style="color: #FF9F0A;"></i> Tabla Progresiva Oficial del IR Salarial (Art. 23 Ley 822)
+            </div>
+            <table class="rh-table">
+                <thead>
+                    <tr>
+                        <th>Estrato de Renta Neta Anual</th>
+                        <th style="text-align: right;">Impuesto Base</th>
+                        <th style="text-align: center;">% Tasa</th>
+                        <th style="text-align: right;">Sobre Exceso de</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in tabla_dgi %}
+                    <tr>
+                        <td>
+                            <strong>{{ t.estrato }}</strong>
+                            <div style="font-size: 0.72rem; color: var(--text-muted);">{{ t.descripcion }}</div>
+                        </td>
+                        <td style="text-align: right;">C$ {{ "{:,.2f}".format(t.impuesto_base) }}</td>
+                        <td style="text-align: center;">
+                            {% if t.porcentaje > 0 %}
+                                <span class="badge-tramo-dgi">{{ t.porcentaje }}%</span>
+                            {% else %}
+                                <span class="badge-tramo-exento">0%</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">C$ {{ "{:,.2f}".format(t.sobre_exceso) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Consolidado para la Declaración DGI -->
+        <div>
+            <div class="rh-box" style="margin-bottom: 20px;">
+                <div class="rh-box-title" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-file-signature" style="color: #30D158;"></i> Declaración Mensual DGI (Retenciones en la Fuente)
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div class="dgi-decl-row">
+                        <span style="color: var(--text-secondary);">RUC del Contribuyente:</span>
+                        <strong class="dgi-highlight-val">J0310000123456 (Taller CR)</strong>
+                    </div>
+                    <div class="dgi-decl-row">
+                        <span style="color: var(--text-secondary);">Monto Renta Neta Gravable:</span>
+                        <strong class="dgi-highlight-val">C$ {{ "{:,.2f}".format(resumen_dgi.total_renta_gravable) }}</strong>
+                    </div>
+                    <div class="dgi-decl-row">
+                        <span style="color: var(--text-secondary);">Total Retención IR a Enterar:</span>
+                        <strong style="color: #FF9F0A; font-size: 1.15rem;">C$ {{ "{:,.2f}".format(resumen_dgi.total_retenido_ir) }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary);">Trabajadores Sujetos a Retención:</span>
+                        <span class="badge-tramo-dgi">{{ resumen_dgi.empleados_con_retencion }} empleados</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary);">Trabajadores Exentos (< C$100K anual):</span>
+                        <span class="badge-tramo-exento">{{ resumen_dgi.empleados_exentos }} empleados</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal Desglose Paso a Paso DGI -->
+<div id="modalDesgloseDGI" class="dgi-modal" onclick="if(event.target===this) cerrarModalDGI()">
+    <div class="dgi-modal-content">
+        <div class="dgi-modal-divider-top" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; padding-bottom: 14px;">
+            <div>
+                <div class="dgi-modal-title">
+                    <i class="fa-solid fa-building-columns" style="color: #30D158;"></i> Auditoría y Desglose Tributario DGI
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;">
+                    Cálculo oficial de retención progresiva sobre la renta del trabajo • <strong>Ley N° 822 (Art. 23)</strong>
+                </div>
+            </div>
+            <button type="button" class="dgi-modal-close" onclick="cerrarModalDGI()">&times;</button>
+        </div>
+
+        <div id="modalDgiBody">
+            <!-- Contenido dinámico inyectado por JS -->
+        </div>
+
+        <div class="dgi-modal-divider-bottom" style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; flex-wrap: wrap; gap: 10px;">
+            <div id="modalDgiActionsLeft">
+                <!-- Enlace dinámico a colilla -->
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="imprimirDesgloseDGI()" class="btn-action-sm btn-sec-sm" style="padding: 8px 16px;">
+                    <i class="fa-solid fa-print"></i> Imprimir Auditoría
+                </button>
+                <button type="button" onclick="cerrarModalDGI()" class="btn-action-sm btn-sec-sm" style="padding: 8px 18px;">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Salario Base, Inasistencias, Bonos de Vehículos y Deducciones -->
+<div id="modalEditarAjusteNomina" class="dgi-modal" onclick="if(event.target===this) cerrarModalAjusteNomina()" style="display: none;">
+    <div class="dgi-modal-content" style="max-width: 760px;">
+        <div class="dgi-modal-divider-top" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; padding-bottom: 14px;">
+            <div>
+                <div class="dgi-modal-title">
+                    <i class="fa-solid fa-sliders" style="color: #FF9F0A;"></i> Ajuste de Salario, Inasistencias y Bonos
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;">
+                    Modificación de nómina en tiempo real • Sincronización automática con Balance y Estado de Resultados
+                </div>
+            </div>
+            <button type="button" class="dgi-modal-close" onclick="cerrarModalAjusteNomina()">&times;</button>
+        </div>
+
+        <form id="formAjusteNomina" onsubmit="guardarAjusteNomina(event)">
+            <input type="hidden" id="ajusteUsuarioID" name="usuario_id" value="">
+            <input type="hidden" id="ajusteMes" name="mes" value="{{ mes_seleccionado or 10 }}">
+            <input type="hidden" id="ajusteAnio" name="anio" value="{{ anio_seleccionado or 2026 }}">
+            <input type="hidden" id="ajusteTasaBonoVehiculo" name="tasa_bono_vehiculo" value="500.0">
+
+            <!-- Ficha del Colaborador -->
+            <div class="dgi-modal-card" style="margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 id="ajusteColaboradorNombre" style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">-</h3>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">
+                        Cargo: <strong id="ajusteColaboradorCargo" class="dgi-highlight-val">-</strong> • Área: <span id="ajusteColaboradorDepto" style="color: #0A84FF;">-</span>
+                    </div>
+                </div>
+                <div id="ajusteBadgeCategoria">
+                    <!-- Badge categoría -->
+                </div>
+            </div>
+
+            <!-- Campos de Edición en Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                <!-- Salario Base -->
+                <div>
+                    <label style="font-size: 0.76rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">
+                        <i class="fa-solid fa-money-bill-wave" style="color: #0A84FF; margin-right: 4px;"></i> Salario Base Mensual (C$):
+                    </label>
+                    <input type="number" step="0.01" min="0" id="ajusteSalarioBase" name="salario_base" class="dgi-modal-input" required oninput="recalcularAjusteLive()">
+                    <span style="font-size: 0.70rem; color: var(--text-muted); display: block; margin-top: 3px;">Salario ordinario pactado por mes.</span>
+                </div>
+
+                <!-- Días Faltados / Deducción -->
+                <div>
+                    <label style="font-size: 0.76rem; color: #FF453A; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">
+                        <i class="fa-solid fa-calendar-xmark" style="margin-right: 4px;"></i> Inasistencias (Días Faltados):
+                    </label>
+                    <input type="number" min="0" max="30" step="1" id="ajusteDiasFaltados" name="dias_faltados" class="dgi-modal-input" value="0" oninput="recalcularAjusteLive()" style="border-color: rgba(255,69,58,0.3);">
+                    <span id="ajusteDeduccionFaltasLabel" style="font-size: 0.72rem; color: #FF453A; font-weight: 600; display: block; margin-top: 3px;">Deducción: - C$ 0.00 (Salario diario / 30 × días)</span>
+                </div>
+            </div>
+
+            <!-- Sección Especial Mecánicos: Bono de Productividad por cada 5 vehículos -->
+            <div id="seccionMecanicoVehiculos" style="background: rgba(10, 132, 255, 0.08); border: 1px solid rgba(10, 132, 255, 0.25); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                    <div style="font-weight: 700; color: #0A84FF; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-wrench"></i> Bono de Productividad de Taller (Cada 5 Vehículos)
+                    </div>
+                    <span style="font-size: 0.74rem; background: rgba(10,132,255,0.2); color: #0A84FF; padding: 2px 8px; border-radius: 10px; font-weight: 700;">
+                        Tasa: C$ 500.00 por cada bloque de 5 vehículos atendidos
+                    </span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center;">
+                    <div>
+                        <label style="font-size: 0.74rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px;">Vehículos Atendidos en el Mes:</label>
+                        <input type="number" min="0" step="1" id="ajusteVehiculosAtendidos" name="vehiculos_atendidos" class="dgi-modal-input" value="0" oninput="recalcularAjusteLive()" style="border-color: rgba(10,132,255,0.3); font-weight: 700;">
+                    </div>
+                    <div>
+                        <div style="font-size: 0.74rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Bono por Productividad:</div>
+                        <div id="ajusteBonoVehiculosPreview" style="font-size: 1.2rem; font-weight: 800; color: #30D158;">+ C$ 0.00</div>
+                        <div id="ajusteVehiculosProximoMilestone" style="font-size: 0.70rem; color: var(--text-muted); margin-top: 2px;">Faltan 5 vehículos para el próximo bono</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deducciones y Bonos Extraordinarios -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                <!-- Bonos Extras -->
+                <div class="dgi-modal-card" style="padding: 12px; border-radius: 10px;">
+                    <label style="font-size: 0.74rem; color: #30D158; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">
+                        <i class="fa-solid fa-gift"></i> Bonos Extras / Incentivos (C$):
+                    </label>
+                    <input type="number" step="0.01" min="0" id="ajusteBonosExtras" name="bonos_extras" class="dgi-modal-input" value="0" oninput="recalcularAjusteLive()" style="padding: 8px 10px; font-size: 0.90rem; border-color: rgba(48,209,88,0.25);">
+                    <input type="text" id="ajusteMotivoBono" name="motivo_bono" class="dgi-modal-input" placeholder="Motivo (ej: Meta mensual, Puntualidad)" style="padding: 6px 10px; font-size: 0.76rem; margin-top: 6px;">
+                </div>
+
+                <!-- Otras Deducciones -->
+                <div class="dgi-modal-card" style="padding: 12px; border-radius: 10px;">
+                    <label style="font-size: 0.74rem; color: #FF453A; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">
+                        <i class="fa-solid fa-receipt"></i> Otras Deducciones Legales (C$):
+                    </label>
+                    <input type="number" step="0.01" min="0" id="ajusteOtrasDeducciones" name="otras_deducciones" class="dgi-modal-input" value="0" oninput="recalcularAjusteLive()" style="padding: 8px 10px; font-size: 0.90rem; border-color: rgba(255,69,58,0.25);">
+                    <input type="text" id="ajusteMotivoDeduccion" name="motivo_deduccion" class="dgi-modal-input" placeholder="Motivo (ej: Anticipo de quincena, Daño)" style="padding: 6px 10px; font-size: 0.76rem; margin-top: 6px;">
+                </div>
+            </div>
+
+            <!-- Previsualización en Vivo de Nómina y Estados Financieros -->
+            <div class="dgi-preview-box">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #FF9F0A; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-calculator"></i> Liquidación Mensual en Tiempo Real</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 400;">Leyes 185 y 822 de Nicaragua</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
+                    <div class="dgi-preview-cell">
+                        <span style="font-size: 0.68rem; color: var(--text-secondary); text-transform: uppercase; display: block;">Salario Bruto</span>
+                        <strong id="liveSalarioBruto" class="dgi-highlight-val" style="font-size: 1.0rem;">C$ 0.00</strong>
+                    </div>
+                    <div class="dgi-preview-cell">
+                        <span style="font-size: 0.68rem; color: var(--text-secondary); text-transform: uppercase; display: block;">INSS Lab. (7%)</span>
+                        <strong id="liveInssLaboral" style="font-size: 1.0rem; color: #FF453A;">- C$ 0.00</strong>
+                    </div>
+                    <div class="dgi-preview-cell">
+                        <span style="font-size: 0.68rem; color: var(--text-secondary); text-transform: uppercase; display: block;">IR DGI (Mensual)</span>
+                        <strong id="liveIrMensual" style="font-size: 1.0rem; color: #FF9F0A;">C$ 0.00</strong>
+                    </div>
+                    <div style="background: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.3); padding: 8px; border-radius: 8px;">
+                        <span style="font-size: 0.68rem; color: #30D158; text-transform: uppercase; font-weight: 700; display: block;">Salario Neto</span>
+                        <strong id="liveSalarioNeto" style="font-size: 1.1rem; color: #30D158;">C$ 0.00</strong>
+                    </div>
+                </div>
+                <div class="dgi-modal-divider-bottom" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 10px; text-align: center; padding-top: 8px;">
+                    Costo Patronal Empresa: INSS (22.5%): <span id="liveInssPatronal" class="dgi-highlight-val">C$ 0.00</span> • INATEC (2%): <span id="liveInatec" class="dgi-highlight-val">C$ 0.00</span> • Costo Total: <span id="liveCostoTotal" style="color: #BF5AF2; font-weight: 700;">C$ 0.00</span>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" onclick="cerrarModalAjusteNomina()" class="btn-action-sm btn-sec-sm" style="padding: 10px 20px;">
+                    Cancelar
+                </button>
+                <button type="submit" id="btnGuardarAjuste" class="btn-action-sm btn-primary-sm" style="padding: 10px 24px; font-weight: 700; background: #FF9F0A; border-color: #FF9F0A; color: #000;">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Ajustes y Sincronizar Finanzas
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Registro indexado de empleados para acceso O(1) libre de errores de escape HTML
+    const EMPLEADOS_PLANILLA = {{ planilla | tojson }};
+    const empleadosPlanillaMap = {};
+    EMPLEADOS_PLANILLA.forEach(emp => {
+        empleadosPlanillaMap[emp.id] = emp;
+    });
+
+    let categoriaActualPlanilla = 'todos';
+
+    function cambiarTabRH(tabId, btn) {
+        document.querySelectorAll('.rh-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
+        const target = document.getElementById(tabId);
+        if (target) target.classList.add('active');
+    }
+
+    function filtrarCategoria(cat, btn) {
+        categoriaActualPlanilla = cat;
+        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        aplicarFiltrosCombinados();
+    }
+
+    function filtrarTablaPlanilla() {
+        aplicarFiltrosCombinados();
+    }
+
+    function aplicarFiltrosCombinados() {
+        const input = (document.getElementById('buscadorPlanilla')?.value || '').toLowerCase();
+
+        // 1. Tabla Planilla
+        const filasPlanilla = document.querySelectorAll('#tablaPlanilla tbody tr.row-colaborador');
+        const headersPlanilla = document.querySelectorAll('#tablaPlanilla tbody tr.group-header-row');
+        const subtotalesPlanilla = document.querySelectorAll('#tablaPlanilla tbody tr.subtotal-row');
+
+        filasPlanilla.forEach(f => {
+            const cat = f.getAttribute('data-category');
+            const coincideCat = (categoriaActualPlanilla === 'todos' || cat === categoriaActualPlanilla);
+            const coincideTexto = f.innerText.toLowerCase().includes(input);
+            f.style.display = (coincideCat && coincideTexto) ? '' : 'none';
+        });
+
+        headersPlanilla.forEach(h => {
+            const cat = h.getAttribute('data-category');
+            if (categoriaActualPlanilla === 'todos') {
+                h.style.display = (input === '') ? '' : 'none';
+            } else {
+                h.style.display = (cat === categoriaActualPlanilla && input === '') ? '' : 'none';
+            }
+        });
+
+        subtotalesPlanilla.forEach(s => {
+            const cat = s.getAttribute('data-category');
+            if (categoriaActualPlanilla === 'todos') {
+                s.style.display = (input === '') ? '' : 'none';
+            } else {
+                s.style.display = (cat === categoriaActualPlanilla && input === '') ? '' : 'none';
+            }
+        });
+
+        // 2. Tabla Patronal
+        const filasPatronal = document.querySelectorAll('#tablaPatronal tbody tr.row-colaborador-patronal');
+        const headersPatronal = document.querySelectorAll('#tablaPatronal tbody tr.group-header-row');
+        const subtotalesPatronal = document.querySelectorAll('#tablaPatronal tbody tr.subtotal-row');
+
+        filasPatronal.forEach(f => {
+            const cat = f.getAttribute('data-category');
+            const coincideCat = (categoriaActualPlanilla === 'todos' || cat === categoriaActualPlanilla);
+            const coincideTexto = f.innerText.toLowerCase().includes(input);
+            f.style.display = (coincideCat && coincideTexto) ? '' : 'none';
+        });
+
+        headersPatronal.forEach(h => {
+            const cat = h.getAttribute('data-category');
+            if (categoriaActualPlanilla === 'todos') {
+                h.style.display = (input === '') ? '' : 'none';
+            } else {
+                h.style.display = (cat === categoriaActualPlanilla && input === '') ? '' : 'none';
+            }
+        });
+
+        subtotalesPatronal.forEach(s => {
+            const cat = s.getAttribute('data-category');
+            if (categoriaActualPlanilla === 'todos') {
+                s.style.display = (input === '') ? '' : 'none';
+            } else {
+                s.style.display = (cat === categoriaActualPlanilla && input === '') ? '' : 'none';
+            }
+        });
+    }
+
+    function fmtMoney(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return '0.00';
+        return num.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // ==============================================================================
+    // ACCIÓN INTERACTIVA: PAGAR / NO PAGAR POR EMPLEADO INDIVIDUAL
+    // ==============================================================================
+    async function togglePagoEmpleado(usuarioId, estadoDeseado) {
+        const btn = document.getElementById(`btnTogglePago_${usuarioId}`);
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${estadoDeseado ? 'Calculando...' : 'Revirtiendo...'}`;
+        }
+
+        try {
+            const resp = await fetch('/admin/planilla/toggle_pago', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    usuario_id: usuarioId,
+                    pagado: estadoDeseado,
+                    mes: {{ mes_seleccionado }},
+                    anio: {{ anio_seleccionado }}
+                })
+            });
+
+            if (!resp.ok) throw new Error('Error de comunicación con el servidor');
+            const data = await resp.json();
+
+            if (data.success && data.empleado) {
+                // Actualizar fila del colaborador en el DOM
+                actualizarFilaEmpleadoDOM(data.empleado);
+                // Actualizar totales y KPIs consolidados
+                actualizarTotalesPlanillaDOM(data);
+
+                // Sincronizar mapas de memoria para el modal DGI
+                empleadosPlanillaMap[usuarioId] = data.empleado;
+                const idx = EMPLEADOS_PLANILLA.findIndex(e => String(e.id) === String(usuarioId));
+                if (idx !== -1) EMPLEADOS_PLANILLA[idx] = data.empleado;
+
+                // Animación de pulso verde en la fila modificada
+                const row = document.getElementById(`rowPlanilla_${usuarioId}`);
+                if (row) {
+                    row.classList.add('row-pago-highlight');
+                    setTimeout(() => row.classList.remove('row-pago-highlight'), 1000);
+                }
+            } else {
+                mostrarNotificacionSistema(data.message || 'Error al procesar el estado de pago', 'error');
+                if (btn) btn.innerHTML = originalHtml;
+            }
+        } catch (err) {
+            console.error('Error en togglePagoEmpleado:', err);
+            mostrarNotificacionSistema('Error de conexión al procesar el pago del colaborador.', 'error');
+            if (btn) btn.innerHTML = originalHtml;
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    // ==============================================================================
+    // ACCIÓN INTERACTIVA: PAGAR TODOS O RESTABLECER TODOS A 0.00
+    // ==============================================================================
+    let pendienteEstadoLote = true;
+
+    function togglePagoTodos(estadoDeseado) {
+        pendienteEstadoLote = estadoDeseado;
+        const modal = document.getElementById('modalConfirmarLotePlanilla');
+        const iconBox = document.getElementById('modalLoteIconBox');
+        const icon = document.getElementById('modalLoteIcon');
+        const title = document.getElementById('modalLoteTitle');
+        const msg = document.getElementById('modalLoteMessage');
+        const btnConfirm = document.getElementById('btnConfirmarLoteEjecutar');
+        const btnTxt = document.getElementById('btnConfirmarLoteTexto');
+
+        if (estadoDeseado) {
+            iconBox.style.background = 'rgba(48, 209, 88, 0.15)';
+            icon.className = 'fa-solid fa-money-bill-transfer';
+            icon.style.color = '#30D158';
+            title.innerText = '¿Procesar Pago Global de Planilla?';
+            msg.innerText = '¿Deseas procesar el pago y calcular el salario neto con todas las deducciones de TODOS los colaboradores?';
+            btnConfirm.className = 'btn-action-sm btn-estado-pagar';
+            btnConfirm.style.background = 'linear-gradient(135deg, #30D158 0%, #248A3D 100%)';
+            btnTxt.innerText = 'Aceptar y Pagar Todos';
+        } else {
+            iconBox.style.background = 'rgba(255, 69, 58, 0.15)';
+            icon.className = 'fa-solid fa-rotate-left';
+            icon.style.color = '#FF453A';
+            title.innerText = '¿Restablecer Montos de Planilla?';
+            msg.innerText = '¿Deseas restablecer todos los montos a C$ 0.00 (No Pagar) para toda la planilla del mes?';
+            btnConfirm.className = 'btn-action-sm btn-estado-nopagar';
+            btnConfirm.style.background = 'rgba(255, 69, 58, 0.25)';
+            btnTxt.innerText = 'Restablecer a C$ 0.00';
+        }
+
+        modal.classList.add('active');
+    }
+
+    function cerrarModalConfirmarLote() {
+        const modal = document.getElementById('modalConfirmarLotePlanilla');
+        if (modal) modal.classList.remove('active');
+    }
+
+    async function ejecutarPagoTodosConfirmado() {
+        cerrarModalConfirmarLote();
+        const estadoDeseado = pendienteEstadoLote;
+
+        try {
+            const resp = await fetch('/admin/planilla/toggle_pago', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    todos: true,
+                    pagado: estadoDeseado,
+                    mes: {{ mes_seleccionado }},
+                    anio: {{ anio_seleccionado }}
+                })
+            });
+
+            if (!resp.ok) throw new Error('Error de comunicación con el servidor');
+            const data = await resp.json();
+
+            if (data.success && data.planilla) {
+                data.planilla.forEach(emp => {
+                    actualizarFilaEmpleadoDOM(emp);
+                    empleadosPlanillaMap[emp.id] = emp;
+                    const idx = EMPLEADOS_PLANILLA.findIndex(e => String(e.id) === String(emp.id));
+                    if (idx !== -1) EMPLEADOS_PLANILLA[idx] = emp;
+                });
+                actualizarTotalesPlanillaDOM(data);
+            } else {
+                mostrarNotificacionSistema(data.message || 'Error al procesar el lote de planilla', 'error');
+            }
+        } catch (err) {
+            console.error('Error en togglePagoTodos:', err);
+            mostrarNotificacionSistema('Error de conexión al procesar la planilla en lote.', 'error');
+        }
+    }
+
+    function mostrarNotificacionSistema(mensaje, tipo = 'info') {
+        const toast = document.createElement('div');
+        toast.style.position = 'fixed';
+        toast.style.bottom = '24px';
+        toast.style.right = '24px';
+        toast.style.padding = '14px 22px';
+        toast.style.background = tipo === 'error' ? '#ef4444' : '#10b981';
+        toast.style.color = '#fff';
+        toast.style.borderRadius = '12px';
+        toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)';
+        toast.style.fontWeight = '700';
+        toast.style.zIndex = '99999';
+        toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${mensaje}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // ==============================================================================
+    // ACTUALIZACIÓN DINÁMICA DE LA FILA DE UN COLABORADOR EN EL DOM
+    // ==============================================================================
+    function actualizarFilaEmpleadoDOM(emp) {
+        if (!emp) return;
+        const id = emp.id;
+
+        // Fila Planilla
+        const rowPlanilla = document.getElementById(`rowPlanilla_${id}`);
+        if (rowPlanilla) rowPlanilla.setAttribute('data-pagado', emp.pagado ? '1' : '0');
+
+        // Badge de Estado
+        const badgeStatus = document.getElementById(`badgeStatus_${id}`);
+        if (badgeStatus) {
+            if (emp.pagado) {
+                badgeStatus.className = 'badge-status-pago status-pagado';
+                badgeStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> Pagado`;
+            } else {
+                badgeStatus.className = 'badge-status-pago status-pendiente';
+                badgeStatus.innerHTML = `<i class="fa-solid fa-clock"></i> Pendiente (C$ 0.00)`;
+            }
+        }
+
+        // Botón Pagar / No Pagar
+        const btnToggle = document.getElementById(`btnTogglePago_${id}`);
+        if (btnToggle) {
+            if (emp.pagado) {
+                btnToggle.className = 'btn-action-sm btn-pagar-action btn-estado-nopagar';
+                btnToggle.innerHTML = `<i class="fa-solid fa-ban"></i> No Pagar`;
+                btnToggle.title = 'Revertir desembolso y colocar montos en C$ 0.00';
+                btnToggle.setAttribute('onclick', `togglePagoEmpleado(${id}, false)`);
+            } else {
+                btnToggle.className = 'btn-action-sm btn-pagar-action btn-estado-pagar';
+                btnToggle.innerHTML = `<i class="fa-solid fa-money-bill-wave"></i> Pagar`;
+                btnToggle.title = 'Calcular salario neto y procesar pago';
+                btnToggle.setAttribute('onclick', `togglePagoEmpleado(${id}, true)`);
+            }
+        }
+
+        // Deducciones e Inasistencias
+        const cellDed = document.getElementById(`cellDeducciones_${id}`);
+        if (cellDed) {
+            if (emp.pagado && emp.total_deducciones_ajustes > 0) {
+                const faltaNote = emp.dias_faltados > 0 ? `<div style="font-size: 0.70rem; color: #ff8b85;">${emp.dias_faltados} día(s) falta</div>` : '';
+                cellDed.innerHTML = `<span style="color: #FF453A; font-weight: 600;">- C$ ${fmtMoney(emp.total_deducciones_ajustes)}</span>${faltaNote}`;
+            } else {
+                cellDed.innerHTML = `<span style="color: #8E8E93;">C$ 0.00</span>`;
+            }
+        }
+
+        // Bonos
+        const cellBonos = document.getElementById(`cellBonos_${id}`);
+        if (cellBonos) {
+            if (emp.pagado && emp.total_bonos > 0) {
+                let bonoNote = '';
+                if (emp.bono_vehiculos > 0) {
+                    bonoNote = `<div style="font-size: 0.70rem; color: #7bf79b;">${emp.vehiculos_atendidos} veh. (+C$ ${fmtMoney(emp.bono_vehiculos)})</div>`;
+                } else if (emp.bonos_extras > 0) {
+                    bonoNote = `<div style="font-size: 0.70rem; color: #7bf79b;">Bono extra</div>`;
+                }
+                cellBonos.innerHTML = `<span style="color: #30D158; font-weight: 700;">+ C$ ${fmtMoney(emp.total_bonos)}</span>${bonoNote}`;
+            } else {
+                if (emp.es_mecanico && emp.pagado) {
+                    cellBonos.innerHTML = `<span style="color: #8E8E93; font-size: 0.74rem;">${emp.vehiculos_atendidos} veh. (0 bonos)</span>`;
+                } else {
+                    cellBonos.innerHTML = `<span style="color: #8E8E93;">C$ 0.00</span>`;
+                }
+            }
+        }
+
+        // Salario Bruto
+        const cellBruto = document.getElementById(`cellBruto_${id}`);
+        if (cellBruto) {
+            const isThemeLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.classList.contains('light-theme');
+            cellBruto.style.color = emp.pagado ? (isThemeLight ? '#0f172a' : '#ffffff') : '#8E8E93';
+            cellBruto.innerText = `C$ ${fmtMoney(emp.salario_bruto)}`;
+        }
+
+        // INSS Laboral (7%)
+        const cellInssLab = document.getElementById(`cellInssLab_${id}`);
+        if (cellInssLab) {
+            if (emp.pagado) {
+                cellInssLab.className = 'val-deduction';
+                cellInssLab.style.color = '';
+                cellInssLab.innerText = `- C$ ${fmtMoney(emp.inss_laboral)}`;
+            } else {
+                cellInssLab.className = '';
+                cellInssLab.style.color = '#8E8E93';
+                cellInssLab.innerText = `C$ 0.00`;
+            }
+        }
+
+        // Tramo DGI
+        const cellTramo = document.getElementById(`cellTramoDgi_${id}`);
+        if (cellTramo) {
+            if (emp.pagado) {
+                if (parseFloat(emp.ir) > 0) {
+                    cellTramo.innerHTML = `<span class="badge-tramo-dgi">Tramo ${emp.tramo_dgi} (${emp.tasa_dgi}%)</span>`;
+                } else {
+                    cellTramo.innerHTML = `<span class="badge-tramo-exento">Exento (0%)</span>`;
+                }
+            } else {
+                cellTramo.innerHTML = `<span class="badge-tramo-exento" style="opacity: 0.6;">Sin Pagar (0.00)</span>`;
+            }
+        }
+
+        // IR DGI
+        const cellIr = document.getElementById(`cellIr_${id}`);
+        if (cellIr) {
+            if (emp.pagado && parseFloat(emp.ir) > 0) {
+                cellIr.className = 'val-deduction';
+                cellIr.style.color = '';
+                cellIr.innerText = `- C$ ${fmtMoney(emp.ir)}`;
+            } else {
+                cellIr.className = '';
+                cellIr.style.color = '#8E8E93';
+                cellIr.innerText = `C$ 0.00`;
+            }
+        }
+
+        // Salario Neto
+        const cellNeto = document.getElementById(`cellNeto_${id}`);
+        if (cellNeto) {
+            if (emp.pagado) {
+                cellNeto.innerHTML = `<span class="val-neto">C$ ${fmtMoney(emp.salario_neto)}</span>`;
+            } else {
+                cellNeto.innerHTML = `<span style="color: #8E8E93; font-weight: 700;">C$ 0.00</span>`;
+            }
+        }
+
+        // Fila Tabla Patronal
+        const cellPatBruto = document.getElementById(`cellPatBruto_${id}`);
+        if (cellPatBruto) cellPatBruto.innerText = `C$ ${fmtMoney(emp.salario_bruto)}`;
+
+        const cellPatInssPat = document.getElementById(`cellPatInssPat_${id}`);
+        if (cellPatInssPat) cellPatInssPat.innerText = `C$ ${fmtMoney(emp.inss_patronal)}`;
+
+        const cellPatInatec = document.getElementById(`cellPatInatec_${id}`);
+        if (cellPatInatec) cellPatInatec.innerText = `C$ ${fmtMoney(emp.inatec)}`;
+
+        const cellPatAg = document.getElementById(`cellPatAguinaldo_${id}`);
+        if (cellPatAg) cellPatAg.innerText = `C$ ${fmtMoney(emp.aguinaldo)}`;
+
+        const cellPatVac = document.getElementById(`cellPatVacaciones_${id}`);
+        if (cellPatVac) cellPatVac.innerText = `C$ ${fmtMoney(emp.vacaciones)}`;
+
+        const cellPatInd = document.getElementById(`cellPatIndemnizacion_${id}`);
+        if (cellPatInd) cellPatInd.innerText = `C$ ${fmtMoney(emp.indemnizacion)}`;
+
+        const cellPatCosto = document.getElementById(`cellPatCosto_${id}`);
+        if (cellPatCosto) cellPatCosto.innerText = `C$ ${fmtMoney(emp.costo_total_empleador)}`;
+    }
+
+    // ==============================================================================
+    // ACTUALIZACIÓN DE TOTALES Y KPIS EN EL DOM
+    // ==============================================================================
+    function actualizarTotalesPlanillaDOM(data) {
+        if (!data || !data.totales) return;
+        const tot = data.totales;
+        const totPlanta = data.totales_permanentes || {};
+        const totAsesor = data.totales_asesores || {};
+        const resDgi = data.resumen_dgi || {};
+
+        // KPIs Ejecutivos Superiores
+        const kBruto = document.getElementById('kpiSalarioBruto');
+        if (kBruto) kBruto.innerText = `C$ ${fmtMoney(tot.salario_bruto)}`;
+
+        const kInss = document.getElementById('kpiInssLaboral');
+        if (kInss) kInss.innerText = `- C$ ${fmtMoney(tot.inss_laboral)}`;
+
+        const kIr = document.getElementById('kpiRetencionIr');
+        if (kIr) kIr.innerText = `- C$ ${fmtMoney(tot.ir)}`;
+
+        const kNeto = document.getElementById('kpiSalarioNeto');
+        if (kNeto) kNeto.innerText = `C$ ${fmtMoney(tot.salario_neto)}`;
+
+        const kCosto = document.getElementById('kpiCostoEmpresa');
+        if (kCosto) kCosto.innerText = `C$ ${fmtMoney(tot.costo_total_empleador)}`;
+
+        // Cards de Categoría
+        const kpCant = document.getElementById('kpiPlantaCantidad');
+        if (kpCant) kpCant.innerText = `${totPlanta.cantidad_pagados || 0} / ${totPlanta.cantidad || 0}`;
+
+        const kpBruto = document.getElementById('kpiPlantaBruto');
+        if (kpBruto) kpBruto.innerText = `C$ ${fmtMoney(totPlanta.salario_bruto)}`;
+
+        const kpNeto = document.getElementById('kpiPlantaNeto');
+        if (kpNeto) kpNeto.innerText = `C$ ${fmtMoney(totPlanta.salario_neto)}`;
+
+        const kpCosto = document.getElementById('kpiPlantaCosto');
+        if (kpCosto) kpCosto.innerText = `C$ ${fmtMoney(totPlanta.costo_total_empleador)}`;
+
+        const kaCant = document.getElementById('kpiAsesorCantidad');
+        if (kaCant) kaCant.innerText = `${totAsesor.cantidad_pagados || 0} / ${totAsesor.cantidad || 0}`;
+
+        const kaBruto = document.getElementById('kpiAsesorBruto');
+        if (kaBruto) kaBruto.innerText = `C$ ${fmtMoney(totAsesor.salario_bruto)}`;
+
+        const kaNeto = document.getElementById('kpiAsesorNeto');
+        if (kaNeto) kaNeto.innerText = `C$ ${fmtMoney(totAsesor.salario_neto)}`;
+
+        const kaCosto = document.getElementById('kpiAsesorCosto');
+        if (kaCosto) kaCosto.innerText = `C$ ${fmtMoney(totAsesor.costo_total_empleador)}`;
+
+        // Subtotales Tabla Planilla Planta
+        const sPlantaCant = document.getElementById('subtotPlantaCant');
+        if (sPlantaCant) sPlantaCant.innerText = totPlanta.cantidad_pagados || 0;
+
+        const sPlantaBase = document.getElementById('subtotPlantaBase');
+        if (sPlantaBase) sPlantaBase.innerText = `C$ ${fmtMoney(totPlanta.salario_base)}`;
+
+        const sPlantaDed = document.getElementById('subtotPlantaDed');
+        if (sPlantaDed) sPlantaDed.innerText = `- C$ ${fmtMoney((totPlanta.deduccion_faltas || 0) + (totPlanta.otras_deducciones || 0))}`;
+
+        const sPlantaBonos = document.getElementById('subtotPlantaBonos');
+        if (sPlantaBonos) sPlantaBonos.innerText = `+ C$ ${fmtMoney((totPlanta.bono_vehiculos || 0) + (totPlanta.bonos_extras || 0))}`;
+
+        const sPlantaBruto = document.getElementById('subtotPlantaBruto');
+        if (sPlantaBruto) sPlantaBruto.innerText = `C$ ${fmtMoney(totPlanta.salario_bruto)}`;
+
+        const sPlantaInss = document.getElementById('subtotPlantaInss');
+        if (sPlantaInss) sPlantaInss.innerText = `- C$ ${fmtMoney(totPlanta.inss_laboral)}`;
+
+        const sPlantaIr = document.getElementById('subtotPlantaIr');
+        if (sPlantaIr) sPlantaIr.innerText = `- C$ ${fmtMoney(totPlanta.ir)}`;
+
+        const sPlantaNeto = document.getElementById('subtotPlantaNeto');
+        if (sPlantaNeto) sPlantaNeto.innerText = `C$ ${fmtMoney(totPlanta.salario_neto)}`;
+
+        // Subtotales Tabla Planilla Asesor
+        const sAsesorCant = document.getElementById('subtotAsesorCant');
+        if (sAsesorCant) sAsesorCant.innerText = totAsesor.cantidad_pagados || 0;
+
+        const sAsesorBase = document.getElementById('subtotAsesorBase');
+        if (sAsesorBase) sAsesorBase.innerText = `C$ ${fmtMoney(totAsesor.salario_base)}`;
+
+        const sAsesorDed = document.getElementById('subtotAsesorDed');
+        if (sAsesorDed) sAsesorDed.innerText = `- C$ ${fmtMoney((totAsesor.deduccion_faltas || 0) + (totAsesor.otras_deducciones || 0))}`;
+
+        const sAsesorBonos = document.getElementById('subtotAsesorBonos');
+        if (sAsesorBonos) sAsesorBonos.innerText = `+ C$ ${fmtMoney((totAsesor.bono_vehiculos || 0) + (totAsesor.bonos_extras || 0))}`;
+
+        const sAsesorBruto = document.getElementById('subtotAsesorBruto');
+        if (sAsesorBruto) sAsesorBruto.innerText = `C$ ${fmtMoney(totAsesor.salario_bruto)}`;
+
+        const sAsesorInss = document.getElementById('subtotAsesorInss');
+        if (sAsesorInss) sAsesorInss.innerText = `- C$ ${fmtMoney(totAsesor.inss_laboral)}`;
+
+        const sAsesorIr = document.getElementById('subtotAsesorIr');
+        if (sAsesorIr) sAsesorIr.innerText = `- C$ ${fmtMoney(totAsesor.ir)}`;
+
+        const sAsesorNeto = document.getElementById('subtotAsesorNeto');
+        if (sAsesorNeto) sAsesorNeto.innerText = `C$ ${fmtMoney(totAsesor.salario_neto)}`;
+
+        // Footer Tabla Planilla Consolidado General
+        const fCant = document.getElementById('totalesCantPagados');
+        if (fCant) fCant.innerText = tot.cantidad_pagados || 0;
+
+        const fBase = document.getElementById('footSalarioBase');
+        if (fBase) fBase.innerText = `C$ ${fmtMoney(tot.salario_base)}`;
+
+        const fDed = document.getElementById('footDeducciones');
+        if (fDed) fDed.innerText = `- C$ ${fmtMoney((tot.deduccion_faltas || 0) + (tot.otras_deducciones || 0))}`;
+
+        const fBonos = document.getElementById('footBonos');
+        if (fBonos) fBonos.innerText = `+ C$ ${fmtMoney((tot.bono_vehiculos || 0) + (tot.bonos_extras || 0))}`;
+
+        const fBruto = document.getElementById('footSalarioBruto');
+        if (fBruto) fBruto.innerText = `C$ ${fmtMoney(tot.salario_bruto)}`;
+
+        const fInss = document.getElementById('footInssLaboral');
+        if (fInss) fInss.innerText = `- C$ ${fmtMoney(tot.inss_laboral)}`;
+
+        const fGrav = document.getElementById('footGravados');
+        if (fGrav) fGrav.innerText = `${resDgi.empleados_con_retencion || 0} gravados`;
+
+        const fIr = document.getElementById('footIr');
+        if (fIr) fIr.innerText = `- C$ ${fmtMoney(tot.ir)}`;
+
+        const fNeto = document.getElementById('footSalarioNeto');
+        if (fNeto) fNeto.innerText = `C$ ${fmtMoney(tot.salario_neto)}`;
+
+        // Subtotales Patronal
+        const spPlantaBruto = document.getElementById('subtotPatPlantaBruto');
+        if (spPlantaBruto) spPlantaBruto.innerText = `C$ ${fmtMoney(totPlanta.salario_bruto)}`;
+
+        const spPlantaInss = document.getElementById('subtotPatPlantaInss');
+        if (spPlantaInss) spPlantaInss.innerText = `C$ ${fmtMoney(totPlanta.inss_patronal)}`;
+
+        const spPlantaInatec = document.getElementById('subtotPatPlantaInatec');
+        if (spPlantaInatec) spPlantaInatec.innerText = `C$ ${fmtMoney(totPlanta.inatec)}`;
+
+        const spPlantaProv = document.getElementById('subtotPatPlantaProvisiones');
+        if (spPlantaProv) spPlantaProv.innerText = `C$ ${fmtMoney(totPlanta.provisiones_acumuladas)}`;
+
+        const spPlantaCosto = document.getElementById('subtotPatPlantaCosto');
+        if (spPlantaCosto) spPlantaCosto.innerText = `C$ ${fmtMoney(totPlanta.costo_total_empleador)}`;
+
+        const spAsesorBruto = document.getElementById('subtotPatAsesorBruto');
+        if (spAsesorBruto) spAsesorBruto.innerText = `C$ ${fmtMoney(totAsesor.salario_bruto)}`;
+
+        const spAsesorInss = document.getElementById('subtotPatAsesorInss');
+        if (spAsesorInss) spAsesorInss.innerText = `C$ ${fmtMoney(totAsesor.inss_patronal)}`;
+
+        const spAsesorInatec = document.getElementById('subtotPatAsesorInatec');
+        if (spAsesorInatec) spAsesorInatec.innerText = `C$ ${fmtMoney(totAsesor.inatec)}`;
+
+        const spAsesorProv = document.getElementById('subtotPatAsesorProvisiones');
+        if (spAsesorProv) spAsesorProv.innerText = `C$ ${fmtMoney(totAsesor.provisiones_acumuladas)}`;
+
+        const spAsesorCosto = document.getElementById('subtotPatAsesorCosto');
+        if (spAsesorCosto) spAsesorCosto.innerText = `C$ ${fmtMoney(totAsesor.costo_total_empleador)}`;
+
+        // Footer Patronal
+        const fpBruto = document.getElementById('footPatSalarioBruto');
+        if (fpBruto) fpBruto.innerText = `C$ ${fmtMoney(tot.salario_bruto)}`;
+
+        const fpInss = document.getElementById('footPatInssPat');
+        if (fpInss) fpInss.innerText = `C$ ${fmtMoney(tot.inss_patronal)}`;
+
+        const fpInatec = document.getElementById('footPatInatec');
+        if (fpInatec) fpInatec.innerText = `C$ ${fmtMoney(tot.inatec)}`;
+
+        const fpProv = document.getElementById('footPatProvisiones');
+        if (fpProv) fpProv.innerText = `C$ ${fmtMoney(tot.provisiones_acumuladas)}`;
+
+        const fpCosto = document.getElementById('footPatCostoTotal');
+        if (fpCosto) fpCosto.innerText = `C$ ${fmtMoney(tot.costo_total_empleador)}`;
+    }
+
+    function abrirModalDGI(idOrData) {
+        let rawData = null;
+        if (idOrData && typeof idOrData === 'object') {
+            rawData = idOrData;
+        } else if (idOrData !== undefined && idOrData !== null) {
+            rawData = empleadosPlanillaMap[idOrData] || EMPLEADOS_PLANILLA.find(e => String(e.id) === String(idOrData));
+        }
+
+        if (!rawData) {
+            console.warn("Colaborador no encontrado para DGI:", idOrData);
+            return;
+        }
+
+        // Crear objeto de datos proyectado para que la auditoría DGI muestre el desglose legal
+        // independientemente de si ya fue pagado o está pendiente de pagar
+        const data = { ...rawData };
+        if (!data.pagado) {
+            data.salario_bruto = rawData.calc_salario_bruto || rawData.salario_base;
+            data.inss_laboral = rawData.calc_inss_laboral || 0;
+            data.base_imponible_mensual = rawData.calc_base_imponible_mensual || 0;
+            data.renta_anual_proyectada = rawData.calc_renta_anual_proyectada || 0;
+            data.tramo_dgi = rawData.calc_tramo_dgi || 1;
+            data.tasa_dgi = rawData.calc_tasa_dgi || 0;
+            data.ir = rawData.calc_ir || 0;
+            data.salario_neto = rawData.calc_salario_neto || 0;
+            data.ir_anual = (rawData.calc_ir || 0) * 12;
+            data.impuesto_base_dgi = rawData.impuesto_base_dgi || 0;
+            data.exceso_dgi = rawData.exceso_dgi || 0;
+            data.sobre_exceso_dgi = rawData.sobre_exceso_dgi || 0;
+        }
+
+        const modal = document.getElementById('modalDesgloseDGI');
+        const body = document.getElementById('modalDgiBody');
+        const actionsLeft = document.getElementById('modalDgiActionsLeft');
+        if (!modal || !body) return;
+
+        const badgeCategoria = data.es_asesor 
+            ? `<span class="badge-asesor" style="font-size: 0.72rem; padding: 4px 10px;"><i class="fa-solid fa-calendar-check"></i> Asesoría de Cierre (1 Día/Mes)</span>
+               <span class="badge-pago-unico" style="font-size: 0.70rem; padding: 4px 9px;"><i class="fa-solid fa-bolt"></i> Pago Único por Cierre</span>`
+            : `<span class="badge-planta" style="font-size: 0.72rem; padding: 4px 10px;"><i class="fa-solid fa-building-user"></i> Planta Permanente Diaria</span>
+               <span style="color: #0A84FF; font-size: 0.74rem; font-weight: 600;"><i class="fa-solid fa-clock"></i> 48 hrs semanales</span>`;
+
+        // Banner de Estado Fiscal
+        const tieneRetencion = (parseFloat(data.ir) > 0);
+        const estaPagado = Boolean(data.pagado);
+
+        let statusFiscalBanner = '';
+        if (!estaPagado) {
+            statusFiscalBanner = `
+                <div style="background: rgba(255,159,10,0.12); border: 1px solid rgba(255,159,10,0.4); border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.5rem; color: #FF9F0A;"></i>
+                        <div>
+                            <div style="font-weight: 700; color: #FF9F0A; font-size: 0.95rem;">CÁLCULO DGI EN ESPERA (C$ 0.00)</div>
+                            <div style="font-size: 0.76rem; color: #ddd;">El colaborador está en estado <strong>NO PAGADO</strong>. Conforme al control tributario, todas las retenciones y bases permanecen en C$ 0.00 hasta confirmar el pago.</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-action-sm btn-estado-pagar" onclick="pagarYActualizarModalDGI(${data.id})" style="padding: 8px 18px; font-weight: 700; border-radius: 8px;">
+                        <i class="fa-solid fa-money-bill-wave"></i> Pagar y Calcular DGI
+                    </button>
+                </div>
+            `;
+        } else if (tieneRetencion) {
+            statusFiscalBanner = `
+                <div style="background: rgba(255,159,10,0.12); border: 1px solid rgba(255,159,10,0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-file-invoice-dollar" style="font-size: 1.4rem; color: #FF9F0A;"></i>
+                        <div>
+                            <div style="font-weight: 700; color: #FF9F0A; font-size: 0.95rem;">Empleado Sujeto a Retención Fiscal Progresiva</div>
+                            <div style="font-size: 0.76rem; color: #ddd;">Renta neta proyectada anual excede los C$ 100,000.00 (Art. 23 Ley 822)</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; display: block;">Retención Mensual:</span>
+                            <span style="font-size: 1.25rem; font-weight: 800; color: #FF9F0A;">- C$ ${fmtMoney(data.ir)}</span>
+                        </div>
+                        <button type="button" class="btn-action-sm btn-estado-nopagar" onclick="revertirYActualizarModalDGI(${data.id})" style="padding: 6px 12px; font-weight: 600; border-radius: 8px;">
+                            <i class="fa-solid fa-ban"></i> Revertir
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            statusFiscalBanner = `
+                <div style="background: rgba(48,209,88,0.12); border: 1px solid rgba(48,209,88,0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-shield-check" style="font-size: 1.4rem; color: #30D158;"></i>
+                        <div>
+                            <div style="font-weight: 700; color: #30D158; font-size: 0.95rem;">Empleado 100% Exento de Retención en la Fuente</div>
+                            <div style="font-size: 0.76rem; color: var(--text-secondary);">Renta neta anual proyectada de C$ ${fmtMoney(data.renta_anual_proyectada)} no supera el piso exento de C$ 100,000.00 (Art. 23 Ley 822)</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; display: block;">Retención Mensual:</span>
+                            <span style="font-size: 1.2rem; font-weight: 800; color: #30D158;">C$ 0.00 (0%)</span>
+                        </div>
+                        <button type="button" class="btn-action-sm btn-estado-nopagar" onclick="revertirYActualizarModalDGI(${data.id})" style="padding: 6px 12px; font-weight: 600; border-radius: 8px;">
+                            <i class="fa-solid fa-ban"></i> Revertir
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Generar escala de tramos visual
+        const tramosInfo = [
+            { t: 1, rango: 'Hasta C$ 100k', tasa: '0% Exento' },
+            { t: 2, rango: '100k - 200k', tasa: '15%' },
+            { t: 3, rango: '200k - 350k', tasa: '20%' },
+            { t: 4, rango: '350k - 500k', tasa: '25%' },
+            { t: 5, rango: 'Más de 500k', tasa: '30%' }
+        ];
+
+        let escalaHtml = `<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0 16px 0;">`;
+        tramosInfo.forEach(item => {
+            const esActivo = estaPagado && (parseInt(data.tramo_dgi) === item.t);
+            const bgColor = esActivo 
+                ? (item.t === 1 ? 'rgba(48,209,88,0.22)' : 'rgba(255,159,10,0.25)')
+                : 'rgba(255,255,255,0.03)';
+            const bdrColor = esActivo 
+                ? (item.t === 1 ? '#30D158' : '#FF9F0A')
+                : 'rgba(255,255,255,0.08)';
+            const txtColor = esActivo ? 'var(--text-primary)' : 'var(--text-secondary)';
+            const iconBadge = esActivo ? `<i class="fa-solid fa-circle-check" style="color: ${item.t === 1 ? '#30D158' : '#FF9F0A'}; margin-right: 3px;"></i>` : '';
+
+            escalaHtml += `
+                <div class="dgi-modal-card" style="background: ${bgColor}; border: 1px solid ${bdrColor}; padding: 7px 5px; border-radius: 8px; text-align: center; box-shadow: ${esActivo ? '0 0 12px rgba(255,159,10,0.2)' : 'none'};">
+                    <div style="font-size: 0.68rem; color: ${txtColor}; text-transform: uppercase; font-weight: 700;">${iconBadge}Tramo ${item.t}</div>
+                    <div class="dgi-highlight-val" style="font-size: 0.72rem; font-weight: 600; margin-top: 2px;">${item.tasa}</div>
+                    <div style="font-size: 0.62rem; color: var(--text-muted);">${item.rango}</div>
+                </div>
+            `;
+        });
+        escalaHtml += `</div>`;
+
+        const excesoVal = estaPagado ? parseFloat(data.exceso_dgi || 0) : 0;
+        const tasaVal = estaPagado ? parseFloat(data.tasa_dgi || 0) : 0;
+        const tasaCalculada = (excesoVal * tasaVal / 100);
+
+        body.innerHTML = `
+            ${statusFiscalBanner}
+
+            <!-- Ficha del Colaborador -->
+            <div class="dgi-modal-card" style="padding: 14px 18px; border-radius: 14px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <strong class="dgi-highlight-val" style="font-size: 1.15rem; letter-spacing: 0.3px;">${data.nombre || 'Colaborador'}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                            Cédula: <strong>${data.cedula || 'N/A'}</strong> • Contrato: <strong style="color: #0A84FF;">${data.num_contrato || 'N/A'}</strong>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        ${badgeCategoria}
+                    </div>
+                </div>
+                <div class="dgi-modal-divider-bottom" style="font-size: 0.85rem; color: var(--text-primary); margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                    <div><span style="color: var(--text-secondary);">Cargo:</span> <strong>${data.cargo || 'Cargo'}</strong> (<span style="color: #0A84FF;">${data.depto || 'General'}</span>)</div>
+                    <div><span style="color: var(--text-secondary);">Modalidad:</span> <strong style="color: #FF9F0A;">${data.modalidad || 'Presencial'}</strong></div>
+                </div>
+            </div>
+
+            <!-- Escala Visual de Tramos DGI -->
+            ${escalaHtml}
+
+            <!-- Tabla de Auditoría DGI Línea por Línea -->
+            <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.86rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden;">
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <td style="padding: 9px 14px; color: var(--text-secondary);">1. Salario Bruto Mensual Ordinario / Honorario:</td>
+                        <td style="text-align: right; padding: 9px 14px; font-weight: 700; color: ${estaPagado ? 'var(--text-primary)' : '#8E8E93'};">C$ ${fmtMoney(estaPagado ? data.salario_bruto : 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,69,58,0.03);">
+                        <td style="padding: 9px 14px; color: var(--text-secondary);">
+                            2. Menos: Deducción INSS Laboral (7.0%):
+                            <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">No gravable de IR según Art. 19 Ley 822 DGI</span>
+                        </td>
+                        <td style="text-align: right; padding: 9px 14px; font-weight: 700; color: ${estaPagado ? '#FF453A' : '#8E8E93'};">${estaPagado ? '- C$ ' + fmtMoney(data.inss_laboral) : 'C$ 0.00'}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
+                        <td style="padding: 9px 14px; font-weight: 600; color: var(--text-primary);">
+                            3. Base Imponible Mensual Gravable (Materia Imponible):
+                            <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Monto sujeto a retención progresiva DGI</span>
+                        </td>
+                        <td style="text-align: right; padding: 9px 14px; font-weight: 700; color: ${estaPagado ? '#30D158' : '#8E8E93'};">C$ ${fmtMoney(estaPagado ? data.base_imponible_mensual : 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <td style="padding: 9px 14px; color: var(--text-secondary);">4. Proyección Anual de Renta (Base × 12 meses):</td>
+                        <td style="text-align: right; padding: 9px 14px; font-weight: 600; color: ${estaPagado ? 'var(--text-primary)' : '#8E8E93'};">C$ ${fmtMoney(estaPagado ? data.renta_anual_proyectada : 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,159,10,0.05);">
+                        <td style="padding: 9px 14px; color: #FF9F0A; font-weight: 600;">5. Tramo Aplicable según Ley 822 (Art. 23):</td>
+                        <td style="text-align: right; padding: 9px 14px; font-weight: 700; color: ${estaPagado ? '#FF9F0A' : '#8E8E93'};">${estaPagado ? 'Tramo ' + (data.tramo_dgi || 1) + ' (' + (data.tasa_dgi || 0) + '%)' : 'Pendiente / Exento (0%)'}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <td style="padding: 9px 14px; color: var(--text-secondary);">6. Impuesto Base DGI del Tramo:</td>
+                        <td class="dgi-highlight-val" style="text-align: right; padding: 9px 14px;">C$ ${fmtMoney(estaPagado ? data.impuesto_base_dgi : 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <td style="padding: 9px 14px; color: var(--text-secondary);">7. Exceso sobre estrato base:</td>
+                        <td class="dgi-highlight-val" style="text-align: right; padding: 9px 14px;">C$ ${fmtMoney(estaPagado ? data.exceso_dgi : 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <td style="padding: 9px 14px; color: var(--text-secondary);">8. Impuesto sobre Exceso:</td>
+                        <td style="text-align: right; padding: 9px 14px; color: #FF9F0A;">C$ ${fmtMoney(estaPagado ? tasaCalculada : 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <td style="padding: 9px 14px; color: var(--text-secondary);">9. Impuesto Anual Total Liquidado:</td>
+                        <td style="text-align: right; padding: 9px 14px; font-weight: 700; color: #FF9F0A;">C$ ${fmtMoney(estaPagado ? data.ir_anual : 0)}</td>
+                    </tr>
+                    <tr style="background: rgba(255,159,10,0.14); border-bottom: 1px solid rgba(255,159,10,0.3); font-weight: 700;">
+                        <td style="padding: 11px 14px; color: #FF9F0A;">
+                            10. Retención Mensual a Declarar en DGI:
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); display: block; font-weight: 400;">Impuesto Anual dividido entre 12 meses</span>
+                        </td>
+                        <td style="text-align: right; padding: 11px 14px; color: #FF9F0A; font-size: 1.15rem;">
+                            ${(estaPagado && tieneRetencion) ? '- C$ ' + fmtMoney(data.ir) : '<span style="color:#30D158;">C$ 0.00 (Exento)</span>'}
+                        </td>
+                    </tr>
+                    <tr style="background: rgba(48,209,88,0.14); font-weight: 700;">
+                        <td style="padding: 12px 14px; color: #30D158;">
+                            11. Salario Neto Líquido a Pagar / Depositar:
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); display: block; font-weight: 400;">Monto efectivamente acreditado al trabajador</span>
+                        </td>
+                        <td style="text-align: right; padding: 12px 14px; color: #30D158; font-size: 1.25rem;">
+                            C$ ${fmtMoney(estaPagado ? data.salario_neto : 0)}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Resumen Informativo Patronal Ley 185 -->
+            <div style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(255,255,255,0.02); padding: 9px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); margin-top: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                <span><strong>INSS Patronal (22.5%):</strong> C$ ${fmtMoney(estaPagado ? data.inss_patronal : 0)}</span>
+                <span><strong>INATEC (2.0%):</strong> C$ ${fmtMoney(estaPagado ? data.inatec : 0)}</span>
+                <span><strong>Costo Empresa:</strong> <strong style="color: #BF5AF2;">C$ ${fmtMoney(estaPagado ? data.costo_total_empleador : 0)}</strong></span>
+            </div>
+        `;
+
+        if (actionsLeft) {
+            actionsLeft.innerHTML = `
+                <a href="/admin/planilla/colilla/${data.id}" class="btn-action-sm btn-primary-sm" style="padding: 8px 16px;">
+                    <i class="fa-solid fa-receipt"></i> Ver Colilla Oficial
+                </a>
+            `;
+        }
+
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalDGI() {
+        const modal = document.getElementById('modalDesgloseDGI');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
+        document.body.style.overflow = '';
+    }
+
+    async function pagarYActualizarModalDGI(id) {
+        await togglePagoEmpleado(id, true);
+        abrirModalDGI(id);
+    }
+
+    async function revertirYActualizarModalDGI(id) {
+        await togglePagoEmpleado(id, false);
+        abrirModalDGI(id);
+    }
+
+    // Delegación global de clics para asegurar que los botones DGI respondan siempre
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-action-dgi');
+        if (btn) {
+            e.preventDefault();
+            const id = btn.getAttribute('data-id');
+            if (id) abrirModalDGI(id);
+        }
+    });
+
+    function imprimirDesgloseDGI() {
+        window.print();
+    }
+
+    // Cerrar modales con la tecla Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarModalDGI();
+            cerrarModalAjusteNomina();
+        }
+    });
+
+    // =========================================================================
+    // MODAL DE AJUSTE Y EDICIÓN DE NÓMINA (SALARIOS, FALTAS, BONOS Y MECÁNICOS)
+    // =========================================================================
+    function abrirModalAjusteNomina(id) {
+        const emp = empleadosPlanillaMap[id] || EMPLEADOS_PLANILLA.find(e => String(e.id) === String(id));
+        if (!emp) {
+            mostrarNotificacionSistema('Colaborador no encontrado en la planilla.', 'error');
+            return;
+        }
+
+        const modal = document.getElementById('modalEditarAjusteNomina');
+        if (!modal) return;
+
+        // Ficha del colaborador
+        document.getElementById('ajusteUsuarioID').value = emp.id;
+        document.getElementById('ajusteColaboradorNombre').textContent = emp.nombre;
+        document.getElementById('ajusteColaboradorCargo').textContent = emp.cargo;
+        document.getElementById('ajusteColaboradorDepto').textContent = emp.depto || 'Operaciones';
+
+        const badgeCat = document.getElementById('ajusteBadgeCategoria');
+        if (badgeCat) {
+            badgeCat.innerHTML = emp.es_asesor
+                ? `<span class="badge-asesor" style="padding: 4px 10px;"><i class="fa-solid fa-calendar-check"></i> Asesoría de Cierre (1 Día/Mes)</span>`
+                : `<span class="badge-planta" style="padding: 4px 10px;"><i class="fa-solid fa-building-user"></i> Planta Permanente Diaria</span>`;
+        }
+
+        // Cargar valores iniciales
+        document.getElementById('ajusteSalarioBase').value = emp.salario_base || 0;
+        document.getElementById('ajusteDiasFaltados').value = emp.dias_faltados || 0;
+        document.getElementById('ajusteBonosExtras').value = emp.bonos_extras || 0;
+        document.getElementById('ajusteMotivoBono').value = emp.motivo_bono || '';
+        document.getElementById('ajusteOtrasDeducciones').value = emp.otras_deducciones || 0;
+        document.getElementById('ajusteMotivoDeduccion').value = emp.motivo_deduccion || '';
+        document.getElementById('ajusteVehiculosAtendidos').value = emp.vehiculos_atendidos || 0;
+        document.getElementById('ajusteTasaBonoVehiculo').value = emp.tasa_bono_vehiculo || 500;
+
+        recalcularAjusteLive();
+
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalAjusteNomina() {
+        const modal = document.getElementById('modalEditarAjusteNomina');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
+        document.body.style.overflow = '';
+    }
+
+    function recalcularAjusteLive() {
+        const base = parseFloat(document.getElementById('ajusteSalarioBase').value) || 0;
+        const faltas = parseInt(document.getElementById('ajusteDiasFaltados').value) || 0;
+        const deducFaltas = Math.round((base / 30.0) * faltas * 100) / 100;
+        const salarioDiario = Math.round((base / 30.0) * 100) / 100;
+
+        document.getElementById('ajusteDeduccionFaltasLabel').textContent = 
+            `Deducción automática: - C$ ${fmtMoney(deducFaltas)} (Salario diario C$ ${fmtMoney(salarioDiario)} × ${faltas} d)`;
+
+        const vehiculos = parseInt(document.getElementById('ajusteVehiculosAtendidos').value) || 0;
+        const tasaVeh = parseFloat(document.getElementById('ajusteTasaBonoVehiculo').value) || 500;
+        const bloquesCompletos = Math.floor(vehiculos / 5);
+        const bonoVeh = bloquesCompletos * tasaVeh;
+        const faltanParaSig = 5 - (vehiculos % 5);
+
+        document.getElementById('ajusteBonoVehiculosPreview').textContent = `+ C$ ${fmtMoney(bonoVeh)}`;
+        document.getElementById('ajusteVehiculosProximoMilestone').textContent = 
+            `${vehiculos} veh. atendidos (${bloquesCompletos} bono${bloquesCompletos !== 1 ? 's' : ''} ganado${bloquesCompletos !== 1 ? 's' : ''}). Faltan ${faltanParaSig} veh. para el próximo bono (+C$ ${fmtMoney(tasaVeh)}).`;
+
+        const bonosExt = parseFloat(document.getElementById('ajusteBonosExtras').value) || 0;
+        const otrasDeduc = parseFloat(document.getElementById('ajusteOtrasDeducciones').value) || 0;
+
+        const totalBonos = bonoVeh + bonosExt;
+        const totalDeducciones = deducFaltas + otrasDeduc;
+        const bruto = Math.max(0, Math.round((base + totalBonos - totalDeducciones) * 100) / 100);
+
+        // Deducción INSS Laboral (7%)
+        const inssLab = Math.round(bruto * 0.07 * 100) / 100;
+        const baseIr = Math.round((bruto - inssLab) * 100) / 100;
+        const anual = baseIr * 12;
+
+        let irAnual = 0;
+        if (anual > 500000) irAnual = 82500 + ((anual - 500000) * 0.30);
+        else if (anual > 350000) irAnual = 45000 + ((anual - 350000) * 0.25);
+        else if (anual > 200000) irAnual = 15000 + ((anual - 200000) * 0.20);
+        else if (anual > 100000) irAnual = (anual - 100000) * 0.15;
+
+        const irMensual = Math.round((irAnual / 12) * 100) / 100;
+        const neto = Math.round((bruto - inssLab - irMensual) * 100) / 100;
+
+        const inssPat = Math.round(bruto * 0.225 * 100) / 100;
+        const inatec = Math.round(bruto * 0.02 * 100) / 100;
+        const provisiones = Math.round(bruto * 0.25 * 100) / 100;
+        const costoTotal = Math.round((bruto + inssPat + inatec + provisiones) * 100) / 100;
+
+        document.getElementById('liveSalarioBruto').textContent = `C$ ${fmtMoney(bruto)}`;
+        document.getElementById('liveInssLaboral').textContent = `- C$ ${fmtMoney(inssLab)}`;
+        document.getElementById('liveIrMensual').textContent = irMensual > 0 ? `- C$ ${fmtMoney(irMensual)}` : 'C$ 0.00 (Exento)';
+        document.getElementById('liveSalarioNeto').textContent = `C$ ${fmtMoney(neto)}`;
+        document.getElementById('liveInssPatronal').textContent = `C$ ${fmtMoney(inssPat)}`;
+        document.getElementById('liveInatec').textContent = `C$ ${fmtMoney(inatec)}`;
+        document.getElementById('liveCostoTotal').textContent = `C$ ${fmtMoney(costoTotal)}`;
+    }
+
+    async function guardarAjusteNomina(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnGuardarAjuste');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando y Sincronizando...';
+
+        const form = document.getElementById('formAjusteNomina');
+        const formData = new FormData(form);
+
+        try {
+            const resp = await fetch('/admin/planilla/guardar_ajuste', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (resp.redirected) {
+                window.location.href = resp.url;
+                return;
+            }
+
+            const res = await resp.json();
+            if (res.success) {
+                window.location.reload();
+            } else {
+                mostrarNotificacionSistema(res.message || 'Error al guardar ajustes.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Ajustes y Sincronizar Finanzas';
+            }
+        } catch (err) {
+            console.error(err);
+            form.submit();
+        }
+    }
+
+
+</script>
+{% endblock %}

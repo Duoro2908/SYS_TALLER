@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Contrato Laboral - {{ c.numero_contrato }}{% endblock %}
+
+{% block content %}
+<style>
+    .contract-view-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .contract-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 25px;
+    }
+
+    @media (max-width: 1050px) {
+        .contract-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Hoja Formal del Contrato */
+    .contract-paper {
+        background: #ffffff;
+        color: #1a1a1a;
+        padding: 50px 45px;
+        border-radius: 16px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        font-family: 'Times New Roman', Times, serif;
+        line-height: 1.6;
+        font-size: 1.02rem;
+    }
+
+    .contract-paper h2, .contract-paper h3, .contract-paper h4 {
+        font-family: 'Inter', -apple-system, sans-serif;
+        text-align: center;
+        margin: 0;
+    }
+
+    .contract-clause-title {
+        font-family: 'Inter', -apple-system, sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        margin-top: 18px;
+        margin-bottom: 6px;
+        color: #000;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .contract-clause-p {
+        text-align: justify;
+        margin: 0 0 12px 0;
+    }
+
+    .signature-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        margin-top: 60px;
+        padding-top: 20px;
+    }
+
+    .signature-slot {
+        text-align: center;
+        border-top: 1px solid #333;
+        padding-top: 10px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+    }
+
+    /* Panel Lateral de Parámetros */
+    .rh-side-box {
+        background: var(--bg-surface);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        padding: 22px;
+        margin-bottom: 20px;
+    }
+
+    .rh-side-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .side-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.85rem;
+    }
+
+    .side-row:last-child {
+        border-bottom: none;
+    }
+
+    .btn-action-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary-sm {
+        background: #0A84FF;
+        color: var(--text-primary);
+    }
+    .btn-primary-sm:hover {
+        background: #0070e0;
+    }
+
+    .btn-sec-sm {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    .btn-sec-sm:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+</style>
+
+<!-- Barra Superior -->
+<div class="contract-view-header">
+    <div>
+        <a href="{{ url_for('planilla.contratos') }}" style="color: #0A84FF; text-decoration: none; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Volver a Contratos Laborales
+        </a>
+        <h1 style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary); margin: 0;">
+            Contrato Individual de Trabajo #{{ c.numero_contrato }}
+        </h1>
+        <p style="color: var(--text-muted); margin: 4px 0 0 0; font-size: 0.9rem;">
+            Trabajador: <strong>{{ c.nombre_trabajador }}</strong> • Cargo: <strong>{{ c.cargo }}</strong>
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('planilla.colilla', id=c.usuario_id) }}" class="btn-action-sm btn-sec-sm">
+            <i class="fa-solid fa-receipt"></i> Ver Colilla de Pago
+        </a>
+        <a href="{{ url_for('planilla.imprimir_contrato', id=c.contrato_id) }}" target="_blank" class="btn-action-sm btn-primary-sm">
+            <i class="fa-solid fa-print"></i> Imprimir Contrato Oficial
+        </a>
+    </div>
+</div>
+
+<div class="contract-layout">
+    <!-- Hoja Formal de Contrato Laboral Ley 185 -->
+    <div class="contract-paper">
+        <div style="text-align: center; border-bottom: 2px solid #222; padding-bottom: 18px; margin-bottom: 24px;">
+            <h3 style="font-size: 1.15rem; letter-spacing: 1px; color: #333; margin-bottom: 4px;">REPÚBLICA DE NICARAGUA</h3>
+            <h2 style="font-size: 1.45rem; font-weight: 800; color: #000; margin-bottom: 4px;">CONTRATO INDIVIDUAL DE TRABAJO</h2>
+            <h4 style="font-size: 0.92rem; font-weight: 600; color: #555;">LEY N° 185 - CÓDIGO DEL TRABAJO</h4>
+            <div style="margin-top: 8px; font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #444;">
+                EXPEDIENTE N°: {{ c.numero_contrato }}
+            </div>
+        </div>
+
+        <p class="contract-clause-p">
+            Nosotros: Por una parte, <strong>TALLER Y LUBRICANTES CR</strong>, empresa comercial y automotriz legalmente constituida bajo las leyes de la República de Nicaragua, con Registro Único de Contribuyente (RUC) <strong>J0310000123456</strong>, con domicilio legal en la ciudad de Managua, representada en este acto por su Administración General, en adelante denominada <strong>"EL EMPLEADOR"</strong>; y por otra parte, el señor(a) <strong>{{ c.nombre_trabajador }}</strong>, mayor de edad, nicaragüense, portador de la Cédula de Identidad Ciudadana número <strong>{{ c.cedula }}</strong>, con domicilio actual en <strong>{{ c.domicilio }}</strong> y número telefónico <strong>{{ c.telefono }}</strong>, en adelante denominado <strong>"EL TRABAJADOR"</strong>, convenimos en suscribir el presente <strong>CONTRATO INDIVIDUAL DE TRABAJO A {{ c.tipo_contrato | upper }}</strong>, sujeto a las siguientes cláusulas y estipulaciones:
+        </p>
+
+        <div class="contract-clause-title">CLÁUSULA PRIMERA: OBJETO DEL CONTRATO Y FUNCIONES</div>
+        <p class="contract-clause-p">
+            EL TRABAJADOR se compromete a prestar sus servicios personales y profesionales a EL EMPLEADOR desempeñando el cargo de <strong>{{ c.cargo }}</strong>, adscrito al departamento de <strong>{{ c.departamento }}</strong>, obligándose a ejecutar con celo, fidelidad, pericia y puntualidad todas las labores inherentes al puesto asignado y aquellas instrucciones conexas que le fueren impartidas en el giro comercial y operativo de Taller y Lubricantes CR.
+        </p>
+
+        <div class="contract-clause-title">CLÁUSULA SEGUNDA: LUGAR DE PRESTACIÓN DEL SERVICIO</div>
+        <p class="contract-clause-p">
+            El lugar principal para el desempeño de las labores será en las <strong>{{ c.lugar_trabajo }}</strong>, pudiendo realizar desplazamientos o asignaciones específicas conforme a las necesidades operativas de la empresa dentro del territorio de Managua.
+        </p>
+
+        <div class="contract-clause-title">CLÁUSULA TERCERA: JORNADA LABORAL Y HORARIO</div>
+        <p class="contract-clause-p">
+            De conformidad con los artículos 51, 52 y 53 de la <strong>Ley N° 185 (Código del Trabajo)</strong>, la jornada ordinaria será de naturaleza <strong>{{ c.jornada }}</strong>, distribuida en el siguiente horario: <strong>{{ c.horario }}</strong>, con el descanso correspondiente de una hora para alimentación e intermedio de jornada. EL TRABAJADOR gozará del descanso semanal obligatorio remunerado de conformidad con la ley.
+        </p>
+
+        <div class="contract-clause-title">CLÁUSULA CUARTA: SALARIO, FORMA DE PAGO Y DEDUCCIONES DE LEY</div>
+        <p class="contract-clause-p">
+            EL EMPLEADOR pagará a EL TRABAJADOR en concepto de salario ordinario mensual la cantidad de <strong>C$ {{ "{:,.2f}".format(c.salario_pactado) }} Córdobas netos</strong>, pagaderos en moneda de curso legal mediante depósitos bancarios o efectivo los días quince y último de cada mes calendario.<br>
+            De conformidad con la legislación nicaragüense, de dicho monto se aplicarán exclusivamente las deducciones legales obligatorias correspondientes a:
+            <br>
+            <strong>a)</strong> Aporte a la Seguridad Social (INSS Laboral) del <strong>7.0%</strong> de conformidad con la Ley de Seguridad Social.<br>
+            <strong>b)</strong> Retención en la Fuente del Impuesto sobre la Renta (IR Laboral) de conformidad con la tarifa progresiva establecida en el <strong>Artículo 23 de la Ley N° 822 (Ley de Concertación Tributaria)</strong> de la Dirección General de Ingresos (DGI).
+        </p>
+
+        <div class="contract-clause-title">CLÁUSULA QUINTA: PERÍODO DE PRUEBA</div>
+        <p class="contract-clause-p">
+            De conformidad con el <strong>Artículo 28 del Código del Trabajo</strong>, se establece un período de prueba de <strong>{{ c.periodo_prueba_dias }} días continuos</strong> a partir de la fecha de inicio. Durante este plazo, cualquiera de las partes podrá dar por terminada la relación laboral sin que nazca derecho a indemnización, sin perjuicio de liquidar el salario devengado y las prestaciones proporcionales generadas.
+        </p>
+
+        <div class="contract-clause-title">CLÁUSULA SEXTA: PRESTACIONES SOCIALES Y DERECHOS LABORALES</div>
+        <p class="contract-clause-p">
+            EL EMPLEADOR garantiza a EL TRABAJADOR el pleno goce de todas las prestaciones sociales establecidas en la Ley 185:
+            <br>
+            <strong>1. Décimo Tercer Mes (Aguinaldo):</strong> Equivalente a un mes de salario ordinario devengado por cada año continuo de trabajo o su parte proporcional, pagadero en los primeros diez días del mes de diciembre (Arts. 93 al 99).<br>
+            <strong>2. Vacaciones Remuneradas:</strong> Quince días de descanso remunerado por cada seis meses continuos de labores (30 días anuales) de conformidad con los artículos 76 al 81.<br>
+            <strong>3. Indemnización por Años de Servicio:</strong> En caso de rescisión del contrato laboral por tiempo indeterminado, se aplicará la tabla de indemnización legal estipulada en el <strong>Artículo 45 del Código del Trabajo</strong>.
+        </p>
+
+        <div class="contract-clause-title">CLÁUSULA SÉPTIMA: CUIDADO DE HERRAMIENTAS, EQUIPOS Y CONFIDENCIALIDAD</div>
+        <p class="contract-clause-p">
+            EL TRABAJADOR se compromete a conservar en óptimo estado las herramientas, maquinaria, equipos de diagnóstico computarizado y repuestos puestos bajo su custodia, respondiendo por el mal uso o negligencia imputable. Asimismo, asume compromiso expreso de reserva y confidencialidad respecto a la información comercial, cartera de clientes, precios y métodos operativos de Taller y Lubricantes CR.
+        </p>
+
+        <div class="contract-clause-title">CLÁUSULA OCTAVA: VIGENCIA Y JURISDICCIÓN</div>
+        <p class="contract-clause-p">
+            El presente contrato entra en vigor y surte todos sus efectos legales a partir del <strong>{{ c.fecha_inicio }}</strong>. Para cualquier controversia no resuelta de mutuo acuerdo, las partes se someten expresamente a la vía administrativa ante el Ministerio del Trabajo (MITRAB) y a los Juzgados del Trabajo y de la Seguridad Social de la circunscripción de Managua.
+        </p>
+
+        <p class="contract-clause-p" style="margin-top: 25px;">
+            En fe de lo anterior y conformes en todas y cada una de sus partes, se suscribe el presente contrato en dos tantos de un mismo tenor y validez, uno para cada una de las partes, en la ciudad de Managua, República de Nicaragua.
+        </p>
+
+        <!-- Firmas Formales -->
+        <div class="signature-grid">
+            <div class="signature-slot">
+                <strong>POR EL EMPLEADOR</strong><br>
+                Taller y Lubricantes CR<br>
+                RUC: J0310000123456<br>
+                Administración General y Sello
+            </div>
+            <div class="signature-slot">
+                <strong>POR EL TRABAJADOR</strong><br>
+                <strong>{{ c.nombre_trabajador }}</strong><br>
+                Cédula: {{ c.cedula }}<br>
+                Firma y Huella Digital
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Lateral: Desglose y Parámetros -->
+    <div>
+        <div class="rh-side-box">
+            <div class="rh-side-title">
+                <i class="fa-solid fa-file-invoice" style="color: #0A84FF;"></i> Resumen Salarial del Contrato
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Salario Bruto Pactado:</span>
+                <strong style="color: #fff;">C$ {{ "{:,.2f}".format(c.salario_pactado) }}</strong>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">INSS Laboral (7%):</span>
+                <strong style="color: #FF453A;">- C$ {{ "{:,.2f}".format(c.inss_laboral) }}</strong>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Base Imponible Mensual:</span>
+                <strong style="color: #a1a1aa;">C$ {{ "{:,.2f}".format(c.base_imponible_ir) }}</strong>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Proyección Anual DGI:</span>
+                <strong style="color: #a1a1aa;">C$ {{ "{:,.2f}".format(c.renta_anual_proyectada) }}</strong>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Tramo DGI Aplicable:</span>
+                <span style="color: #FF9F0A; font-weight: 700;">Tramo {{ c.tramo_dgi }} ({{ c.tasa_dgi }}%)</span>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Retención IR Mensual:</span>
+                <strong style="color: #FF9F0A;">- C$ {{ "{:,.2f}".format(c.ir_mensual) }}</strong>
+            </div>
+            <div class="side-row" style="background: rgba(48,209,88,0.12); padding: 10px 6px; border-radius: 8px; margin-top: 8px;">
+                <span style="color: #30D158; font-weight: 700;">Salario Neto Quincenal:</span>
+                <strong style="color: #30D158; font-size: 1.05rem;">C$ {{ "{:,.2f}".format(c.salario_neto / 2) }}</strong>
+            </div>
+            <div class="side-row" style="background: rgba(48,209,88,0.18); padding: 10px 6px; border-radius: 8px; margin-top: 4px;">
+                <span style="color: #30D158; font-weight: 700;">Salario Neto Mensual:</span>
+                <strong style="color: #30D158; font-size: 1.15rem;">C$ {{ "{:,.2f}".format(c.salario_neto) }}</strong>
+            </div>
+        </div>
+
+        <div class="rh-side-box">
+            <div class="rh-side-title">
+                <i class="fa-solid fa-building-shield" style="color: #30D158;"></i> Cargas Patronales Asumidas
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">INSS Patronal (22.5%):</span>
+                <strong style="color: #0A84FF;">C$ {{ "{:,.2f}".format(c.inss_patronal) }}</strong>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Aporte INATEC (2%):</span>
+                <strong style="color: #FF9F0A;">C$ {{ "{:,.2f}".format(c.inatec) }}</strong>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Provisión Vacaciones:</span>
+                <strong style="color: #e5e5ea;">C$ {{ "{:,.2f}".format(c.salario_pactado / 12) }}</strong>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Provisión Aguinaldo:</span>
+                <strong style="color: #e5e5ea;">C$ {{ "{:,.2f}".format(c.salario_pactado / 12) }}</strong>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Provisión Indemnización:</span>
+                <strong style="color: #e5e5ea;">C$ {{ "{:,.2f}".format(c.salario_pactado / 12) }}</strong>
+            </div>
+        </div>
+
+        <div class="rh-side-box">
+            <div class="rh-side-title">
+                <i class="fa-solid fa-clock-rotate-left" style="color: #BF5AF2;"></i> Datos Administrativos
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Estado Contrato:</span>
+                <span style="color: #30D158; font-weight: 700;">{{ c.estado }}</span>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Fecha de Registro:</span>
+                <span style="color: #fff;">{{ c.fecha_registro }}</span>
+            </div>
+            <div class="side-row">
+                <span style="color: var(--text-secondary);">Período de Prueba:</span>
+                <span style="color: #fff;">{{ c.periodo_prueba_dias }} días (Art. 28)</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

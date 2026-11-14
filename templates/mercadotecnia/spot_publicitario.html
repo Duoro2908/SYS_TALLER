@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spot Publicitario Oficial 4K - Taller y Lubricantes CR</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet CSS & JS para Mapa Interactivo con Ruta GPS Azul -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        :root {
+            --gold: #f2c029;
+            --gold-bright: #ffd700;
+            --gold-glow: rgba(242, 192, 41, 0.45);
+            --red-maps: #ea4335;
+            --blue-maps: #2563eb;
+            --blue-route: #3b82f6;
+            --green-live: #22c55e;
+            --bg-deep: #06070a;
+            --bg-surface: rgba(14, 18, 28, 0.94);
+            --bg-card: rgba(20, 26, 40, 0.96);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-gold: rgba(242, 192, 41, 0.35);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Fondo ambiental oscuro de lujo con micro-textura */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(242, 192, 41, 0.08) 0%, transparent 65%),
+                radial-gradient(circle at 100% 100%, rgba(234, 67, 53, 0.06) 0%, transparent 55%),
+                linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Efecto Ambilight difuminado en alta resolución detrás de la pantalla */
+        .ambient-backdrop {
+            position: fixed;
+            inset: -60px;
+            background-size: cover;
+            background-position: center;
+            filter: blur(95px) brightness(0.24) saturate(1.4);
+            z-index: 0;
+            transition: background-image 1.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(1.02);
+            pointer-events: none;
+        }
+
+        .ambient-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 35%, rgba(6, 7, 10, 0.90) 95%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Header Cinematográfico Oficial */
+        .cinema-header {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 44px;
+            background: linear-gradient(180deg, rgba(6, 7, 10, 0.95) 0%, rgba(6, 7, 10, 0.5) 100%);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .cinema-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.2s ease;
+        }
+
+        .cinema-brand:hover {
+            transform: translateY(-1px);
+        }
+
+        .cinema-brand img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(242, 192, 41, 0.5));
+        }
+
+        .cinema-brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+        }
+
+        .cinema-brand-sub {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .cinema-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-cinema {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-glass);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-cinema:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-cinema.btn-primary {
+            background: linear-gradient(135deg, #f2c029 0%, #d49a0e 100%);
+            color: #000000;
+            font-weight: 700;
+            border: none;
+            box-shadow: 0 4px 18px var(--gold-glow);
+        }
+
+        .btn-cinema.btn-primary:hover {
+            background: linear-gradient(135deg, #ffd700 0%, #e5a712 100%);
+            box-shadow: 0 6px 24px rgba(242, 192, 41, 0.65);
+            transform: translateY(-2px);
+        }
+
+        /* Escenario Principal */
+        .cinema-stage-wrapper {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 30px 24px;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Pantalla de Cine Widescreen 16:9 en Alta Definición */
+        .cinema-screen {
+            position: relative;
+            width: 100%;
+            max-width: 960px;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 85px rgba(0, 0, 0, 0.95), 0 0 50px rgba(242, 192, 41, 0.10);
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .cinema-screen:hover {
+            border-color: rgba(242, 192, 41, 0.35);
+            box-shadow: 0 30px 95px rgba(0, 0, 0, 0.98), 0 0 65px rgba(242, 192, 41, 0.18);
+        }
+
+        /* Animación Cinematográfica de Cámara en Movimiento (Estilo Película / Gimbal, Zoom Dinámico y Giros) */
+        .cinema-slide {
+            position: absolute;
+            inset: -2%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.85s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.85s;
+            will-change: transform, opacity;
+            pointer-events: none;
+            transform-origin: center center;
+        }
+
+        .cinema-slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Coreografías cinematográficas de 8s por escena: acercamientos agresivos, giros de gimbal y paneos continuos */
+        #slide0.active {
+            animation: movieCamera0 8s cubic-bezier(0.16, 0.85, 0.35, 1) forwards;
+        }
+        #slide1.active {
+            animation: movieCamera1 8s cubic-bezier(0.16, 0.85, 0.35, 1) forwards;
+        }
+        #slide2.active {
+            animation: movieCamera2 8s cubic-bezier(0.16, 0.85, 0.35, 1) forwards;
+        }
+        #slide3.active {
+            animation: movieCamera3 8s cubic-bezier(0.16, 0.85, 0.35, 1) forwards;
+        }
+        #slide4.active {
+            animation: movieCamera4 8s cubic-bezier(0.16, 0.85, 0.35, 1) forwards;
+        }
+
+        /* Escena 0: Fachada Nicaragüense de Esquina - Acercamiento suave */
+        @keyframes movieCamera0 {
+            0% {
+                transform: scale(1.00) translate(0%, 0.8%);
+            }
+            100% {
+                transform: scale(1.025) translate(-0.8%, -0.5%);
+            }
+        }
+
+        /* Escena 1: Desarme Técnico KA 150 en Elevador - Paneo dinámico a componentes */
+        @keyframes movieCamera1 {
+            0% {
+                transform: scale(1.025) translate(0.8%, -0.5%);
+            }
+            100% {
+                transform: scale(1.00) translate(-0.8%, 0.5%);
+            }
+        }
+
+        /* Escena 2: Vertido Motul 7100 con Génesis CR4 */
+        @keyframes movieCamera2 {
+            0% {
+                transform: scale(1.00) translate(-0.6%, 0.8%);
+            }
+            100% {
+                transform: scale(1.025) translate(0.6%, -0.6%);
+            }
+        }
+
+        /* Escena 3: Génesis SX3 250 Enduro */
+        @keyframes movieCamera3 {
+            0% {
+                transform: scale(1.025) translate(-0.8%, 0.5%);
+            }
+            100% {
+                transform: scale(1.00) translate(0.8%, -0.4%);
+            }
+        }
+
+        /* Escena 4: Gran Rifa Mensual */
+        @keyframes movieCamera4 {
+            0% {
+                transform: scale(1.00) translate(0.5%, 0.6%);
+            }
+            100% {
+                transform: scale(1.025) translate(-0.5%, -0.5%);
+            }
+        }
+
+        /* Sacudida de impacto al cambiar de escena / Braaam trailer */
+        .cinema-screen.scene-impact {
+            animation: cameraImpactShake 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes cameraImpactShake {
+            0%   { transform: translate(0, 0) scale(1); }
+            15%  { transform: translate(-5px, 3px) scale(1.012); }
+            30%  { transform: translate(5px, -3px) scale(0.995); }
+            50%  { transform: translate(-3px, -2px) scale(1.006); }
+            70%  { transform: translate(2px, 2px) scale(1.002); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* Haz de Luz Volumétrico en Movimiento Continuo (Dynamic Cinematic Light Ray) */
+        .volumetric-light-beam {
+            position: absolute;
+            inset: -25%;
+            background: radial-gradient(ellipse 65% 35% at 50% 50%, rgba(242, 192, 41, 0.13) 0%, rgba(59, 130, 246, 0.08) 40%, transparent 70%);
+            mix-blend-mode: screen;
+            pointer-events: none;
+            z-index: 5;
+            animation: lightBeamSweep 8s ease-in-out infinite alternate;
+        }
+        @keyframes lightBeamSweep {
+            0%   { transform: translate(-18%, -12%) rotate(-14deg) scale(0.95); opacity: 0.35; }
+            50%  { transform: translate(6%, 6%) rotate(2deg) scale(1.12); opacity: 0.85; }
+            100% { transform: translate(18%, -10%) rotate(16deg) scale(1.0); opacity: 0.45; }
+        }
+
+        /* Capa de Partículas de Luz & Polvo de Taller Cinematográfico */
+        .cinema-particles-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        /* Destello Anamórfico de Transición Cinematográfica (Flare Streak) */
+        .anamorphic-flare {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 7;
+            background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0) 15%, rgba(96, 165, 250, 0.55) 48%, rgba(245, 190, 40, 0.45) 52%, rgba(59, 130, 246, 0) 85%, transparent 100%);
+            opacity: 0;
+            mix-blend-mode: screen;
+        }
+        .anamorphic-flare.flash {
+            animation: flareFlash 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes flareFlash {
+            0%   { opacity: 0; transform: scaleX(0.08) scaleY(0.4); }
+            35%  { opacity: 0.95; transform: scaleX(1.5) scaleY(1.0); }
+            100% { opacity: 0; transform: scaleX(2.3) scaleY(1.3); }
+        }
+
+        /* Textura Cinematográfica de Película 35mm */
+        .cinema-film-grain {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 3px 3px;
+            opacity: 0.25;
+            mix-blend-mode: overlay;
+        }
+
+        /* HUD Holográfico de Escaneo y Telemetría en Vivo */
+        .cinema-tech-hud {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 6;
+            display: none;
+        }
+        .tech-scanner-bar {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, rgba(96, 165, 250, 0.2) 20%, #60a5fa 50%, rgba(96, 165, 250, 0.2) 80%, transparent 100%);
+            box-shadow: 0 0 16px #3b82f6;
+            animation: scanSweep 4s ease-in-out infinite alternate;
+        }
+        @keyframes scanSweep {
+            0%   { top: 18%; opacity: 0.2; }
+            30%  { opacity: 0.95; }
+            70%  { opacity: 0.95; }
+            100% { top: 82%; opacity: 0.2; }
+        }
+        .hud-reticle {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: pulseReticle 2.2s infinite ease-in-out;
+        }
+        .hud-reticle-ring {
+            width: 26px;
+            height: 26px;
+            border: 1.5px dashed #60a5fa;
+            border-radius: 50%;
+            position: relative;
+            animation: spinRing 7s linear infinite;
+        }
+        .hud-reticle-ring::after {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            background: #60a5fa;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #60a5fa;
+        }
+        .hud-reticle-tag {
+            background: rgba(10, 15, 25, 0.85);
+            border: 1px solid rgba(96, 165, 250, 0.45);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.70rem;
+            font-family: monospace;
+            color: #93c5fd;
+            letter-spacing: 1px;
+            text-shadow: 0 0 4px rgba(96, 165, 250, 0.8);
+        }
+        @keyframes spinRing {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulseReticle {
+            0%, 100% { transform: scale(1); opacity: 0.85; }
+            50%      { transform: scale(1.02); opacity: 1; }
+        }
+
+        /* Viñeta Cinematográfica Suave */
+        .cinema-vignette {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, 
+                rgba(0,0,0,0.55) 0%, 
+                transparent 25%, 
+                transparent 55%, 
+                rgba(0,0,0,0.85) 85%,
+                rgba(0,0,0,0.98) 100%
+            );
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* Overlay Superior: Badge SPOT INSTITUCIONAL & Google Maps Chip */
+        .cinema-overlay-top {
+            position: absolute;
+            top: 22px;
+            left: 28px;
+            right: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 8;
+            pointer-events: auto;
+        }
+
+        .cinema-tag-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cinema-tag-badge {
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(242, 192, 41, 0.45);
+            color: var(--gold);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+            animation: pulseGlow 1.5s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.6; }
+        }
+
+        .cinema-maps-chip {
+            background: rgba(14, 20, 32, 0.85);
+            border: 1px solid rgba(59, 130, 246, 0.6);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .cinema-maps-chip:hover {
+            background: rgba(59, 130, 246, 0.35);
+            border-color: #60a5fa;
+            transform: translateY(-1px);
+        }
+
+        .cinema-timer-badge {
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid var(--border-glass);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Overlay Inferior: Textos Cinematográficos y Botones */
+        .cinema-overlay-bottom {
+            position: absolute;
+            bottom: 26px;
+            left: 36px;
+            right: 36px;
+            z-index: 8;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .scene-kicker {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(8px);
+            animation: enterKicker 0.6s 0.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .scene-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.15rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.18;
+            text-shadow: 0 4px 22px rgba(0, 0, 0, 0.95);
+            letter-spacing: -0.5px;
+            opacity: 0;
+            transform: translateY(12px);
+            animation: enterTitle 0.7s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .scene-description {
+            font-size: 1.02rem;
+            color: rgba(255, 255, 255, 0.92);
+            max-width: 900px;
+            line-height: 1.5;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+            opacity: 0;
+            transform: translateY(12px);
+            animation: enterDesc 0.7s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .scene-action-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+            pointer-events: auto;
+        }
+
+        /* Botón Interactivo para Trazar Ruta GPS en Escena 1 (Ubicación) */
+        .btn-gps-route {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(29, 78, 216, 0.95) 100%);
+            border: 1px solid #60a5fa;
+            padding: 11px 22px;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+            transition: all 0.25s ease;
+            cursor: pointer;
+        }
+
+        .btn-gps-route:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border-color: #93c5fd;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 26px rgba(37, 99, 235, 0.65);
+        }
+
+        .btn-google-maps-unified {
+            background: linear-gradient(135deg, rgba(234, 67, 53, 0.90) 0%, rgba(37, 99, 235, 0.95) 100%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            box-shadow: 0 6px 22px rgba(234, 67, 53, 0.45) !important;
+        }
+
+        .btn-google-maps-unified:hover {
+            background: linear-gradient(135deg, #ea4335 0%, #2563eb 100%) !important;
+            box-shadow: 0 8px 28px rgba(234, 67, 53, 0.65) !important;
+            border-color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        .btn-gps-route i.fa-route {
+            font-size: 1.25rem;
+            color: #ffffff;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+        }
+
+        .btn-gps-route .btn-map-text {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .btn-gps-route .btn-map-sub {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #bfdbfe;
+            font-weight: 700;
+        }
+
+        .btn-gps-route .btn-map-main {
+            font-size: 0.95rem;
+            font-weight: 800;
+        }
+
+        .btn-google-maps-alt {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-glass);
+            padding: 11px 18px;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            text-decoration: none;
+            backdrop-filter: blur(12px);
+            transition: all 0.25s ease;
+        }
+
+        .btn-google-maps-alt:hover {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        /* Banner de Rifa Mensual en Escena 5 */
+        .scene-promo-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(90deg, rgba(242, 192, 41, 0.25) 0%, rgba(242, 192, 41, 0.08) 100%);
+            border: 1px solid var(--gold);
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.92rem;
+            font-weight: 600;
+            width: fit-content;
+            backdrop-filter: blur(10px);
+            animation: pulseGoldBorder 2.5s infinite;
+        }
+
+        @keyframes pulseGoldBorder {
+            0%, 100% { border-color: var(--gold); box-shadow: 0 0 15px rgba(242, 192, 41, 0.2); }
+            50% { border-color: #ffffff; box-shadow: 0 0 25px rgba(255, 255, 255, 0.35); }
+        }
+
+        @keyframes enterKicker {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes enterTitle {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes enterDesc {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Barra de Progreso Superior */
+        .cinema-progress-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f2c029, #ffd700);
+            box-shadow: 0 0 12px #f2c029;
+            width: 0%;
+            z-index: 10;
+            transition: width 0.1s linear;
+        }
+
+        /* Panel de Controles Profesionales */
+        .cinema-controls-bar {
+            width: 100%;
+            max-width: 960px;
+            margin-top: 16px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(18px);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+            gap: 16px;
+        }
+
+        .controls-left, .controls-right, .controls-center {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            color: #ffffff;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: var(--gold);
+            transform: scale(1.05);
+        }
+
+        .ctrl-btn.play-btn {
+            background: var(--gold);
+            color: #000;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 14px var(--gold-glow);
+            border: none;
+        }
+
+        .ctrl-btn.play-btn:hover {
+            background: var(--gold-bright);
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(242, 192, 41, 0.65);
+        }
+
+        /* Ecualizador Animado de Sonido */
+        .audio-wave-box {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 18px;
+            padding: 0 4px;
+        }
+
+        .audio-wave-bar {
+            width: 3px;
+            height: 4px;
+            background: var(--text-muted);
+            border-radius: 2px;
+            transition: height 0.15s ease, background-color 0.2s ease;
+        }
+
+        .audio-active .audio-wave-bar {
+            background: var(--gold);
+            animation: waveBounce 1.2s infinite ease-in-out alternate;
+        }
+
+        .audio-active .audio-wave-bar:nth-child(1) { animation-delay: 0.1s; }
+        .audio-active .audio-wave-bar:nth-child(2) { animation-delay: 0.3s; }
+        .audio-active .audio-wave-bar:nth-child(3) { animation-delay: 0.5s; }
+        .audio-active .audio-wave-bar:nth-child(4) { animation-delay: 0.2s; }
+
+        @keyframes waveBounce {
+            0% { height: 4px; }
+            100% { height: 18px; }
+        }
+
+        /* Marcadores de Escena Limpios y Centrados */
+        .scene-markers {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+
+        .scene-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.80rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+        .scene-pill:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+
+        .scene-pill.active {
+            background: rgba(242, 192, 41, 0.18);
+            border-color: var(--gold);
+            color: var(--gold);
+            font-weight: 700;
+            box-shadow: 0 0 14px rgba(242, 192, 41, 0.28);
+        }
+
+        audio {
+            display: none;
+        }
+
+        /* ========================================================= */
+        /* MODAL DE RUTA GPS INTERACTIVA (LÍNEA AZUL EN MAPA)       */
+        /* ========================================================= */
+        .gps-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 6, 10, 0.85);
+            backdrop-filter: blur(14px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeInModal 0.25s ease-out;
+        }
+
+        .gps-modal-backdrop.show {
+            display: flex;
+        }
+
+        .gps-modal-box {
+            background: var(--bg-card);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 860px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95), 0 0 50px rgba(37, 99, 235, 0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gps-modal-header {
+            padding: 18px 24px;
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .gps-modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gps-modal-title i {
+            color: var(--blue-route);
+        }
+
+        .gps-modal-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #ffffff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .gps-modal-close:hover {
+            background: rgba(239, 68, 68, 0.4);
+            transform: scale(1.1);
+        }
+
+        .gps-modal-body {
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Selector de Modo de Transporte (Moto vs Carro) */
+        .route-controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .mode-toggle-group {
+            display: flex;
+            background: rgba(10, 14, 22, 0.8);
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: var(--blue-route);
+            color: #ffffff;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.5);
+        }
+
+        .btn-detect-gps {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.35) 100%);
+            border: 1px solid var(--green-live);
+            color: #ffffff;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-detect-gps:hover {
+            background: var(--green-live);
+            color: #000000;
+            transform: translateY(-1px);
+        }
+
+
+
+        /* Contenedor del Mapa Leaflet */
+        #routeMap {
+            width: 100%;
+            height: 350px;
+            border-radius: 14px;
+            border: 1px solid var(--border-glass);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+            z-index: 1;
+        }
+
+        /* Footer con Estadísticas de Ruta y Botón Google Maps */
+        .gps-modal-footer {
+            padding: 16px 24px;
+            background: rgba(10, 14, 22, 0.85);
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .route-stats-box {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.70rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .btn-launch-nav {
+            background: linear-gradient(135deg, #ea4335 0%, #c5221f 100%);
+            border: none;
+            color: #ffffff;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-size: 0.90rem;
+            font-weight: 800;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(234, 67, 53, 0.4);
+            transition: all 0.25s ease;
+        }
+
+        .btn-launch-nav:hover {
+            background: linear-gradient(135deg, #f25547 0%, #d93025 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(234, 67, 53, 0.6);
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Responsive Media Queries */
+        @media (max-width: 1024px) {
+            .scene-title { font-size: 1.7rem; }
+            .scene-description { font-size: 0.92rem; }
+            .cinema-controls-bar { flex-direction: column; gap: 12px; padding: 14px; }
+            .scene-markers { overflow-x: auto; max-width: 100%; padding-bottom: 4px; }
+        }
+
+        @media (max-width: 640px) {
+            .cinema-header { padding: 12px 18px; }
+            .cinema-stage-wrapper { padding: 10px 12px 20px; }
+            .scene-title { font-size: 1.35rem; }
+            .cinema-overlay-bottom { bottom: 16px; left: 18px; right: 18px; }
+            .cinema-overlay-top { top: 14px; left: 16px; right: 16px; }
+            #routeMap { height: 260px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fondo ambiental difuminado -->
+    <div class="ambient-backdrop" id="ambientBackdrop"></div>
+    <div class="ambient-overlay"></div>
+
+    <!-- Header Cinematográfico Oficial (Limpio y elegante) -->
+    <header class="cinema-header">
+        <a href="{{ url_for('auth.login') }}" class="cinema-brand">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Taller CR" onerror="this.src='https://via.placeholder.com/60/333/fff?text=CR'">
+            <div>
+                <div class="cinema-brand-title">Taller y Lubricantes CR</div>
+                <div class="cinema-brand-sub">Spot Publicitario Oficial 2026</div>
+            </div>
+        </a>
+
+        <div class="cinema-actions">
+            <a href="{{ url_for('cashier.pos_publico') }}" target="_blank" class="btn-cinema">
+                <i class="fa-solid fa-store"></i> Tienda Virtual
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn-cinema btn-primary">
+                <i class="fa-solid fa-right-to-bracket"></i> Ingresar al Sistema
+            </a>
+        </div>
+    </header>
+
+    <!-- Escenario Principal -->
+    <main class="cinema-stage-wrapper">
+        
+        <!-- Pantalla de Cine Widescreen 16:9 -->
+        <div class="cinema-screen" id="cinemaScreen" onclick="handleScreenClick(event)">
+            <div class="cinema-progress-line" id="cinemaProgressBar"></div>
+            <div class="cinema-vignette"></div>
+
+            <!-- Overlay Superior -->
+            <div class="cinema-overlay-top">
+                <div class="cinema-tag-group">
+                    <div class="cinema-tag-badge">
+                        <span class="pulse-dot"></span>
+                        <span id="badgeLiveText">SPOT OFICIAL CR</span>
+                    </div>
+                    <div class="cinema-maps-chip" onclick="openGpsModal(); event.stopPropagation();" title="Google Maps • San Judas">
+                        <i class="fa-solid fa-location-dot" style="color: #ea4335;"></i>
+                        <span>Google Maps • San Judas</span>
+                    </div>
+                </div>
+                <div class="cinema-timer-badge" id="cinemaTimer">00:00 / 00:40</div>
+            </div>
+
+            <!-- Diapositivas en Alta Definición 4K Real (5 Escenas con Cinemáticas en Movimiento) -->
+            <!-- Escena 0: Fachada Nicaragüense de Esquina Taller y Lubricantes CR (San Judas) -->
+            <div class="cinema-slide active" id="slide0" style="background-image: url('{{ url_for('static', filename='img/comercial/slide_0_ubicacion.jpg') }}?v=real_corner_v2');"></div>
+            <!-- Escena 1: Desarme Técnico en Elevador & Genesis KA 150 (Imagen Exacta 4K) -->
+            <div class="cinema-slide" id="slide1" style="background-image: url('{{ url_for('static', filename='img/comercial/slide_1_ka150_diagnostico.jpg') }}?v=ka150_lift_service');"></div>
+            <!-- Escena 2: Lubricación Certificada Motul 7100 con Génesis CR4 (Imagen 4K) -->
+            <div class="cinema-slide" id="slide2" style="background-image: url('{{ url_for('static', filename='img/comercial/slide_2_motul_lubricacion.jpg') }}');"></div>
+            <!-- Escena 3: Génesis SX3 250 Enduro Showroom & Repuestos Genuinos (Imagen Exacta 4K) -->
+            <div class="cinema-slide" id="slide3" style="background-image: url('{{ url_for('static', filename='img/comercial/slide_3_sx3_repuestos.jpg') }}?v=sx3_showroom');"></div>
+            <!-- Escena 4: Gran Rifa Mensual Taller CR (Imagen 4K) -->
+            <div class="cinema-slide" id="slide4" style="background-image: url('{{ url_for('static', filename='img/comercial/slide_4_gran_rifa.jpg') }}');"></div>
+
+            <!-- Efectos de Película: Haz de Luz Volumétrico, Partículas de Luz, Destello Anamórfico y Textura de Grano -->
+            <div class="volumetric-light-beam"></div>
+            <canvas id="cinemaParticlesCanvas" class="cinema-particles-canvas"></canvas>
+            <div class="anamorphic-flare" id="anamorphicFlare"></div>
+            <div class="cinema-film-grain"></div>
+
+            <!-- HUD de Telemetría y Escaneo Óptico en Vivo -->
+            <div class="cinema-tech-hud" id="cinemaTechHud">
+                <div class="tech-scanner-bar"></div>
+                <div class="hud-reticle" style="top: 48%; left: 42%;">
+                    <div class="hud-reticle-ring"></div>
+                    <div class="hud-reticle-tag">MOTOR 4T • TELEMETRÍA 100% OK</div>
+                </div>
+                <div class="hud-reticle" style="top: 66%; right: 26%;">
+                    <div class="hud-reticle-ring"></div>
+                    <div class="hud-reticle-tag">SUSPENSIÓN & FRENOS • CALIBRADOS</div>
+                </div>
+            </div>
+
+            <!-- Overlay Inferior con Textos y Botón Directo GPS -->
+            <div class="cinema-overlay-bottom" id="sceneOverlayBottom">
+                <div class="scene-kicker" id="sceneKicker">
+                    <i class="fa-solid fa-map-location-dot"></i> SEDE CENTRAL & TALLER PRINCIPAL
+                </div>
+                <h1 class="scene-title" id="sceneTitle">San Judas, del Ceibo 2 ½ Cuadras Arriba • Managua</h1>
+                <p class="scene-description" id="sceneDescription">
+                    Visítanos en nuestra sede de esquina en Managua: área de taller abierta con mecánicos certificados atendiendo motocicletas Génesis CR4, herramientas computarizadas y tienda completa de repuestos y lubricantes.
+                </p>
+                
+                <div class="scene-action-row">
+                    <!-- Botón Unificado Google Maps con Detección de Ubicación y Trazado de Línea Azul -->
+                    <button type="button" class="btn-gps-route btn-google-maps-unified" id="btnGpsRoute" onclick="openGpsModal(); event.stopPropagation();">
+                        <i class="fa-solid fa-location-dot" style="font-size: 1.4rem; color: #ea4335; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7));"></i>
+                        <div class="btn-map-text">
+                            <span class="btn-map-sub">CÓMO LLEGAR • NAVEGACIÓN EN VIVO</span>
+                            <span class="btn-map-main">Abrir en Google Maps</span>
+                        </div>
+                    </button>
+
+                    <!-- Banner de Rifa en Escena 4 -->
+                    <div class="scene-promo-pill" id="scenePromoPill" style="display: none;">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>¡Por cada <strong>C$ 1,000 acumulados</strong> obtienes un cupón automático para la Gran Rifa Mensual!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Controles Profesionales (Limpia y Centrada) -->
+        <div class="cinema-controls-bar">
+            
+            <!-- Controles de Reproducción y Audio -->
+            <div class="controls-left">
+                <button type="button" class="ctrl-btn play-btn" id="btnPlayPause" onclick="togglePlayPause()" title="Reproducir / Pausar (Barra espaciadora)">
+                    <i class="fa-solid fa-pause" id="iconPlayPause"></i>
+                </button>
+                <button type="button" class="ctrl-btn" onclick="prevSlide()" title="Escena Anterior">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+                <button type="button" class="ctrl-btn" onclick="nextSlide()" title="Siguiente Escena">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+                <button type="button" class="ctrl-btn" id="btnAudio" onclick="toggleAudio()" title="Soundtrack Cinemático Brutal (Tráiler Oficial)">
+                    <i class="fa-solid fa-volume-xmark" id="iconAudio"></i>
+                </button>
+
+                <!-- Ecualizador de Audio -->
+                <div class="audio-wave-box" id="audioWaveBox" title="Indicador de audio">
+                    <div class="audio-wave-bar"></div>
+                    <div class="audio-wave-bar"></div>
+                    <div class="audio-wave-bar"></div>
+                    <div class="audio-wave-bar"></div>
+                </div>
+            </div>
+
+            <!-- Marcadores de Escena Interactivas (5 Escenas Limpias) -->
+            <div class="controls-center scene-markers">
+                <div class="scene-pill active" id="pill0" onclick="goToSlide(0)">
+                    <i class="fa-solid fa-location-dot"></i> 1. Ubicación
+                </div>
+                <div class="scene-pill" id="pill1" onclick="goToSlide(1)">
+                    <i class="fa-solid fa-microchip"></i> 2. Desarme KA 150
+                </div>
+                <div class="scene-pill" id="pill2" onclick="goToSlide(2)">
+                    <i class="fa-solid fa-oil-can"></i> 3. Lubricación Motul
+                </div>
+                <div class="scene-pill" id="pill3" onclick="goToSlide(3)">
+                    <i class="fa-solid fa-motorcycle"></i> 4. Enduro SX3
+                </div>
+                <div class="scene-pill" id="pill4" onclick="goToSlide(4)">
+                    <i class="fa-solid fa-trophy"></i> 5. Gran Rifa
+                </div>
+            </div>
+
+            <!-- Controles Derechos: Pantalla Completa -->
+            <div class="controls-right">
+                <button type="button" class="ctrl-btn" onclick="toggleFullScreen()" title="Modo Pantalla Completa (F)">
+                    <i class="fa-solid fa-expand" id="iconFullscreen"></i>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ============================================================= -->
+    <!-- MODAL DE NAVEGACIÓN GPS EN VIVO CON RUTA AZUL (MOTO O CARRO)  -->
+    <!-- ============================================================= -->
+    <div class="gps-modal-backdrop" id="gpsModal" onclick="closeGpsModalOnBackdrop(event)">
+        <div class="gps-modal-box">
+            <div class="gps-modal-header">
+                <div class="gps-modal-title">
+                    <i class="fa-solid fa-location-dot" style="color: #ea4335;"></i>
+                    <span>Ruta en Google Maps hacia Taller y Lubricantes CR</span>
+                </div>
+                <button type="button" class="gps-modal-close" onclick="closeGpsModal()" title="Cerrar ventana">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="gps-modal-body">
+                <!-- Fila de Controles Waze: Modo de Transporte y Estado GPS -->
+                <div class="route-controls-row">
+                    <div class="mode-toggle-group">
+                        <button type="button" class="mode-btn active" id="btnModeMoto" onclick="setTravelMode('moto')">
+                            <i class="fa-solid fa-motorcycle"></i> En Moto
+                        </button>
+                        <button type="button" class="mode-btn" id="btnModeCarro" onclick="setTravelMode('carro')">
+                            <i class="fa-solid fa-car"></i> En Carro
+                        </button>
+                    </div>
+
+                    <!-- Botón Waze para geolocalización directa -->
+                    <button type="button" class="btn-detect-gps" onclick="requestUserLocation()">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        <span id="gpsBtnText">Solicitar Mi Ubicación en Vivo</span>
+                    </button>
+                </div>
+
+                <!-- Barra de Estado Waze en Vivo -->
+                <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-satellite-dish fa-spin" id="wazeStatusIcon" style="color: #60a5fa; font-size: 1.1rem;"></i>
+                        <div>
+                            <div style="font-size: 0.88rem; font-weight: 700; color: #ffffff;" id="wazeStatusTitle">Waze GPS: Solicitando tu ubicación actual...</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;" id="wazeStatusSub">Destino Fijo: Taller y Lubricantes CR • San Judas, del Ceibo 2 ½ Cuadras Arriba</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="text" id="manualOriginInput" placeholder="O escribe tu barrio o punto de partida..." style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 0.82rem; min-width: 240px;" onkeydown="if(event.key==='Enter') searchManualOrigin()">
+                        <button type="button" onclick="searchManualOrigin()" style="background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-route"></i> Trazar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mapa Leaflet Interactivo con la Línea Azul Limpia sin Watermarks -->
+                <div id="routeMap"></div>
+            </div>
+
+            <div class="gps-modal-footer">
+                <div class="route-stats-box">
+                    <div class="stat-item">
+                        <span class="stat-label">Origen Actual</span>
+                        <span class="stat-value" id="routeOriginName" style="font-size: 0.95rem; color: #60a5fa;">Rotonda El Periodista</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Distancia</span>
+                        <span class="stat-value" id="routeDistance">2.8 km</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label" id="travelTimeLabel">Tiempo en Moto</span>
+                        <span class="stat-value" id="routeDuration" style="color: var(--gold);">~ 6 min</span>
+                    </div>
+                </div>
+
+                <!-- Botones de Navegación Externa: Waze y Google Maps -->
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <a href="https://waze.com/ul?ll=12.1147,-86.2915&navigate=yes" target="_blank" class="btn-launch-nav" id="btnLaunchWaze" style="background: linear-gradient(135deg, #33ccff 0%, #0099ff 100%);">
+                        <i class="fa-brands fa-waze" style="font-size: 1.1rem;"></i>
+                        <span>Abrir en Waze</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.75rem;"></i>
+                    </a>
+                    <a href="#" target="_blank" class="btn-launch-nav" id="btnLaunchGoogleMapsNav">
+                        <i class="fa-solid fa-diamond-turn-right"></i>
+                        <span>Abrir en Google Maps</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.75rem;"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Soundtrack Cinemático Brutal (Tráiler Oficial 4K) -->
+    <audio id="engineAudio" preload="auto" loop>
+        <source src="{{ url_for('static', filename='audio/spot_cinematico_brutal.wav') }}?v=soundtrack_brutal_v2" type="audio/wav">
+    </audio>
+
+    <script>
+        // Configuración de las 5 Escenas
+        const scenes = [
+            {
+                slideId: 'slide0',
+                imgUrl: "{{ url_for('static', filename='img/comercial/slide_0_ubicacion.jpg') }}?v=real_corner_v2",
+                kicker: '<i class="fa-solid fa-map-location-dot"></i> SEDE CENTRAL & TALLER PRINCIPAL',
+                title: 'San Judas, del Ceibo 2 ½ Cuadras Arriba • Managua',
+                description: 'Visítanos en nuestra sede de esquina en Managua: área de taller abierta con mecánicos certificados atendiendo motocicletas Génesis CR4, herramientas computarizadas y tienda completa de repuestos y lubricantes.',
+                showGpsBtn: true,
+                showPromoPill: false
+            },
+            {
+                slideId: 'slide1',
+                imgUrl: "{{ url_for('static', filename='img/comercial/slide_1_ka150_diagnostico.jpg') }}?v=ka150_lift_service",
+                kicker: '<i class="fa-solid fa-wrench"></i> MANTENIMIENTO INTEGRAL EN ELEVADOR',
+                title: 'Génesis KA 150 • Desarme Técnico y Puesta a Punto',
+                description: 'Mantenimiento mayor en elevador hidráulico: cambio de aceite Motul 7100, calibración de bujía, frenos de disco y revisión computarizada completa para máxima potencia.',
+                showGpsBtn: false,
+                showPromoPill: false
+            },
+            {
+                slideId: 'slide2',
+                imgUrl: "{{ url_for('static', filename='img/comercial/slide_2_motul_lubricacion.jpg') }}",
+                kicker: '<i class="fa-solid fa-oil-can"></i> LUBRICACIÓN OFICIAL CERTIFICADA',
+                title: 'Gama de Fluidos y Lubricantes Motul de Alto Desempeño',
+                description: 'Protección térmica y mecánica insuperable con Motul 7100 100% Sintético Éster, 5100 Technosynthese y 3100 JASO MA2 para motor, embrague y caja de cambios.',
+                showGpsBtn: false,
+                showPromoPill: false
+            },
+            {
+                slideId: 'slide3',
+                imgUrl: "{{ url_for('static', filename='img/comercial/slide_3_sx3_repuestos.jpg') }}?v=sx3_showroom",
+                kicker: '<i class="fa-solid fa-motorcycle"></i> DUAL-SPORT ENDURO & REPUESTOS GENUINOS',
+                title: 'Génesis SX3 250 • Desempeño Enduro y Componentes Genuinos',
+                description: 'Stock completo de repuestos originales para las series SX3, SX2 y SX1: llantas de tacos, kits de arrastre reforzados, filtros de aire y suspensión invertida monoshock.',
+                showGpsBtn: false,
+                showPromoPill: false
+            },
+            {
+                slideId: 'slide4',
+                imgUrl: "{{ url_for('static', filename='img/comercial/slide_4_gran_rifa.jpg') }}",
+                kicker: '<i class="fa-solid fa-trophy"></i> ¡GRAN RIFA MENSUAL TALLER CR!',
+                title: 'Gana Cascos Certificados DOT, Llantas Nuevas y Mantenimientos',
+                description: '¡Premiamos tu lealtad! Por cada C$ 1,000 en compras de repuestos o servicios recibes un boleto automático para nuestro sorteo mensual transmitido en vivo.',
+                showGpsBtn: false,
+                showPromoPill: true
+            }
+        ];
+
+        let currentIdx = 0;
+        let isPlaying = true;
+        let isAudioOn = false;
+        let sceneDuration = 8.0;
+        let totalSpotDuration = sceneDuration * scenes.length;
+        let elapsedTotal = 0.0;
+        let timerInterval = null;
+
+        const ambientEl = document.getElementById('ambientBackdrop');
+        const audioEl = document.getElementById('engineAudio');
+        const progressBar = document.getElementById('cinemaProgressBar');
+        const timerLabel = document.getElementById('cinemaTimer');
+        const audioWaveBox = document.getElementById('audioWaveBox');
+
+        function initSpot() {
+            updateAmbient(scenes[0].imgUrl);
+            initCinemaParticles();
+            timerInterval = setInterval(onTick, 100);
+        }
+
+        // Motor de Partículas Atmosféricas Cinematográficas (Polvo y Chispas de Luz)
+        function initCinemaParticles() {
+            const canvas = document.getElementById('cinemaParticlesCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = canvas.offsetWidth;
+            let height = canvas.height = canvas.offsetHeight;
+
+            window.addEventListener('resize', () => {
+                if (!canvas.offsetWidth) return;
+                width = canvas.width = canvas.offsetWidth;
+                height = canvas.height = canvas.offsetHeight;
+            });
+
+            const particles = [];
+            const count = 35;
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    r: Math.random() * 2.2 + 0.6,
+                    vx: (Math.random() - 0.5) * 0.35,
+                    vy: -Math.random() * 0.45 - 0.15,
+                    alpha: Math.random() * 0.55 + 0.25,
+                    pulse: Math.random() * Math.PI * 2,
+                    isGold: Math.random() > 0.45
+                });
+            }
+
+            function renderParticles() {
+                ctx.clearRect(0, 0, width, height);
+                for (let p of particles) {
+                    p.y += p.vy;
+                    p.x += p.vx;
+                    p.pulse += 0.025;
+                    if (p.y < -10) { p.y = height + 10; p.x = Math.random() * width; }
+                    if (p.x < -10) p.x = width + 10;
+                    if (p.x > width + 10) p.x = -10;
+
+                    const curAlpha = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = p.isGold ? `rgba(242, 192, 41, ${curAlpha})` : `rgba(96, 165, 250, ${curAlpha})`;
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = p.isGold ? '#f59e0b' : '#3b82f6';
+                    ctx.fill();
+                }
+                requestAnimationFrame(renderParticles);
+            }
+            renderParticles();
+        }
+
+        function updateAmbient(imgUrl) {
+            ambientEl.style.backgroundImage = `url('${imgUrl}')`;
+        }
+
+        function onTick() {
+            if (!isPlaying) return;
+
+            // Sincronización perfecta con el soundtrack cinemático si está sonando
+            if (isAudioOn && !audioEl.paused && audioEl.currentTime > 0) {
+                elapsedTotal = audioEl.currentTime % totalSpotDuration;
+            } else {
+                elapsedTotal += 0.1;
+                if (elapsedTotal >= totalSpotDuration) {
+                    elapsedTotal = 0.0;
+                }
+            }
+
+            const progress = (elapsedTotal / totalSpotDuration) * 100;
+            progressBar.style.width = progress + '%';
+
+            const curSec = Math.floor(elapsedTotal);
+            const totSec = Math.floor(totalSpotDuration);
+            timerLabel.innerText = `00:${curSec < 10 ? '0' : ''}${curSec} / 00:${totSec < 10 ? '0' : ''}${totSec}`;
+
+            const calculatedScene = Math.min(Math.floor(elapsedTotal / sceneDuration), scenes.length - 1);
+            if (calculatedScene !== currentIdx) {
+                goToSlide(calculatedScene, false);
+            }
+        }
+
+        function goToSlide(index, resetTimer = true) {
+            if (index < 0 || index >= scenes.length) return;
+
+            // Retirar active de la diapositiva y marcador anteriores
+            const prevSlideEl = document.getElementById(scenes[currentIdx].slideId);
+            if (prevSlideEl) prevSlideEl.classList.remove('active');
+            const prevPill = document.getElementById('pill' + currentIdx);
+            if (prevPill) prevPill.classList.remove('active');
+
+            currentIdx = index;
+
+            const s = scenes[currentIdx];
+            const nextSlideEl = document.getElementById(s.slideId);
+            if (nextSlideEl) {
+                // Reiniciar animación CSS para disparar el movimiento, acercamiento y giro completo desde 0s
+                nextSlideEl.style.animation = 'none';
+                void nextSlideEl.offsetWidth;
+                nextSlideEl.style.animation = '';
+                nextSlideEl.classList.add('active');
+            }
+            const nextPill = document.getElementById('pill' + currentIdx);
+            if (nextPill) nextPill.classList.add('active');
+
+            // Sacudida de impacto cinematográfico en el screen (sincronizada con el braaam)
+            const screen = document.getElementById('cinemaScreen');
+            if (screen) {
+                screen.classList.remove('scene-impact');
+                void screen.offsetWidth;
+                screen.classList.add('scene-impact');
+                setTimeout(() => screen.classList.remove('scene-impact'), 450);
+            }
+
+            // Sincronizar audio cinemático al corte si el usuario saltó manualmente
+            if (isAudioOn && !audioEl.paused && resetTimer) {
+                audioEl.currentTime = currentIdx * sceneDuration;
+            }
+
+            const kickerEl = document.getElementById('sceneKicker');
+            kickerEl.innerHTML = s.kicker;
+            kickerEl.style.animation = 'none';
+            void kickerEl.offsetWidth;
+            kickerEl.style.animation = 'enterKicker 0.6s 0.1s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+
+            const titleEl = document.getElementById('sceneTitle');
+            titleEl.innerText = s.title;
+            titleEl.style.animation = 'none';
+            void titleEl.offsetWidth;
+            titleEl.style.animation = 'enterTitle 0.7s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+
+            const descEl = document.getElementById('sceneDescription');
+            descEl.innerText = s.description;
+            descEl.style.animation = 'none';
+            void descEl.offsetWidth;
+            descEl.style.animation = 'enterDesc 0.7s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+
+            const gpsBtn = document.getElementById('btnGpsRoute');
+            if (gpsBtn) gpsBtn.style.display = s.showGpsBtn ? 'inline-flex' : 'none';
+
+            // Disparar destello anamórfico cinematográfico
+            const flare = document.getElementById('anamorphicFlare');
+            if (flare) {
+                flare.classList.remove('flash');
+                void flare.offsetWidth;
+                flare.classList.add('flash');
+            }
+
+            // Activar HUD técnico en escenas de taller (KA 150 y SX3)
+            const techHud = document.getElementById('cinemaTechHud');
+            if (techHud) {
+                techHud.style.display = (currentIdx === 1 || currentIdx === 3) ? 'block' : 'none';
+            }
+
+            const promoPill = document.getElementById('scenePromoPill');
+            promoPill.style.display = s.showPromoPill ? 'inline-flex' : 'none';
+
+            updateAmbient(s.imgUrl);
+
+            if (resetTimer) {
+                elapsedTotal = currentIdx * sceneDuration;
+            }
+        }
+
+        function handleScreenClick(e) {
+            if (currentIdx === 0) {
+                openGpsModal();
+            } else {
+                togglePlayPause();
+            }
+        }
+
+        function nextSlide() {
+            let next = (currentIdx + 1) % scenes.length;
+            goToSlide(next);
+        }
+
+        function prevSlide() {
+            let prev = (currentIdx - 1 + scenes.length) % scenes.length;
+            goToSlide(prev);
+        }
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            const icon = document.getElementById('iconPlayPause');
+            if (isPlaying) {
+                icon.className = 'fa-solid fa-pause';
+                if (isAudioOn && audioEl.paused) audioEl.play().catch(e => {});
+            } else {
+                icon.className = 'fa-solid fa-play';
+                if (!audioEl.paused) audioEl.pause();
+            }
+        }
+
+        function toggleAudio() {
+            isAudioOn = !isAudioOn;
+            const icon = document.getElementById('iconAudio');
+            const btn = document.getElementById('btnAudio');
+
+            if (isAudioOn) {
+                icon.className = 'fa-solid fa-volume-high';
+                btn.style.color = 'var(--gold)';
+                btn.style.borderColor = 'var(--gold)';
+                audioWaveBox.classList.add('audio-active');
+                audioEl.volume = 0.85;
+                audioEl.play().catch(e => {});
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark';
+                btn.style.color = '#ffffff';
+                btn.style.borderColor = 'var(--border-glass)';
+                audioWaveBox.classList.remove('audio-active');
+                audioEl.pause();
+                audioEl.currentTime = 0;
+            }
+        }
+
+        function toggleFullScreen() {
+            const screen = document.getElementById('cinemaScreen');
+            const icon = document.getElementById('iconFullscreen');
+
+            if (!document.fullscreenElement) {
+                if (screen.requestFullscreen) {
+                    screen.requestFullscreen();
+                } else if (screen.webkitRequestFullscreen) {
+                    screen.webkitRequestFullscreen();
+                } else if (screen.msRequestFullscreen) {
+                    screen.msRequestFullscreen();
+                }
+                icon.className = 'fa-solid fa-compress';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                icon.className = 'fa-solid fa-expand';
+            }
+        }
+
+        // =============================================================
+        // MOTOR DE NAVEGACIÓN GPS EN VIVO CON LÍNEA AZUL
+        // =============================================================
+        const TALLER_COORDS = [12.1147, -86.2915]; // San Judas, Ceibo 2.5 c. arriba (Destino Fijo)
+        let userCoords = [12.1265, -86.2890]; // Coordenada temporal mientras detecta satélites
+        let currentMode = 'moto';
+        let currentOriginName = 'Buscando GPS...';
+        let leafletMap = null;
+        let routeLayer = null;
+        let userMarker = null;
+        let tallerMarker = null;
+
+        function openGpsModal() {
+            const modal = document.getElementById('gpsModal');
+            modal.classList.add('show');
+            if (isPlaying) togglePlayPause();
+
+            setTimeout(() => {
+                initOrUpdateRouteMap();
+                requestUserLocation();
+            }, 120);
+        }
+
+        function closeGpsModal() {
+            document.getElementById('gpsModal').classList.remove('show');
+        }
+
+        function closeGpsModalOnBackdrop(e) {
+            if (e.target.id === 'gpsModal') closeGpsModal();
+        }
+
+        function setTravelMode(mode) {
+            currentMode = mode;
+            document.getElementById('btnModeMoto').classList.toggle('active', mode === 'moto');
+            document.getElementById('btnModeCarro').classList.toggle('active', mode === 'carro');
+            document.getElementById('travelTimeLabel').innerText = mode === 'moto' ? 'Tiempo en Moto' : 'Tiempo en Carro';
+            calculateAndDrawRoute();
+        }
+
+        function requestUserLocation() {
+            const btnText = document.getElementById('gpsBtnText');
+            const icon = document.getElementById('wazeStatusIcon');
+            const title = document.getElementById('wazeStatusTitle');
+            const sub = document.getElementById('wazeStatusSub');
+
+            btnText.innerText = 'Detectando satélites...';
+            if (icon) { icon.className = 'fa-solid fa-satellite-dish fa-spin'; icon.style.color = '#60a5fa'; }
+            if (title) title.innerText = 'Waze GPS: Solicitando tu ubicación actual en vivo...';
+
+            if (!navigator.geolocation) {
+                if (title) title.innerText = 'Geolocalización no soportada por el navegador';
+                if (sub) sub.innerText = 'Escribe tu punto de partida a la derecha para trazar la ruta hacia Taller CR.';
+                btnText.innerText = 'Escribir Ubicación';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userCoords = [pos.coords.latitude, pos.coords.longitude];
+                    currentOriginName = 'Tu Ubicación Actual (GPS en Vivo)';
+                    btnText.innerText = '✓ Ubicación GPS Activa';
+                    if (icon) { icon.className = 'fa-solid fa-circle-check'; icon.style.color = '#22c55e'; }
+                    if (title) title.innerText = '✓ Ubicación GPS en Vivo detectada';
+                    if (sub) sub.innerText = 'Línea azul trazada con éxito hasta Taller y Lubricantes CR (San Judas).';
+                    calculateAndDrawRoute();
+                },
+                (err) => {
+                    console.log('Error GPS:', err);
+                    currentOriginName = 'Punto Inicial en Managua';
+                    btnText.innerText = 'Reintentar GPS';
+                    if (icon) { icon.className = 'fa-solid fa-location-dot'; icon.style.color = '#f59e0b'; }
+                    if (title) title.innerText = 'Ubicación GPS no permitida o inactiva';
+                    if (sub) sub.innerText = 'Puedes escribir tu barrio o punto de partida a la derecha para trazar la ruta.';
+                    calculateAndDrawRoute();
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        }
+
+        // Búsqueda rápida de punto de partida (Waze style)
+        function searchManualOrigin() {
+            const input = document.getElementById('manualOriginInput');
+            if (!input || !input.value.trim()) return;
+            const query = input.value.trim().toLowerCase();
+
+            // Puntos de referencia comunes de Managua
+            const landmarks = {
+                'periodista': [12.1265, -86.2890, 'Rotonda El Periodista'],
+                'metrocentro': [12.1305, -86.2680, 'Metrocentro'],
+                'inter': [12.1460, -86.2750, 'Plaza Inter'],
+                'plaza inter': [12.1460, -86.2750, 'Plaza Inter'],
+                'linda vista': [12.1520, -86.3050, 'Linda Vista'],
+                'carretera sur': [12.0950, -86.3200, 'Carretera Sur'],
+                'suburbana': [12.1150, -86.3050, 'Pista Suburbana'],
+                'ciudad sandino': [12.1580, -86.3450, 'Ciudad Sandino'],
+                'bello horizonte': [12.1450, -86.2300, 'Bello Horizonte'],
+                'rubenia': [12.1220, -86.2360, 'Rubenia'],
+                'mercado oriental': [12.1440, -86.2580, 'Mercado Oriental'],
+                'galerias': [12.1020, -86.2480, 'Galerías Santo Domingo']
+            };
+
+            let matched = false;
+            for (let k in landmarks) {
+                if (query.includes(k)) {
+                    userCoords = [landmarks[k][0], landmarks[k][1]];
+                    currentOriginName = landmarks[k][2];
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched) {
+                currentOriginName = input.value.trim();
+            }
+
+            const title = document.getElementById('wazeStatusTitle');
+            const sub = document.getElementById('wazeStatusSub');
+            if (title) title.innerText = `Ruta trazada desde: ${currentOriginName}`;
+            if (sub) sub.innerText = 'Ruta óptima calculada hacia Taller y Lubricantes CR (San Judas).';
+
+            calculateAndDrawRoute();
+        }
+
+        function initOrUpdateRouteMap() {
+            if (!leafletMap) {
+                leafletMap = L.map('routeMap', {
+                    zoomControl: true,
+                    attributionControl: false
+                }).setView(TALLER_COORDS, 14);
+
+                // Capa de mapa oscura y moderna
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(leafletMap);
+
+                // Marcador personalizado para Taller y Lubricantes CR
+                const tallerIcon = L.divIcon({
+                    className: 'custom-taller-pin',
+                    html: `<div style="background: #ea4335; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 4px 15px rgba(234,67,53,0.7); font-size: 16px;"><i class="fa-solid fa-wrench"></i></div>`,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18]
+                });
+                tallerMarker = L.marker(TALLER_COORDS, { icon: tallerIcon }).addTo(leafletMap)
+                    .bindPopup('<strong>Taller y Lubricantes CR</strong><br>San Judas, del Ceibo 2 ½ c. arriba');
+            }
+
+            leafletMap.invalidateSize();
+            
+            // Permitir al usuario tocar cualquier punto de Managua para fijar su punto de partida exacto
+            leafletMap.on('click', function(e) {
+                userCoords = [e.latlng.lat, e.latlng.lng];
+                currentOriginName = 'Punto seleccionado en el mapa';
+                const title = document.getElementById('wazeStatusTitle');
+                const sub = document.getElementById('wazeStatusSub');
+                if (title) title.innerText = '✓ Punto de partida fijado manualmente en el mapa';
+                if (sub) sub.innerText = 'Ruta trazada desde tus coordenadas seleccionadas hasta Taller CR (San Judas).';
+                calculateAndDrawRoute();
+            });
+
+            calculateAndDrawRoute();
+        }
+
+        function calculateAndDrawRoute() {
+            if (!leafletMap) return;
+
+            document.getElementById('routeOriginName').innerText = currentOriginName;
+
+            // Marcador de Origen del Usuario
+            const userIcon = L.divIcon({
+                className: 'custom-user-pin',
+                html: `<div style="background: #2563eb; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 0 16px #3b82f6; font-size: 14px;"><i class="fa-solid fa-${currentMode === 'moto' ? 'motorcycle' : 'car'}"></i></div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            if (userMarker) leafletMap.removeLayer(userMarker);
+            userMarker = L.marker(userCoords, { icon: userIcon }).addTo(leafletMap)
+                .bindPopup(`<strong>Punto de Partida</strong><br>${currentOriginName}`);
+
+            // Actualizar Enlace de Google Maps
+            // Enlace de alta precisión a Google Maps: usa navegación paso a paso con destino oficial Taller CR en San Judas
+            const mapsNavUrl = `https://www.google.com/maps/dir/?api=1&destination=12.1147,-86.2915&travelmode=driving`;
+            document.getElementById('btnLaunchGoogleMapsNav').href = mapsNavUrl;
+
+            // Consultar ruta real OSRM
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${userCoords[1]},${userCoords[0]};-86.2915,12.1147?overview=full&geometries=geojson`;
+
+            fetch(osrmUrl)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.routes && data.routes.length > 0) {
+                        const route = data.routes[0];
+                        const distKm = (route.distance / 1000.0).toFixed(1);
+                        let durationMin = Math.round(route.duration / 60.0);
+                        if (currentMode === 'moto') {
+                            durationMin = Math.max(3, Math.round(durationMin * 0.75)); // La moto es ~25% más ágil en tráfico
+                        }
+
+                        document.getElementById('routeDistance').innerText = `${distKm} km`;
+                        document.getElementById('routeDuration').innerText = `~ ${durationMin} min`;
+
+                        // Coordenadas GeoJSON invertidas para Leaflet [lat, lng]
+                        const latLngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
+
+                        if (routeLayer) leafletMap.removeLayer(routeLayer);
+
+                        // LÍNEA AZUL LUMINOSA CON RESPLANDOR
+                        routeLayer = L.featureGroup([
+                            // Capa de resplandor exterior
+                            L.polyline(latLngs, { color: '#60a5fa', weight: 8, opacity: 0.5 }),
+                            // Línea principal azul intensa
+                            L.polyline(latLngs, { color: '#2563eb', weight: 5, opacity: 0.95 })
+                        ]).addTo(leafletMap);
+
+                        leafletMap.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+                    } else {
+                        fallbackStraightRoute();
+                    }
+                })
+                .catch(err => {
+                    console.log('Fallo OSRM, usando ruta directa:', err);
+                    fallbackStraightRoute();
+                });
+        }
+
+        function fallbackStraightRoute() {
+            const latLngs = [userCoords, TALLER_COORDS];
+            if (routeLayer) leafletMap.removeLayer(routeLayer);
+            routeLayer = L.polyline(latLngs, { color: '#2563eb', weight: 5, dashArray: '8, 8' }).addTo(leafletMap);
+            leafletMap.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+            document.getElementById('routeDistance').innerText = '2.8 km';
+            document.getElementById('routeDuration').innerText = currentMode === 'moto' ? '~ 6 min' : '~ 9 min';
+        }
+
+        // Atajos de Teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePlayPause();
+            } else if (e.code === 'ArrowRight') {
+                nextSlide();
+            } else if (e.code === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullScreen();
+            } else if (e.key === 'm' || e.key === 'M') {
+                toggleAudio();
+            } else if (e.key === 'Escape') {
+                closeGpsModal();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', initSpot);
+    </script>
+</body>
+</html>

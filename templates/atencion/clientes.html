@@ -1,0 +1,387 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Directorio de Clientes{% endblock %}
+
+{% block content %}
+<style>
+    .clients-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    
+    .btn-add {
+        background: var(--accent-red);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+    }
+    
+    .btn-add:hover {
+        background: var(--accent-red-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+    }
+    
+    .clients-table-container {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 0;
+        box-shadow: var(--shadow-sm);
+        overflow-x: auto;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    th, td {
+        padding: 16px 24px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    th {
+        background: rgba(0,0,0,0.02);
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    [data-theme="dark"] th {
+        background: rgba(255,255,255,0.02);
+    }
+    
+    td {
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+    
+    tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .btn-delete {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--accent-red);
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-delete:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+    
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-content {
+        background: var(--bg-surface);
+        padding: 32px;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-color);
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    
+    .modal-header h3 {
+        font-size: 1.25rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    
+    .close-modal:hover {
+        color: var(--text-primary);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-color);
+        color: var(--text-primary);
+        outline: none;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(100, 100, 100, 0.15);
+    }
+    .btn-cancelar {
+        background: var(--bg-primary, #1e293b);
+        color: var(--text-primary, #ffffff);
+        border: 1px solid var(--border-color, #334155);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-cancelar:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-confirmar-eliminar {
+        background: #ef4444;
+        color: #ffffff;
+        border: none;
+        padding: 10px 22px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.92rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    .btn-confirmar-eliminar:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    }
+</style>
+
+<div class="clients-header">
+    <h2 style="color: var(--text-main); margin: 0;">Directorio de Clientes Registrados</h2>
+    <button class="btn-add" onclick="document.getElementById('addModal').style.display='flex'">
+        <i class="fa-solid fa-plus"></i> Agregar Nuevo Cliente
+    </button>
+</div>
+
+
+
+<div class="clients-table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Identificación</th>
+                <th>Nombre Completo</th>
+                <th>Teléfono</th>
+                <th>Visitas al Taller</th>
+                <th style="text-align: right;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in clientes %}
+            <tr>
+                <td>#{{ c[0] }}</td>
+                <td>
+                    <span style="font-family: monospace; font-size: 0.88rem; background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); color: var(--text-primary); letter-spacing: 0.5px;">
+                        {{ c[4] or 'Sin registrar' }}
+                    </span>
+                </td>
+                <td style="font-weight: 500;">
+                    {{ c[1] }}
+                    {% if c[0] in top_5_ids and c[3] > 0 %}
+                        <span style="background: rgba(255, 159, 10, 0.2); color: var(--accent-primary); padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; margin-left: 10px; border: 1px solid rgba(255, 159, 10, 0.4);">
+                            <i class="fa-solid fa-star"></i> Top 5 (1% Desc)
+                        </span>
+                    {% endif %}
+                </td>
+                <td>{{ c[2] }}</td>
+                <td>
+                    <span style="background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 8px;">
+                        <i class="fa-solid fa-motorcycle" style="color: var(--text-muted); margin-right: 5px;"></i> {{ c[3] }}
+                    </span>
+                </td>
+                <td style="text-align: right;">
+                    <button type="button" class="btn-delete" title="Eliminar Cliente" onclick="confirmarEliminarCliente('{{ c[0] }}', '{{ c[1]|replace("'", "\\'") }}', '{{ url_for('atencion.clientes_delete', cliente_id=c[0]) }}')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+                    No hay clientes registrados en el sistema.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin: 0;">Agregar Nuevo Cliente</h3>
+            <button type="button" class="close-modal" onclick="document.getElementById('addModal').style.display='none'">&times;</button>
+        </div>
+        <form action="{{ url_for('atencion.clientes_add') }}" method="POST">
+            <div class="form-group">
+                <label for="identificacion">Identificación (Cédula / DNI / Pasaporte)</label>
+                <input type="text" id="identificacion" name="identificacion" required 
+                       placeholder="Ej. 001-120590-0012A" maxlength="20" 
+                       style="text-transform: uppercase;"
+                       oninput="formatearIdentificacion(this)"
+                       pattern="^(?:\d{3}-?\d{6}-?\d{4}[A-Za-z]|[A-Za-z0-9-]{6,20})$"
+                       title="Cédula de Nicaragua (001-120590-0012A) o documento de identidad oficial">
+                <small style="display:block; margin-top:4px; font-size: 0.78rem; color: var(--text-muted);">
+                    Formato oficial: Cédula (001-120590-0012A) o documento oficial de 6 a 20 caracteres.
+                </small>
+            </div>
+            <div class="form-group">
+                <label for="nombre">Nombre Completo</label>
+                <input type="text" id="nombre" name="nombre" required 
+                       placeholder="Ej. Juan Pérez" maxlength="80"
+                       pattern="^[A-Za-zÁÉÍÓÚáéíóúñÑüÜ\s'\.-]{3,80}$"
+                       title="Solo letras y espacios (sin números)"
+                       oninput="this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑüÜ\s'\.-]/g, '')">
+                <small style="display:block; margin-top:4px; font-size: 0.78rem; color: var(--text-muted);">
+                    Solo letras y espacios (no se permiten números).
+                </small>
+            </div>
+            <div class="form-group">
+                <label for="telefono">Teléfono (Solo números)</label>
+                <input type="text" id="telefono" name="telefono" required 
+                       placeholder="Ej. 88888888" maxlength="15" 
+                       pattern="[0-9]{8,15}" 
+                       title="Ingresa entre 8 y 15 dígitos numéricos sin letras ni símbolos"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                <small style="display:block; margin-top:4px; font-size: 0.78rem; color: var(--text-muted);">
+                    8 a 15 dígitos numéricos sin letras ni caracteres especiales.
+                </small>
+            </div>
+            <button type="submit" class="btn-add" style="width: 100%; justify-content: center; margin-top: 15px;">
+                <i class="fa-solid fa-user-plus"></i> Guardar Cliente
+            </button>
+        </form>
+    </div>
+</div>
+
+
+<!-- Modal de Confirmación de Eliminación Interno -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content" style="max-width: 440px; text-align: center; border-top: 4px solid #ef4444;">
+        <div style="width: 60px; height: 60px; margin: 0 auto 16px auto; border-radius: 50%; background: rgba(239, 68, 68, 0.12); border: 2px solid rgba(239, 68, 68, 0.3); display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.8rem; color: #ef4444;"></i>
+        </div>
+        <h3 style="margin: 0 0 8px 0; font-size: 1.25rem; color: var(--text-primary); font-weight: 700;">¿Eliminar Cliente?</h3>
+        <p style="margin: 0 0 12px 0; font-size: 0.9rem; color: var(--text-secondary);">
+            Esta acción eliminará el registro de este cliente del sistema.
+        </p>
+        <div id="deleteClienteNombre" style="margin: 0 0 22px 0; font-size: 0.98rem; font-weight: 600; color: #ef4444; background: rgba(239, 68, 68, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px dashed rgba(239, 68, 68, 0.3); word-break: break-word;"></div>
+        
+        <form id="formDeleteCliente" method="POST" action="">
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" class="btn-cancelar" onclick="cerrarModalEliminar()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-confirmar-eliminar">
+                    <i class="fa-solid fa-trash"></i> Sí, Eliminar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function formatearIdentificacion(input) {
+        let val = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        let raw = val.replace(/-/g, '');
+        // Si el usuario escribe una cédula nica (dígitos y opcional letra final)
+        if (/^\d{1,13}[A-Z]?$/.test(raw)) {
+            let res = '';
+            if (raw.length > 0) res += raw.substring(0, Math.min(3, raw.length));
+            if (raw.length > 3) res += '-' + raw.substring(3, Math.min(9, raw.length));
+            if (raw.length > 9) res += '-' + raw.substring(9, Math.min(14, raw.length));
+            val = res;
+        }
+        input.value = val;
+    }
+
+    function confirmarEliminarCliente(id, nombre, url) {
+        document.getElementById('deleteClienteNombre').innerText = nombre + ' (ID #' + id + ')';
+        document.getElementById('formDeleteCliente').action = url;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function cerrarModalEliminar() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside or pressing Escape
+    window.addEventListener('click', function(event) {
+        var addModal = document.getElementById('addModal');
+        var deleteModal = document.getElementById('deleteModal');
+        if (event.target == addModal) {
+            addModal.style.display = "none";
+        }
+        if (event.target == deleteModal) {
+            deleteModal.style.display = "none";
+        }
+    });
+
+    window.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            cerrarModalEliminar();
+            var addModal = document.getElementById('addModal');
+            if (addModal) addModal.style.display = "none";
+        }
+    });
+</script>
+{% endblock %}

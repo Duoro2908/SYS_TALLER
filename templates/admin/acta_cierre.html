@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acta Oficial de Cierre Mensual de Nómina - {{ cierre.PeriodoTexto }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0c0c10;
+            --surface-color: #161622;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --text-main: #f5f5f7;
+            --text-secondary: #8e8e93;
+            --accent-gold: #FF9F0A;
+            --accent-green: #30D158;
+            --accent-blue: #0A84FF;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .acta-sheet {
+            background-color: var(--surface-color);
+            width: 100%;
+            max-width: 820px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border-color);
+            padding: 45px;
+            box-sizing: border-box;
+        }
+
+        .acta-header {
+            text-align: center;
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 25px;
+            margin-bottom: 25px;
+        }
+
+        .acta-header h1 {
+            margin: 0 0 6px 0;
+            font-size: 1.8rem;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        .acta-header p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 28px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 16px 20px;
+            border-radius: 12px;
+        }
+
+        .meta-item label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .meta-item div {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 28px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            font-size: 0.9rem;
+        }
+
+        .summary-table td {
+            padding: 12px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .summary-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .signatures-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 50px;
+            padding-top: 25px;
+        }
+
+        .signature-line {
+            text-align: center;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 10px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .signature-line strong {
+            color: #fff;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .nav-bar {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 820px;
+            justify-content: space-between;
+        }
+
+        .btn-acta {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+        }
+
+        .btn-acta-back {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-acta-print {
+            background: linear-gradient(135deg, #0A84FF 0%, #0066CC 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(10, 132, 255, 0.4);
+        }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; padding: 0 !important; }
+            .acta-sheet { background: #fff !important; color: #000 !important; border: 1px solid #000 !important; box-shadow: none !important; max-width: 100% !important; padding: 25px !important; }
+            .acta-header h1, .acta-header p, .meta-item div, .meta-item label, .summary-table td, .signature-line, .signature-line strong { color: #000 !important; }
+            .summary-table { background: #fff !important; border: 1px solid #000 !important; }
+            .summary-table td { border-bottom: 1px solid #ddd !important; }
+            .nav-bar { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="acta-sheet">
+        <div class="acta-header">
+            <i class="fa-solid fa-stamp" style="font-size: 2.2rem; color: var(--accent-gold); margin-bottom: 8px;"></i>
+            <h1>TALLER Y LUBRICANTES CR</h1>
+            <p>RUC: <strong>J0310000123456</strong> • Managua, Nicaragua</p>
+            <p style="margin-top: 6px; font-weight: 700; color: #fff; font-size: 1.05rem;">
+                ACTA OFICIAL DE CIERRE MENSUAL DE NÓMINA Y LIQUIDACIÓN FISCAL
+            </p>
+            <p style="font-size: 0.78rem; margin-top: 3px;">
+                Conforme al Código del Trabajo (Ley N° 185) y Ley de Concertación Tributaria (Ley N° 822 DGI)
+            </p>
+        </div>
+
+        <div class="meta-grid">
+            <div class="meta-item">
+                <label>Período Contable</label>
+                <div style="color: var(--accent-gold);">{{ cierre.PeriodoTexto }}</div>
+            </div>
+            <div class="meta-item">
+                <label>Fecha y Hora de Cierre</label>
+                <div>{{ cierre.FechaCierre.strftime('%d/%m/%Y %I:%M %p') }}</div>
+            </div>
+            <div class="meta-item">
+                <label>Responsable del Cierre</label>
+                <div>{{ cierre.UsuarioCierreNombre or 'Super Administrador' }}</div>
+            </div>
+            <div class="meta-item">
+                <label>Total Nómina</label>
+                <div>{{ cierre.TotalColaboradores }} Colaboradores</div>
+            </div>
+            <div class="meta-item">
+                <label>Colaboradores Pagados</label>
+                <div style="color: var(--accent-green);">{{ cierre.TotalPagados }} Liquidados</div>
+            </div>
+            <div class="meta-item">
+                <label>Colaboradores Pendientes</label>
+                <div style="color: var(--accent-gold);">{{ cierre.TotalPendientes }} en C$ 0.00</div>
+            </div>
+        </div>
+
+        <table class="summary-table">
+            <tbody>
+                <tr>
+                    <td style="color: var(--text-secondary);">1. Masa Salarial Bruta Devengada:</td>
+                    <td style="text-align: right; font-weight: 700; color: #fff;">C$ {{ "{:,.2f}".format(cierre.MasaSalarialBruta) }}</td>
+                </tr>
+                <tr style="background: rgba(255,69,58,0.03);">
+                    <td style="color: var(--text-secondary);">2. Menos: Retención Total INSS Laboral (7.0%):</td>
+                    <td style="text-align: right; font-weight: 700; color: #FF453A;">- C$ {{ "{:,.2f}".format(cierre.TotalInssLaboral) }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-secondary);">3. Base Imponible Gravable Total para IR:</td>
+                    <td style="text-align: right; font-weight: 600; color: #fff;">C$ {{ "{:,.2f}".format(cierre.TotalBaseImponibleIr) }}</td>
+                </tr>
+                <tr style="background: rgba(255,159,10,0.04);">
+                    <td style="color: var(--text-secondary);">4. Menos: Retención Total en la Fuente IR Salarial (DGI Ley 822):</td>
+                    <td style="text-align: right; font-weight: 700; color: #FF9F0A;">- C$ {{ "{:,.2f}".format(cierre.TotalIrDgi) }}</td>
+                </tr>
+                <tr style="background: rgba(48,209,88,0.12); font-weight: 700;">
+                    <td style="color: #30D158; font-size: 1.05rem;">5. Total Salario Neto Líquido Desembolsado:</td>
+                    <td style="text-align: right; color: #30D158; font-size: 1.25rem;">C$ {{ "{:,.2f}".format(cierre.TotalSalarioNeto) }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-secondary);">6. Aporte Patronal al INSS (22.5%):</td>
+                    <td style="text-align: right; color: #fff;">C$ {{ "{:,.2f}".format(cierre.TotalInssPatronal) }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-secondary);">7. Aporte Patronal al INATEC (2.0%):</td>
+                    <td style="text-align: right; color: #fff;">C$ {{ "{:,.2f}".format(cierre.TotalInatec) }}</td>
+                </tr>
+                <tr style="background: rgba(191,90,242,0.12); font-weight: 700;">
+                    <td style="color: #BF5AF2;">8. Costo Total de Nómina para el Taller:</td>
+                    <td style="text-align: right; color: #BF5AF2; font-size: 1.15rem;">C$ {{ "{:,.2f}".format(cierre.CostoTotalEmpleador) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% if cierre.Observaciones %}
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 18px; margin-bottom: 25px; font-size: 0.85rem; color: #d1d1d6;">
+            <strong style="color: var(--accent-gold);">Observaciones del Auditor:</strong> {{ cierre.Observaciones }}
+        </div>
+        {% endif %}
+
+        <div class="signatures-grid">
+            <div class="signature-line">
+                <strong>DIRECCIÓN GENERAL / GERENCIA</strong>
+                Jhosep David Cooper Sandino<br>
+                Taller y Lubricantes CR
+            </div>
+            <div class="signature-line">
+                <strong>RECURSOS HUMANOS Y NÓMINA</strong>
+                Brisa Nazareth Méndez Cruz<br>
+                Responsable de RRHH y Compensación
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="{{ url_for('planilla.registro_mensual', mes=cierre.Mes, anio=cierre.Anio) }}" class="btn-acta btn-acta-back">
+            <i class="fa-solid fa-arrow-left"></i> Volver a Registro Mensual
+        </a>
+        <button type="button" class="btn-acta btn-acta-print" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Imprimir Acta Oficial
+        </button>
+    </div>
+
+</body>
+</html>

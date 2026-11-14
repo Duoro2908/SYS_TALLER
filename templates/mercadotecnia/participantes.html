@@ -1,0 +1,888 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes Participantes en la Rifa - Mercadotecnia{% endblock %}
+{% block page_title %}Mercadotecnia • Clientes Participantes{% endblock %}
+
+{% block content %}
+<style>
+    .merca-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        padding: 20px 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .merca-header h3 {
+        margin: 0 0 6px 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .merca-kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .merca-kpi-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .kpi-icon-circ {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .kpi-icon-circ.gold {
+        background: rgba(242, 192, 41, 0.15);
+        color: #f2c029;
+        border: 1px solid rgba(242, 192, 41, 0.3);
+    }
+
+    .kpi-icon-circ.blue {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .kpi-icon-circ.green {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .kpi-text span {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    .kpi-text strong {
+        font-size: 1.5rem;
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+
+    /* Tabla */
+    .table-container {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        overflow-x: auto;
+    }
+
+    .merca-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .merca-table th {
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 14px 16px;
+        border-bottom: 2px solid var(--border-color);
+        text-align: left;
+    }
+
+    .merca-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .merca-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .ticket-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(242, 192, 41, 0.12);
+        color: #f2c029;
+        border: 1px solid rgba(242, 192, 41, 0.3);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.82rem;
+    }
+
+    .btn-action-primary {
+        background: #f2c029;
+        color: #000;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-action-primary:hover {
+        background: #e0b020;
+        transform: translateY(-1px);
+    }
+
+    .btn-sorteo-modal {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        transition: all 0.2s;
+    }
+
+    .btn-sorteo-modal:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Modal de Sorteo y Ruleta */
+    .sorteo-modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .sorteo-modal-content {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        width: 90%;
+        max-width: 580px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        position: relative;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 18px; right: 20px;
+        color: var(--text-secondary);
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    .ruleta-container {
+        position: relative;
+        width: 340px;
+        height: 340px;
+        margin: 20px auto 15px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .ruleta-bezel {
+        position: absolute;
+        inset: -10px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #2d1804 60%, #854d0e 95%, #eab308 100%);
+        box-shadow: 0 0 35px rgba(234, 179, 8, 0.4), inset 0 0 15px rgba(0,0,0,0.8);
+        border: 4px solid #facc15;
+        z-index: 1;
+    }
+    .ruleta-canvas {
+        position: relative;
+        z-index: 2;
+        border-radius: 50%;
+        box-shadow: inset 0 0 18px rgba(0,0,0,0.6);
+    }
+    .ruleta-pointer {
+        position: absolute;
+        top: -18px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 16px solid transparent;
+        border-right: 16px solid transparent;
+        border-top: 32px solid #ef4444;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.65));
+        z-index: 10;
+        transition: transform 0.08s ease;
+    }
+    .ruleta-pointer::after {
+        content: '';
+        position: absolute;
+        top: -32px;
+        left: -8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #facc15;
+        box-shadow: 0 0 8px #facc15;
+    }
+    .ruleta-center-pin {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #facc15 0%, #ca8a04 70%, #854d0e 100%);
+        border: 3px solid #fef08a;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.7), 0 0 12px rgba(250, 204, 21, 0.6);
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #713f12;
+        font-weight: 900;
+        font-size: 1.1rem;
+        cursor: pointer;
+        user-select: none;
+    }
+    .ruleta-ticker {
+        font-size: 0.92rem;
+        color: #fbbf24;
+        margin-top: 8px;
+        font-weight: 700;
+        min-height: 24px;
+    }
+    .confetti-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 20;
+    }
+
+    .winner-banner {
+        display: none;
+        margin-top: 20px;
+        padding: 20px;
+        border-radius: 14px;
+        background: rgba(16, 185, 129, 0.15);
+        border: 2px solid #10b981;
+    }
+
+    [data-theme="light"] .sorteo-modal-content {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #0f172a !important;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15) !important;
+    }
+    [data-theme="light"] .close-modal {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .close-modal:hover {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .ruleta-bezel {
+        background: radial-gradient(circle, #fffbeb 60%, #fde68a 95%, #f59e0b 100%) !important;
+        border: 4px solid #d97706 !important;
+        box-shadow: 0 0 25px rgba(217, 119, 6, 0.25) !important;
+    }
+    [data-theme="light"] .ruleta-ticker {
+        color: #b45309 !important;
+    }
+    [data-theme="light"] .winner-banner {
+        background: #ecfdf5 !important;
+        border: 2px solid #10b981 !important;
+    }
+    [data-theme="light"] #winnerNombre {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] #modalFacturas .sorteo-modal-content {
+        background: #ffffff !important;
+        color: #0f172a !important;
+    }
+</style>
+
+<div class="merca-header">
+    <div>
+        <h3><i class="fa-solid fa-gift" style="color: #f2c029;"></i> Lista de Clientes Participantes en la Rifa</h3>
+        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+            Clientes que acumulan <strong>C$ 1,000 córdobas o más</strong> en compras durante el mes ({{ mes_nombre }} {{ anio_sel }}).
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <!-- Selector de Mes -->
+        <form method="GET" action="{{ url_for('mercadotecnia.participantes') }}" style="display: flex; gap: 8px;">
+            <select name="mes" class="form-control" style="width: 130px; padding: 8px; border-radius: 8px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color);" onchange="this.form.submit()">
+                {% for m_num, m_name in [(1,'Enero'), (2,'Febrero'), (3,'Marzo'), (4,'Abril'), (5,'Mayo'), (6,'Junio'), (7,'Julio'), (8,'Agosto'), (9,'Septiembre'), (10,'Octubre'), (11,'Noviembre'), (12,'Diciembre')] %}
+                <option value="{{ m_num }}" {% if m_num == mes_sel %}selected{% endif %}>{{ m_name }}</option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="anio" value="{{ anio_sel }}">
+        </form>
+
+        {% if participantes and premio %}
+        <button type="button" class="btn-sorteo-modal" onclick="abrirSorteoModal()">
+            <i class="fa-solid fa-dice"></i> ¡Girar Sorteo de Rifa!
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- KPIs -->
+<div class="merca-kpis">
+    <div class="merca-kpi-card">
+        <div class="kpi-icon-circ gold">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="kpi-text">
+            <span>Clientes Calificados</span>
+            <strong>{{ participantes|length }}</strong>
+        </div>
+    </div>
+
+    <div class="merca-kpi-card">
+        <div class="kpi-icon-circ green">
+            <i class="fa-solid fa-ticket"></i>
+        </div>
+        <div class="kpi-text">
+            <span>Total Boletos Emitidos</span>
+            <strong>{{ total_boletos }}</strong>
+        </div>
+    </div>
+
+    <div class="merca-kpi-card">
+        <div class="kpi-icon-circ blue">
+            <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+        <div class="kpi-text">
+            <span>Ventas Generadas (Rifa)</span>
+            <strong>C$ {{ "{:,.2f}".format(total_ventas) }}</strong>
+        </div>
+    </div>
+
+    {% if premio %}
+    <div class="merca-kpi-card" style="border-color: rgba(242, 192, 41, 0.4);">
+        <div class="kpi-icon-circ gold">
+            <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div class="kpi-text">
+            <span>Premio del Mes</span>
+            <strong style="font-size: 1.1rem; color: #f2c029;">{{ premio.nombre }}</strong>
+            <small style="color: var(--text-secondary);">Valor: C$ {{ "{:,.2f}".format(premio.precio) }}</small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tabla de Clientes -->
+<div class="table-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">
+            <i class="fa-solid fa-clipboard-list" style="color: var(--text-secondary); margin-right: 8px;"></i>
+            Registro Automático de Compras Acumuladas (>= C$ 1,000)
+        </h4>
+        <span style="font-size: 0.82rem; color: var(--text-secondary);">
+            Regla: 1 Boleto por cada C$ 1,000 córdobas de consumo en el mes
+        </span>
+    </div>
+
+    {% if participantes %}
+    <table class="merca-table">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Contacto</th>
+                <th>Compras en el Mes</th>
+                <th>Total Acumulado</th>
+                <th>Boletos Ganados</th>
+                <th>Estado</th>
+                <th>Desglose de Facturas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in participantes %}
+            <tr>
+                <td>
+                    <div style="font-weight: 700; color: var(--text-primary);">
+                        <i class="fa-solid fa-circle-user" style="color: #f2c029; margin-right: 6px;"></i>
+                        {{ p.nombre }}
+                    </div>
+                    {% if p.identificacion != 'N/A' %}
+                    <small style="color: var(--text-secondary);">ID: {{ p.identificacion }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    <div><i class="fa-solid fa-phone" style="font-size: 0.75rem; color: var(--text-secondary);"></i> {{ p.telefono }}</div>
+                </td>
+                <td>
+                    <div style="font-weight: 700; color: var(--text-primary);">
+                        {{ p.cantidad_compras }} {% if p.cantidad_compras == 1 %}comprobante{% else %}comprobantes{% endif %}
+                    </div>
+                    <div style="font-size: 0.74rem; margin-top: 3px; display: flex; gap: 5px; flex-wrap: wrap;">
+                        {% if p.cantidad_ordenes > 0 %}
+                        <span style="background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); padding: 1px 6px; border-radius: 4px; font-weight: 600;">
+                            <i class="fa-solid fa-wrench"></i> {{ p.cantidad_ordenes }} Taller
+                        </span>
+                        {% endif %}
+                        {% if p.cantidad_tienda > 0 %}
+                        <span style="background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); padding: 1px 6px; border-radius: 4px; font-weight: 600;">
+                            <i class="fa-solid fa-bag-shopping"></i> {{ p.cantidad_tienda }} Tienda
+                        </span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <span style="font-weight: 700; color: #10b981; font-size: 1.05rem;">
+                        C$ {{ "{:,.2f}".format(p.total_acumulado) }}
+                    </span>
+                </td>
+                <td>
+                    <span class="ticket-badge">
+                        <i class="fa-solid fa-ticket"></i> {{ p.boletos }} {% if p.boletos == 1 %}Boleto{% else %}Boletos{% endif %}
+                    </span>
+                </td>
+                <td>
+                    <span style="color: #10b981; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-circle-check"></i> Calificado
+                    </span>
+                </td>
+                <td>
+                    <button class="btn-action-primary" style="padding: 6px 12px; font-size: 0.78rem;" onclick="verFacturasModal({{ loop.index0 }})">
+                        <i class="fa-solid fa-receipt"></i> Ver {{ p.facturas|length }} compras
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 50px 20px; color: var(--text-secondary);">
+        <i class="fa-solid fa-ticket-simple" style="font-size: 3rem; color: rgba(255,255,255,0.15); margin-bottom: 15px;"></i>
+        <h4 style="color: var(--text-primary); margin-bottom: 8px;">Aún no hay clientes que alcancen C$ 1,000 este mes</h4>
+        <p style="max-width: 450px; margin: 0 auto; font-size: 0.88rem;">
+            A medida que los clientes realicen compras o paguen servicios en el taller durante el mes de {{ mes_nombre }}, el sistema acumulará automáticamente sus facturas y los registrará aquí para la rifa.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Desglose Facturas -->
+<div id="modalFacturas" class="sorteo-modal">
+    <div class="sorteo-modal-content">
+        <span class="close-modal" onclick="cerrarFacturasModal()">&times;</span>
+        <h3 id="modalClienteNombre" style="color: #f2c029; margin-bottom: 15px;"></h3>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 20px;">
+            Historial de compras acumuladas durante el mes:
+        </p>
+        <div id="modalFacturasList" style="text-align: left; max-height: 250px; overflow-y: auto;">
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sorteo Interactivo -->
+<div id="modalSorteo" class="sorteo-modal">
+    <div class="sorteo-modal-content">
+        <span class="close-modal" onclick="cerrarSorteoModal()">&times;</span>
+        <h2 style="color: #f2c029; margin: 0 0 10px 0;">
+            <i class="fa-solid fa-trophy"></i> Sorteo Oficial de la Rifa Mensual
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            Premio: <strong style="color: var(--text-primary); font-weight: 800;">{{ premio.nombre if premio else 'Premio de Tienda' }}</strong>
+        </p>
+
+        <!-- Ruleta Visual Interactiva -->
+        <div class="ruleta-container" id="ruletaWrap">
+            <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+            <div class="ruleta-bezel"></div>
+            <div class="ruleta-pointer" id="ruletaPointer"></div>
+            <canvas id="ruletaCanvas" class="ruleta-canvas" width="340" height="340"></canvas>
+            <div class="ruleta-center-pin" onclick="ejecutarSorteo()" title="Girar Ruleta">
+                <i class="fa-solid fa-trophy" style="font-size: 1.3rem;"></i>
+            </div>
+        </div>
+
+        <div id="ruletaTicker" class="ruleta-ticker">
+            <i class="fa-solid fa-sparkles"></i> ¡Presiona el botón para girar la Ruleta de la Suerte!
+        </div>
+
+        <button id="btnSpin" class="btn-sorteo-modal" style="font-size: 1.15rem; padding: 13px 34px; margin: 12px 0; font-weight: 800; letter-spacing: 0.5px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);" onclick="ejecutarSorteo()">
+            <i class="fa-solid fa-rotate"></i> ¡Girar Ruleta de la Suerte!
+        </button>
+
+        <div id="winnerBanner" class="winner-banner">
+            <h3 style="color: #10b981; margin: 0 0 8px 0;">🎉 ¡TENEMOS GANADOR OFICIAL! 🎉</h3>
+            <h2 id="winnerNombre" style="color: var(--text-primary); margin: 0 0 6px 0; font-size: 1.6rem; font-weight: 800;"></h2>
+            <p id="winnerTel" style="color: var(--text-secondary); margin: 0 0 15px 0;"></p>
+
+            <form method="POST" action="{{ url_for('mercadotecnia.premios') }}">
+                <input type="hidden" name="action" value="registrar_ganador">
+                <input type="hidden" name="rifa_id" value="{{ premio.rifa_id if premio else 0 }}">
+                <input type="hidden" id="formWinnerNombre" name="ganador_nombre" value="">
+                <input type="hidden" id="formWinnerTel" name="ganador_telefono" value="">
+                <input type="hidden" id="formWinnerId" name="ganador_cliente_id" value="">
+                <button type="submit" class="btn-action-primary" style="background: #10b981; color: white;">
+                    <i class="fa-solid fa-floppy-disk"></i> Confirmar y Guardar Ganador en el Sistema
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const participantesData = {{ participantes|tojson }};
+
+    function verFacturasModal(index) {
+        const p = participantesData[index];
+        document.getElementById('modalClienteNombre').innerText = p.nombre;
+        
+        let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">';
+        html += '<tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);"><th style="padding: 8px 6px; text-align: left;">Comprobante / Origen</th><th style="padding: 8px 6px; text-align: left;">Fecha</th><th style="padding: 8px 6px; text-align: right;">Monto</th></tr>';
+        
+        p.facturas.forEach(f => {
+            const badgeTipo = f.es_taller 
+                ? `<span style="background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.35); font-size: 0.70rem; padding: 2px 7px; border-radius: 6px; margin-left: 6px; font-weight: 700;"><i class="fa-solid fa-wrench"></i> TALLER</span>`
+                : `<span style="background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.35); font-size: 0.70rem; padding: 2px 7px; border-radius: 6px; margin-left: 6px; font-weight: 700;"><i class="fa-solid fa-bag-shopping"></i> TIENDA</span>`;
+
+            html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                <td style="padding: 10px 6px;">
+                    <div style="font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                        ${f.numero} ${badgeTipo}
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.76rem; margin-top: 2px;">
+                        ${f.descripcion_origen}
+                    </div>
+                </td>
+                <td style="padding: 10px 6px; color: var(--text-secondary); font-size: 0.8rem; white-space: nowrap;">${f.fecha}</td>
+                <td style="padding: 10px 6px; text-align: right; color: #10b981; font-weight: 700; white-space: nowrap;">C$ ${Number(f.monto).toLocaleString('es-NI', {minimumFractionDigits: 2})}</td>
+            </tr>`;
+        });
+        html += `<tr style="font-weight: 700; border-top: 2px solid var(--border-color); background: rgba(255,255,255,0.02);">
+            <td colspan="2" style="padding: 12px 6px; color: var(--text-primary);">TOTAL ACUMULADO DEL MES:</td>
+            <td style="padding: 12px 6px; text-align: right; color: #10b981; font-size: 1.05rem;">C$ ${Number(p.total_acumulado).toLocaleString('es-NI', {minimumFractionDigits: 2})}</td>
+        </tr>`;
+        html += '</table>';
+
+        document.getElementById('modalFacturasList').innerHTML = html;
+        document.getElementById('modalFacturas').style.display = 'flex';
+    }
+
+    function cerrarFacturasModal() {
+        document.getElementById('modalFacturas').style.display = 'none';
+    }
+
+    // --- Ruleta de la Suerte Engine ---
+    let ruletaAngle = 0;
+    let isSpinning = false;
+    let audioCtx = null;
+
+    const ruletaColors = [
+        '#2563eb', '#10b981', '#f59e0b', '#dc2626', '#8b5cf6', 
+        '#06b6d4', '#ec4899', '#14b8a6', '#d97706', '#6366f1',
+        '#059669', '#ea580c', '#4f46e5', '#0284c7', '#7c3aed'
+    ];
+
+    function playTickSound() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(580, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.04);
+        } catch(e) {}
+    }
+
+    function playWinFanfare() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [440, 554, 659, 880];
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.12);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.12);
+                gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + i * 0.12);
+                osc.stop(audioCtx.currentTime + i * 0.12 + 0.35);
+            });
+        } catch(e) {}
+    }
+
+    function dibujarRuleta(angle = 0) {
+        const canvas = document.getElementById('ruletaCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+        const cx = W / 2;
+        const cy = H / 2;
+        const R = (W / 2) - 8;
+
+        ctx.clearRect(0, 0, W, H);
+
+        const items = (participantesData && participantesData.length > 0) 
+            ? participantesData 
+            : [{ nombre: 'Sin Participantes', boletos: 1 }];
+
+        const totalSlices = items.length;
+        const arc = (2 * Math.PI) / totalSlices;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+
+        for (let i = 0; i < totalSlices; i++) {
+            const startAngle = i * arc;
+            const endAngle = startAngle + arc;
+            const color = ruletaColors[i % ruletaColors.length];
+
+            // Slice arc
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, R, startAngle, endAngle);
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Text
+            ctx.save();
+            ctx.rotate(startAngle + arc / 2);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = totalSlices > 10 ? 'bold 10px Inter, sans-serif' : 'bold 12px Inter, sans-serif';
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 4;
+            
+            let label = items[i].nombre || 'Cliente';
+            if (label.length > 14) label = label.substring(0, 12) + '..';
+            ctx.fillText(label, R - 20, 4);
+
+            // Perimeter pin
+            ctx.beginPath();
+            ctx.arc(R - 6, 0, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = '#fef08a';
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        ctx.restore();
+    }
+
+    function dispararConfetti() {
+        const canvas = document.getElementById('confettiCanvas');
+        if (!canvas) return;
+        const parent = document.getElementById('ruletaWrap');
+        canvas.width = parent.clientWidth;
+        canvas.height = parent.clientHeight;
+        const ctx = canvas.getContext('2d');
+        const particles = [];
+        const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444', '#facc15'];
+
+        for (let i = 0; i < 70; i++) {
+            particles.push({
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                vx: (Math.random() - 0.5) * 14,
+                vy: (Math.random() - 0.5) * 14 - 3,
+                size: Math.random() * 7 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                alpha: 1,
+                rot: Math.random() * 360,
+                vrot: (Math.random() - 0.5) * 12
+            });
+        }
+
+        let frame = 0;
+        function anim() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.25; // gravity
+                p.alpha -= 0.015;
+                p.rot += p.vrot;
+
+                if (p.alpha > 0) {
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rot * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                }
+            });
+            frame++;
+            if (frame < 80) requestAnimationFrame(anim);
+            else ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        anim();
+    }
+
+    function abrirSorteoModal() {
+        document.getElementById('modalSorteo').style.display = 'flex';
+        document.getElementById('winnerBanner').style.display = 'none';
+        const btn = document.getElementById('btnSpin');
+        btn.style.display = 'inline-flex';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        document.getElementById('ruletaTicker').innerHTML = '<i class="fa-solid fa-sparkles"></i> ¡Presiona el botón para girar la Ruleta de la Suerte!';
+        dibujarRuleta(ruletaAngle);
+    }
+
+    function cerrarSorteoModal() {
+        document.getElementById('modalSorteo').style.display = 'none';
+    }
+
+    function ejecutarSorteo() {
+        if (isSpinning) return;
+        if (!participantesData || participantesData.length === 0) {
+            const winnerBox = document.getElementById('winnerDisplay');
+            if (winnerBox) {
+                winnerBox.innerHTML = '<span style="color: #ef4444; font-size: 1rem;"><i class="fa-solid fa-triangle-exclamation"></i> No hay participantes registrados para el sorteo.</span>';
+                winnerBox.style.display = 'block';
+            }
+            return;
+        }
+
+        const btn = document.getElementById('btnSpin');
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        isSpinning = true;
+
+        // Construir candidatos ponderados por boletos
+        let candidatos = [];
+        participantesData.forEach(p => {
+            const b = Math.max(1, p.boletos || 1);
+            for (let i = 0; i < b; i++) candidatos.push(p);
+        });
+
+        // Seleccionar ganador
+        const finalWinner = candidatos[Math.floor(Math.random() * candidatos.length)];
+        const winnerIndex = participantesData.findIndex(p => p.cliente_id === finalWinner.cliente_id);
+        const totalSlices = participantesData.length;
+        const sliceArc = (2 * Math.PI) / totalSlices;
+
+        // El puntero está arriba (-PI/2). El ángulo del centro del slice ganador relativo al puntero
+        // targetAngle = -PI/2 - (winnerIndex * sliceArc + sliceArc/2)
+        const extraRotations = 6 + Math.floor(Math.random() * 4); // 6-9 giros completos
+        const targetSliceAngle = (3 * Math.PI / 2) - (winnerIndex * sliceArc + sliceArc / 2);
+        const finalTotalAngle = (extraRotations * 2 * Math.PI) + (targetSliceAngle % (2 * Math.PI));
+
+        const startAngle = ruletaAngle % (2 * Math.PI);
+        const totalDelta = finalTotalAngle - startAngle;
+        const duration = 5200; // 5.2 segundos
+        const startTime = performance.now();
+        let lastTickSegment = -1;
+
+        const ticker = document.getElementById('ruletaTicker');
+        const pointer = document.getElementById('ruletaPointer');
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function frame(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(1, elapsed / duration);
+            const eased = easeOutCubic(progress);
+
+            const currentAngle = startAngle + (totalDelta * eased);
+            ruletaAngle = currentAngle;
+            dibujarRuleta(currentAngle);
+
+            // Audio & tick effect
+            const normalizedAngle = (currentAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+            const currentSegment = Math.floor(normalizedAngle / sliceArc);
+            if (currentSegment !== lastTickSegment) {
+                lastTickSegment = currentSegment;
+                playTickSound();
+                if (pointer) {
+                    pointer.style.transform = 'translateX(-50%) rotate(-12deg)';
+                    setTimeout(() => { if (pointer) pointer.style.transform = 'translateX(-50%) rotate(0deg)'; }, 40);
+                }
+            }
+
+            if (progress < 1) {
+                ticker.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Seleccionando ganador de la rifa mensual...';
+                requestAnimationFrame(frame);
+            } else {
+                // Detenido en el ganador
+                isSpinning = false;
+                playWinFanfare();
+                dispararConfetti();
+
+                ticker.innerHTML = `<span style="color: #10b981; font-weight: 800;">🏆 ¡Boleto Ganador: ${finalWinner.nombre}!</span>`;
+                btn.style.display = 'none';
+
+                document.getElementById('winnerNombre').innerText = finalWinner.nombre;
+                document.getElementById('winnerTel').innerText = "Contacto: " + finalWinner.telefono + " • Boletos: " + finalWinner.boletos + " • Compras: C$ " + Number(finalWinner.total_acumulado).toLocaleString('es-NI', {minimumFractionDigits: 2});
+                document.getElementById('formWinnerNombre').value = finalWinner.nombre;
+                document.getElementById('formWinnerTel').value = finalWinner.telefono;
+                document.getElementById('formWinnerId').value = finalWinner.cliente_id;
+                document.getElementById('winnerBanner').style.display = 'block';
+            }
+        }
+
+        requestAnimationFrame(frame);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,1017 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Recursos Humanos - Contratos Laborales (Ley 185){% endblock %}
+
+{% block content %}
+<style>
+    .contratos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 25px;
+    }
+
+    .kpi-card-rh {
+        background: var(--bg-surface);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 18px 20px;
+        transition: all 0.25s ease;
+    }
+
+    .kpi-card-rh:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .kpi-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .kpi-val {
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .rh-box {
+        background: var(--bg-surface);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        padding: 22px;
+        margin-bottom: 30px;
+        overflow-x: auto;
+    }
+
+    .rh-box-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .rh-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.88rem;
+    }
+
+    .rh-table th {
+        background: var(--bg-secondary);
+        padding: 12px 14px;
+        text-align: left;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .rh-table td {
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .rh-table tbody tr:hover {
+        background: var(--bg-primary);
+    }
+
+    .badge-status-vigente {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: rgba(48, 209, 88, 0.15);
+        color: #30D158;
+        border: 1px solid rgba(48, 209, 88, 0.3);
+    }
+
+    .badge-status-revision {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: rgba(255, 159, 10, 0.15);
+        color: #FF9F0A;
+        border: 1px solid rgba(255, 159, 10, 0.3);
+    }
+
+    .badge-status-finalizado {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: rgba(255, 69, 58, 0.15);
+        color: #FF453A;
+        border: 1px solid rgba(255, 69, 58, 0.3);
+    }
+
+    .btn-action-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary-sm {
+        background: rgba(10, 132, 255, 0.18);
+        color: #0A84FF;
+        border: 1px solid rgba(10, 132, 255, 0.4);
+    }
+    .btn-primary-sm:hover {
+        background: #0A84FF;
+        color: var(--text-primary);
+    }
+
+    .btn-sec-sm {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    .btn-sec-sm:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-success-sm {
+        background: rgba(48, 209, 88, 0.18);
+        color: #30D158;
+        border: 1px solid rgba(48, 209, 88, 0.4);
+    }
+    .btn-success-sm:hover {
+        background: #30D158;
+        color: #000;
+    }
+
+    /* Modales */
+    .modal-rh {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(8px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    .modal-rh.active {
+        display: flex;
+    }
+    .modal-rh-content {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        max-width: 680px;
+        width: 100%;
+        padding: 25px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .form-group-rh {
+        margin-bottom: 15px;
+    }
+    .form-group-rh label {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .input-rh {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 8px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 0.88rem;
+        box-sizing: border-box;
+    }
+    .input-rh:focus {
+        outline: none;
+        border-color: #0A84FF;
+    }
+    .input-rh.is-invalid-field {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+    }
+    .contrato-modal-alert {
+        display: none;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.45);
+        color: #dc2626;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        margin-bottom: 14px;
+        line-height: 1.45;
+    }
+    [data-theme="dark"] .contrato-modal-alert {
+        color: #fca5a5;
+        background: rgba(239, 68, 68, 0.18);
+    }
+
+    .category-filter-bar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .filter-pill {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 7px 16px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 0.84rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+    }
+    .filter-pill:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+    }
+    .filter-pill.active {
+        background: rgba(10, 132, 255, 0.2);
+        border-color: #0A84FF;
+        color: var(--text-primary);
+        box-shadow: 0 0 15px rgba(10, 132, 255, 0.25);
+    }
+    .filter-pill.active.pill-asesor {
+        background: rgba(255, 159, 10, 0.2);
+        border-color: #FF9F0A;
+        box-shadow: 0 0 15px rgba(255, 159, 10, 0.25);
+    }
+    .pill-counter {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    .badge-planta {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.70rem;
+        font-weight: 700;
+        color: #0A84FF;
+        background: rgba(10, 132, 255, 0.12);
+        border: 1px solid rgba(10, 132, 255, 0.35);
+        padding: 2px 7px;
+        border-radius: 10px;
+    }
+    .badge-asesor {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.70rem;
+        font-weight: 700;
+        color: #FF9F0A;
+        background: rgba(255, 159, 10, 0.14);
+        border: 1px solid rgba(255, 159, 10, 0.4);
+        padding: 2px 7px;
+        border-radius: 10px;
+    }
+
+    /* Tipografía y Contraste de Contratos */
+    .contrato-worker-name {
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: block;
+    }
+
+    .contrato-subtext {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .contrato-cargo {
+        color: var(--text-primary);
+        font-weight: 700;
+        font-size: 0.94rem;
+        line-height: 1.3;
+    }
+
+    .contrato-depto {
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .contrato-tipo {
+        font-size: 0.86rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .contrato-jornada {
+        font-size: 0.84rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        line-height: 1.3;
+        display: block;
+    }
+
+    .contrato-salario {
+        font-weight: 800;
+        font-size: 0.96rem;
+        color: var(--text-primary);
+    }
+
+    .contrato-neto {
+        font-weight: 800;
+        font-size: 0.96rem;
+        color: #10b981;
+    }
+
+    .input-buscador-contratos {
+        padding: 8px 16px;
+        border-radius: 20px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        width: 280px;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .input-buscador-contratos:focus {
+        border-color: #0A84FF;
+        box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
+    }
+
+    /* Adaptación Explícita para Modo Claro */
+    body.light-theme .rh-box {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04) !important;
+    }
+    body.light-theme .kpi-card-rh {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.03) !important;
+    }
+    body.light-theme .rh-table th {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border-bottom-color: #e2e8f0 !important;
+    }
+    body.light-theme .rh-table td {
+        border-bottom-color: #f1f5f9 !important;
+    }
+    body.light-theme .rh-table tbody tr:hover {
+        background: #f8fafc !important;
+    }
+    body.light-theme .contrato-worker-name {
+        color: #0f172a !important;
+    }
+    body.light-theme .contrato-cargo {
+        color: #0f172a !important;
+    }
+    body.light-theme .contrato-subtext {
+        color: #475569 !important;
+    }
+    body.light-theme .contrato-tipo {
+        color: #1e293b !important;
+    }
+    body.light-theme .contrato-jornada {
+        color: #475569 !important;
+    }
+    body.light-theme .contrato-salario {
+        color: #0f172a !important;
+    }
+    body.light-theme .contrato-neto {
+        color: #059669 !important;
+    }
+    body.light-theme .filter-pill {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #475569 !important;
+    }
+    body.light-theme .filter-pill.active {
+        background: #0284c7 !important;
+        border-color: #0284c7 !important;
+        color: #ffffff !important;
+    }
+    body.light-theme .filter-pill.active.pill-asesor {
+        background: #d97706 !important;
+        border-color: #d97706 !important;
+        color: #ffffff !important;
+    }
+    body.light-theme .pill-counter {
+        background: rgba(0,0,0,0.08) !important;
+        color: inherit !important;
+    }
+    body.light-theme .input-buscador-contratos {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    body.light-theme .modal-rh-content {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15) !important;
+    }
+    body.light-theme .input-rh {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    body.light-theme .modal-rh-content [style*="color: #fff"] {
+        color: #0f172a !important;
+    }
+    body.light-theme .rh-box-header [style*="color: #fff"] {
+        color: #0f172a !important;
+    }
+</style>
+
+
+<!-- Encabezado Principal -->
+<div class="contratos-header">
+    <div>
+        <h1 style="font-size: 1.85rem; font-weight: 700; color: var(--text-primary); margin: 0 0 6px 0;">
+            <i class="fa-solid fa-file-signature" style="color: #30D158; margin-right: 8px;"></i> Submódulo de Contratos Laborales
+        </h1>
+        <p style="color: var(--text-muted); margin: 0; font-size: 0.92rem;">
+            Gestión y registro formal de contratos individuales de trabajo de Taller CR bajo la <strong>Ley N° 185 (Código del Trabajo de Nicaragua)</strong>.
+        </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <a href="{{ url_for('planilla.index') }}" class="btn-action-sm btn-sec-sm" style="padding: 9px 16px; font-size: 0.88rem;">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Ir a Planilla de Pago
+        </a>
+        <button onclick="abrirModalNuevoContrato()" class="btn-action-sm btn-success-sm" style="padding: 9px 16px; font-size: 0.88rem;">
+            <i class="fa-solid fa-plus"></i> Registrar Nuevo Contrato
+        </button>
+    </div>
+</div>
+
+<!-- Grid de KPIs de Contratos -->
+<div class="kpi-row">
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-folder-closed" style="color: #0A84FF;"></i> Total Contratos</div>
+        <div class="kpi-val">{{ resumen.total_contratos }}</div>
+    </div>
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-circle-check" style="color: #30D158;"></i> Contratos Vigentes</div>
+        <div class="kpi-val" style="color: #30D158;">{{ resumen.vigentes }}</div>
+    </div>
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-money-bill-wave" style="color: #FF9F0A;"></i> Masa Salarial Pactada</div>
+        <div class="kpi-val" style="color: #FF9F0A;">C$ {{ "{:,.2f}".format(resumen.total_nomina) }}</div>
+    </div>
+    <div class="kpi-card-rh">
+        <div class="kpi-label"><i class="fa-solid fa-chart-line" style="color: #BF5AF2;"></i> Salario Promedio</div>
+        <div class="kpi-val" style="color: #BF5AF2;">C$ {{ "{:,.2f}".format(resumen.salario_promedio) }}</div>
+    </div>
+</div>
+
+<!-- Tabla Principal de Contratos -->
+<div class="rh-box">
+    <div class="rh-box-header">
+        <div>
+            <div style="font-weight: 700; font-size: 1.15rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-users" style="color: #0A84FF;"></i> Directorio Oficial de Contratos de Trabajo
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+                Todos los trabajadores cuentan con contrato formal, cédula, salario y cláusulas según el Código del Trabajo.
+            </span>
+        </div>
+        <div>
+            <input type="text" id="buscadorContratos" class="input-buscador-contratos" onkeyup="filtrarTablaContratos()" placeholder="Buscar trabajador, cargo o N° contrato...">
+        </div>
+    </div>
+
+    <!-- Filtros de Clasificación -->
+    <div class="category-filter-bar">
+        <button class="filter-pill active" id="btnContratosTodos" onclick="filtrarCategoriaContratos('todos', this)">
+            <i class="fa-solid fa-users"></i> Todos los Contratos <span class="pill-counter">11</span>
+        </button>
+        <button class="filter-pill" id="btnContratosPermanente" onclick="filtrarCategoriaContratos('permanente', this)">
+            <i class="fa-solid fa-building-user"></i> Planta Permanente Diaria <span class="pill-counter">9</span>
+        </button>
+        <button class="filter-pill pill-asesor" id="btnContratosAsesor" onclick="filtrarCategoriaContratos('asesor', this)">
+            <i class="fa-solid fa-calendar-check"></i> Asesorías de Cierre (1 Día/Mes) <span class="pill-counter" style="background: rgba(255,159,10,0.3); color: #FF9F0A;">2</span>
+        </button>
+    </div>
+
+    <table class="rh-table" id="tablaContratos">
+        <thead>
+            <tr>
+                <th>N° Contrato</th>
+                <th>Trabajador / Cédula</th>
+                <th>Cargo / Clasificación</th>
+                <th>Tipo de Contrato</th>
+                <th>Jornada / Horario</th>
+                <th style="text-align: right;">Salario Pactado</th>
+                <th style="text-align: right;">Salario Neto Est.</th>
+                <th>Inicio</th>
+                <th style="text-align: center;">Estado</th>
+                <th style="text-align: center;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in contratos %}
+            <tr class="row-contrato" data-category="{{ 'asesor' if c.es_asesor else 'permanente' }}">
+                <td>
+                    <span style="font-family: monospace; font-weight: 700; color: #0284c7; background: rgba(2, 132, 199, 0.12); padding: 3px 8px; border-radius: 6px;">
+                        {{ c.numero_contrato }}
+                    </span>
+                </td>
+                <td>
+                    <strong class="contrato-worker-name">{{ c.nombre }}</strong>
+                    <div class="contrato-subtext">
+                        Cédula: {{ c.cedula }} • Tel: {{ c.telefono }}
+                    </div>
+                </td>
+                <td>
+                    <div class="contrato-cargo">{{ c.cargo }}</div>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+                        <span class="contrato-depto" style="color: {% if c.es_asesor %}#d97706{% else %}#0284c7{% endif %};">{{ c.departamento }}</span>
+                        {% if c.es_asesor %}
+                            <span class="badge-asesor"><i class="fa-solid fa-calendar-check"></i> Cierre (1 Día/Mes)</span>
+                        {% else %}
+                            <span class="badge-planta"><i class="fa-solid fa-clock"></i> Diario</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <span class="contrato-tipo">{{ c.tipo_contrato }}</span>
+                </td>
+                <td>
+                    <span class="contrato-jornada">{{ c.jornada }}</span>
+                </td>
+                <td style="text-align: right;">
+                    <span class="contrato-salario">C$ {{ "{:,.2f}".format(c.salario_pactado) }}</span>
+                </td>
+                <td style="text-align: right;">
+                    <span class="contrato-neto">C$ {{ "{:,.2f}".format(c.salario_neto) }}</span>
+                </td>
+                <td>
+                    <span class="contrato-subtext">{{ c.fecha_inicio }}</span>
+                </td>
+                <td style="text-align: center;">
+                    {% if c.estado == 'Vigente' %}
+                        <span class="badge-status-vigente"><i class="fa-solid fa-circle-check"></i> Vigente</span>
+                    {% elif c.estado == 'En Revisión' %}
+                        <span class="badge-status-revision"><i class="fa-solid fa-clock"></i> En Revisión</span>
+                    {% else %}
+                        <span class="badge-status-finalizado"><i class="fa-solid fa-ban"></i> Finalizado</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center; white-space: nowrap;">
+                    <a href="{{ url_for('planilla.ver_contrato', id=c.contrato_id) }}" class="btn-action-sm btn-primary-sm" title="Ver Contrato Legal Completo">
+                        <i class="fa-solid fa-eye"></i> Ver
+                    </a>
+                    <a href="{{ url_for('planilla.imprimir_contrato', id=c.contrato_id) }}" target="_blank" class="btn-action-sm btn-sec-sm" title="Imprimir Contrato Oficial">
+                        <i class="fa-solid fa-print"></i>
+                    </a>
+                    <button type="button" onclick="abrirModalEditarContrato({{ c.contrato_id }})" class="btn-action-sm btn-sec-sm" title="Editar Condiciones">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal: Registrar Nuevo Contrato -->
+<div id="modalNuevoContrato" class="modal-rh">
+    <div class="modal-rh-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+            <div style="font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-file-signature" style="color: #30D158;"></i> Registrar Nuevo Contrato Individual de Trabajo
+            </div>
+            <button type="button" onclick="cerrarModalNuevoContrato()" style="background: none; border: none; color: var(--text-primary); font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="formNuevoContrato" action="{{ url_for('planilla.nuevo_contrato') }}" method="POST" novalidate>
+            <div id="nuevoContratoAlert" class="contrato-modal-alert"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Trabajador / Empleado:</label>
+                    <select name="usuario_id" class="input-rh" required>
+                        <option value="">Seleccione un trabajador...</option>
+                        {% for u in usuarios_activos %}
+                            <option value="{{ u[0] }}">{{ u[1] }} ({{ u[2] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group-rh">
+                    <label>Tipo de Contrato:</label>
+                    <select name="tipo_contrato" class="input-rh">
+                        <option value="Tiempo Indeterminado">Tiempo Indeterminado</option>
+                        <option value="Plazo Determinado">Plazo Determinado</option>
+                        <option value="Por Obra o Servicio Determinado">Por Obra o Servicio Determinado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Cargo / Oficio:</label>
+                    <input type="text" name="cargo" class="input-rh" required placeholder="Ej: Mecánico Especialista">
+                </div>
+                <div class="form-group-rh">
+                    <label>Departamento:</label>
+                    <input type="text" name="departamento" class="input-rh" required placeholder="Ej: Operaciones / Taller">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Salario Pactado Mensual (C$):</label>
+                    <input type="number" step="0.01" name="salario_pactado" class="input-rh" required placeholder="13500.00">
+                </div>
+                <div class="form-group-rh">
+                    <label>Fecha de Inicio de Labores:</label>
+                    <input type="date" name="fecha_inicio" class="input-rh" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Cédula de Identidad:</label>
+                    <input type="text" name="cedula" class="input-rh" required placeholder="001-XXXXXX-XXXXX">
+                </div>
+                <div class="form-group-rh">
+                    <label>Teléfono de Contacto:</label>
+                    <input type="text" name="telefono" class="input-rh" placeholder="+505 8888-9999">
+                </div>
+            </div>
+
+            <div class="form-group-rh">
+                <label>Dirección de Domicilio:</label>
+                <input type="text" name="domicilio" class="input-rh" placeholder="Barrio / Colonia, Managua">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Jornada Laboral:</label>
+                    <input type="text" name="jornada" class="input-rh" value="Diurna Ordinaria (48 hrs semanales)">
+                </div>
+                <div class="form-group-rh">
+                    <label>Horario Establecido:</label>
+                    <input type="text" name="horario" class="input-rh" value="Lunes a Viernes: 8:00 AM - 5:00 PM, Sábado: 8:00 AM - 12:00 MD">
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="cerrarModalNuevoContrato()" class="btn-action-sm btn-sec-sm" style="padding: 9px 18px;">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-action-sm btn-success-sm" style="padding: 9px 20px;">
+                    <i class="fa-solid fa-save"></i> Guardar Contrato
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Editar Contrato -->
+<div id="modalEditarContrato" class="modal-rh">
+    <div class="modal-rh-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+            <div style="font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-pen-to-square" style="color: #0A84FF;"></i> Actualizar Contrato Laboral: <span id="editNumContrato" style="color: #0A84FF;"></span>
+            </div>
+            <button type="button" onclick="cerrarModalEditarContrato()" style="background: none; border: none; color: var(--text-primary); font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="formEditarContrato" method="POST" novalidate>
+            <div id="editarContratoAlert" class="contrato-modal-alert"></div>
+            <div style="margin-bottom: 16px; background: var(--bg-secondary); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+                <strong id="editNombreTrabajador" style="color: var(--text-primary); font-size: 1rem;"></strong>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Cargo / Puesto:</label>
+                    <input type="text" id="editCargo" name="cargo" class="input-rh" required>
+                </div>
+                <div class="form-group-rh">
+                    <label>Departamento:</label>
+                    <input type="text" id="editDepto" name="departamento" class="input-rh" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Tipo de Contrato:</label>
+                    <select id="editTipoContrato" name="tipo_contrato" class="input-rh">
+                        <option value="Tiempo Indeterminado">Tiempo Indeterminado</option>
+                        <option value="Plazo Determinado">Plazo Determinado</option>
+                        <option value="Por Obra o Servicio Determinado">Por Obra o Servicio Determinado</option>
+                    </select>
+                </div>
+                <div class="form-group-rh">
+                    <label>Salario Pactado Mensual (C$):</label>
+                    <input type="number" step="0.01" id="editSalario" name="salario_pactado" class="input-rh" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Fecha de Inicio del Contrato:</label>
+                    <input type="date" id="editFechaInicio" name="fecha_inicio" class="input-rh" required>
+                </div>
+                <div class="form-group-rh">
+                    <label>Cédula de Identidad:</label>
+                    <input type="text" id="editCedula" name="cedula" class="input-rh" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Teléfono:</label>
+                    <input type="text" id="editTelefono" name="telefono" class="input-rh">
+                </div>
+                <div class="form-group-rh">
+                    <label>Domicilio:</label>
+                    <input type="text" id="editDomicilio" name="domicilio" class="input-rh">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group-rh">
+                    <label>Jornada:</label>
+                    <input type="text" id="editJornada" name="jornada" class="input-rh">
+                </div>
+                <div class="form-group-rh">
+                    <label>Estado del Contrato:</label>
+                    <select id="editEstado" name="estado" class="input-rh">
+                        <option value="Vigente">Vigente</option>
+                        <option value="En Revisión">En Revisión</option>
+                        <option value="Finalizado">Finalizado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group-rh">
+                <label>Horario:</label>
+                <input type="text" id="editHorario" name="horario" class="input-rh">
+            </div>
+
+            <div class="form-group-rh">
+                <label>Cláusulas Adicionales / Observaciones:</label>
+                <textarea id="editClausulas" name="clausulas" class="input-rh" rows="3"></textarea>
+            </div>
+
+            <div style="text-align: right; margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="cerrarModalEditarContrato()" class="btn-action-sm btn-sec-sm" style="padding: 9px 18px;">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-action-sm btn-primary-sm" style="padding: 9px 20px;">
+                    <i class="fa-solid fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let categoriaActualContratos = 'todos';
+
+    function filtrarCategoriaContratos(cat, btn) {
+        categoriaActualContratos = cat;
+        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        aplicarFiltrosContratos();
+    }
+
+    function filtrarTablaContratos() {
+        aplicarFiltrosContratos();
+    }
+
+    function aplicarFiltrosContratos() {
+        const input = (document.getElementById('buscadorContratos')?.value || '').toLowerCase();
+        const filas = document.querySelectorAll('#tablaContratos tbody tr.row-contrato');
+        filas.forEach(f => {
+            const cat = f.getAttribute('data-category');
+            const coincideCat = (categoriaActualContratos === 'todos' || cat === categoriaActualContratos);
+            const coincideTexto = f.innerText.toLowerCase().includes(input);
+            f.style.display = (coincideCat && coincideTexto) ? '' : 'none';
+        });
+    }
+
+    function abrirModalNuevoContrato() {
+        document.getElementById('modalNuevoContrato').classList.add('active');
+    }
+    function cerrarModalNuevoContrato() {
+        document.getElementById('modalNuevoContrato').classList.remove('active');
+    }
+
+    const CONTRATOS_DATA = {{ contratos | tojson }};
+    const CONTRATOS_MAP = {};
+    if (Array.isArray(CONTRATOS_DATA)) {
+        CONTRATOS_DATA.forEach(item => {
+            CONTRATOS_MAP[item.contrato_id] = item;
+        });
+    }
+
+    function abrirModalEditarContrato(idOrObj) {
+        let c = null;
+        if (typeof idOrObj === 'object' && idOrObj !== null) {
+            c = idOrObj;
+        } else {
+            c = CONTRATOS_MAP[idOrObj];
+        }
+
+        if (!c) {
+            console.error("Contrato no encontrado para editar:", idOrObj);
+            return;
+        }
+
+        document.getElementById('editNumContrato').innerText = c.numero_contrato || '';
+        document.getElementById('editNombreTrabajador').innerText = (c.nombre || '') + ' (' + (c.cedula || 'N/D') + ')';
+        document.getElementById('editCargo').value = c.cargo || '';
+        document.getElementById('editDepto').value = c.departamento || '';
+        document.getElementById('editTipoContrato').value = c.tipo_contrato || 'Tiempo Indeterminado';
+        document.getElementById('editSalario').value = c.salario_pactado || 0;
+        document.getElementById('editFechaInicio').value = c.fecha_inicio_iso || '2026-01-01';
+        document.getElementById('editCedula').value = c.cedula || '';
+        document.getElementById('editTelefono').value = (c.telefono && c.telefono !== 'N/D') ? c.telefono : '';
+        document.getElementById('editDomicilio').value = c.domicilio || '';
+        document.getElementById('editJornada').value = c.jornada || '';
+        document.getElementById('editHorario').value = c.horario || 'Lunes a Viernes: 8:00 AM - 5:00 PM, Sábado: 8:00 AM - 12:00 MD';
+        document.getElementById('editEstado').value = c.estado || 'Vigente';
+        document.getElementById('editClausulas').value = c.clausulas_adicionales || '';
+
+        document.getElementById('formEditarContrato').action = `/admin/contratos/editar/${c.contrato_id}`;
+        document.getElementById('modalEditarContrato').classList.add('active');
+    }
+
+    function cerrarModalEditarContrato() {
+        document.getElementById('modalEditarContrato').classList.remove('active');
+    }
+
+    function _validarCedulaContrato(ced) {
+        const val = (ced || '').trim().toUpperCase();
+        const m = val.match(/^(\d{3})-(\d{6})-(\d{4})([A-Z])$/);
+        if (!m) return false;
+        const medio = m[2];
+        const dia = parseInt(medio.slice(0, 2), 10);
+        const mes = parseInt(medio.slice(2, 4), 10);
+        if (medio === '000000' || m[3] === '0000' || /^(\d)\1+$/.test(medio)) return false;
+        if (dia < 1 || dia > 31 || mes < 1 || mes > 12) return false;
+        return true;
+    }
+
+    function _validarTelefonoContrato(tel) {
+        let digits = (tel || '').replace(/\D/g, '');
+        if (digits.startsWith('505') && digits.length === 11) digits = digits.slice(3);
+        return /^[2578]\d{7}$/.test(digits);
+    }
+
+    function validarFormularioContrato(formEl, alertEl, isEdit) {
+        const errores = [];
+        formEl.querySelectorAll('.is-invalid-field').forEach(el => el.classList.remove('is-invalid-field'));
+        const marcar = (inp, msg) => { if (inp) inp.classList.add('is-invalid-field'); errores.push(msg); };
+
+        if (!isEdit) {
+            const usrSel = formEl.querySelector('select[name="usuario_id"]');
+            if (!usrSel || !usrSel.value) marcar(usrSel, 'Debe seleccionar un colaborador para formalizar el contrato.');
+        }
+
+        const carInp = formEl.querySelector('input[name="cargo"]');
+        if (!carInp || carInp.value.trim().length < 3 || !/[A-Za-zÁÉÍÓÚáéíóúÑñ]{3,}/.test(carInp.value)) {
+            marcar(carInp, 'Cargo / Puesto inválido: ingresa al menos 3 letras.');
+        }
+
+        const depInp = formEl.querySelector('input[name="departamento"]');
+        if (!depInp || depInp.value.trim().length < 3 || !/[A-Za-zÁÉÍÓÚáéíóúÑñ]{3,}/.test(depInp.value)) {
+            marcar(depInp, 'Departamento inválido: ingresa al menos 3 letras.');
+        }
+
+        const salInp = formEl.querySelector('input[name="salario_pactado"]');
+        const sal = parseFloat(salInp ? salInp.value : '');
+        if (!Number.isFinite(sal) || sal < 1000 || sal > 500000) {
+            marcar(salInp, 'Salario Pactado Mensual inválido: debe estar entre C$ 1,000.00 y C$ 500,000.00.');
+        }
+
+        const fecInp = formEl.querySelector('input[name="fecha_inicio"]');
+        const fec = (fecInp ? fecInp.value : '').trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fec)) {
+            marcar(fecInp, 'Fecha de Inicio inválida.');
+        } else {
+            const d = new Date(fec + 'T00:00:00');
+            const maxD = new Date(); maxD.setFullYear(maxD.getFullYear() + 1);
+            if (Number.isNaN(d.getTime()) || d < new Date('1990-01-01') || d > maxD) {
+                marcar(fecInp, 'Fecha de Inicio fuera de rango permitido (1990 a +1 año).');
+            }
+        }
+
+        const cedInp = formEl.querySelector('input[name="cedula"]');
+        const ced = (cedInp ? cedInp.value : '').trim().toUpperCase();
+        if (cedInp) cedInp.value = ced;
+        if (!_validarCedulaContrato(ced)) {
+            marcar(cedInp, 'Cédula Nicaragua inválida: usa formato 001-DDMMAA-0000X real.');
+        }
+
+        const telInp = formEl.querySelector('input[name="telefono"]');
+        if (!_validarTelefonoContrato(telInp ? telInp.value : '')) {
+            marcar(telInp, 'Teléfono inválido: ingresa 8 dígitos de Nicaragua iniciando en 2, 5, 7 u 8.');
+        }
+
+        const domInp = formEl.querySelector('input[name="domicilio"]');
+        const dom = (domInp ? domInp.value : '').trim();
+        if (dom.length < 6 || !/[A-Za-zÁÉÍÓÚáéíóúÑñ]{3,}/.test(dom)) {
+            marcar(domInp, 'Domicilio inválido: ingresa una dirección real (mínimo 6 caracteres con letras).');
+        }
+
+        const jorInp = formEl.querySelector('input[name="jornada"]');
+        if (!jorInp || jorInp.value.trim().length < 4 || !/[A-Za-zÁÉÍÓÚáéíóúÑñ]{3,}/.test(jorInp.value)) {
+            marcar(jorInp, 'Jornada laboral inválida (mínimo 4 caracteres con letras).');
+        }
+
+        const horInp = formEl.querySelector('input[name="horario"]');
+        if (!horInp || horInp.value.trim().length < 4) {
+            marcar(horInp, 'Horario laboral inválido (mínimo 4 caracteres).');
+        }
+
+        if (errores.length) {
+            alertEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + errores.join('<br><i class="fa-solid fa-circle-dot" style="font-size:0.65rem;margin-right:4px;"></i>');
+            alertEl.style.display = 'block';
+            return false;
+        }
+        alertEl.style.display = 'none';
+        alertEl.innerHTML = '';
+        return true;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const fNuevo = document.getElementById('formNuevoContrato');
+        const aNuevo = document.getElementById('nuevoContratoAlert');
+        if (fNuevo) {
+            fNuevo.addEventListener('submit', (e) => {
+                if (!validarFormularioContrato(fNuevo, aNuevo, false)) e.preventDefault();
+            });
+        }
+        const fEditar = document.getElementById('formEditarContrato');
+        const aEditar = document.getElementById('editarContratoAlert');
+        if (fEditar) {
+            fEditar.addEventListener('submit', (e) => {
+                if (!validarFormularioContrato(fEditar, aEditar, true)) e.preventDefault();
+            });
+        }
+    });
+</script>
+{% endblock %}

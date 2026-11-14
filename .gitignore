@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+cloudflared.log
+server_waitress.log
+.vscode/
+
+webhook_incoming.log

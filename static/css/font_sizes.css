@@ -1,0 +1,18 @@
+
+/* Font Sizes */
+body.font-small {
+  font-size: 0.85rem;
+}
+
+body.font-medium {
+  font-size: 1rem;
+}
+
+body.font-large {
+  font-size: 1.15rem;
+}
+
+/* Base Adjustments for larger fonts */
+body.font-large .brand { font-size: 1.4rem; }
+body.font-large h2 { font-size: 1.8rem; }
+body.font-large .nav-links a { font-size: 1.1rem; }

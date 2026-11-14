@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrato Individual de Trabajo - {{ c.nombre_trabajador }} ({{ c.numero_contrato }})</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #525659;
+            margin: 0;
+            padding: 30px 10px;
+            font-family: 'Times New Roman', Times, serif;
+            color: #111;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .no-print-bar {
+            background: #222;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .btn-print {
+            background: #25D366;
+            color: #000;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+            transition: transform 0.2s;
+        }
+        .btn-print:hover {
+            transform: scale(1.05);
+        }
+
+        .page-sheet {
+            background: #fff;
+            width: 216mm;
+            min-height: 279mm;
+            padding: 25mm 22mm;
+            box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border-radius: 2px;
+            line-height: 1.55;
+            font-size: 11pt;
+        }
+
+        .doc-header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .doc-header h2 {
+            margin: 0;
+            font-size: 13pt;
+            letter-spacing: 0.5px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .doc-header h1 {
+            margin: 4px 0;
+            font-size: 15pt;
+            font-weight: 800;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .doc-header p {
+            margin: 2px 0 0 0;
+            font-size: 10pt;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        .clause-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 10.5pt;
+            margin-top: 14px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        p {
+            text-align: justify;
+            margin: 0 0 10px 0;
+        }
+
+        .signatures {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            margin-top: 45px;
+            padding-top: 20px;
+        }
+
+        .sign-slot {
+            text-align: center;
+            border-top: 1px solid #000;
+            padding-top: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 9pt;
+            line-height: 1.4;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+                margin: 0;
+            }
+            .no-print-bar {
+                display: none !important;
+            }
+            .page-sheet {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 20mm 15mm;
+                width: 100%;
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print-bar">
+        <span>📄 Contrato Laboral Oficial <strong>#{{ c.numero_contrato }}</strong></span>
+        <button onclick="window.print()" class="btn-print">
+            <i class="fa-solid fa-print"></i> Imprimir / Guardar como PDF
+        </button>
+        <button onclick="window.close()" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 7px 14px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
+            Cerrar
+        </button>
+    </div>
+
+    <div class="page-sheet">
+        <div class="doc-header">
+            <h2>REPÚBLICA DE NICARAGUA</h2>
+            <h1>CONTRATO INDIVIDUAL DE TRABAJO</h1>
+            <p>CONFORME A LA LEY N° 185 (CÓDIGO DEL TRABAJO DE LA REPÚBLICA DE NICARAGUA)</p>
+            <p><strong>EXPEDIENTE: {{ c.numero_contrato }}</strong></p>
+        </div>
+
+        <p>
+            Nosotros: Por una parte, <strong>TALLER Y LUBRICANTES CR</strong>, entidad comercial y de servicios automotrices debidamente establecida y operando de conformidad con las leyes de la República de Nicaragua, con Registro Único de Contribuyente (RUC) <strong>J0310000123456</strong>, con domicilio en la ciudad de Managua, representada en este acto por su Representación Legal y Gerencia General, en lo sucesivo denominado <strong>"EL EMPLEADOR"</strong>; y por otra parte, el señor(a) <strong>{{ c.nombre_trabajador }}</strong>, mayor de edad, nicaragüense, titular de la Cédula de Identidad Ciudadana número <strong>{{ c.cedula }}</strong>, con domicilio en <strong>{{ c.domicilio }}</strong>, teléfono de contacto <strong>{{ c.telefono }}</strong>, en lo sucesivo denominado <strong>"EL TRABAJADOR"</strong>, convenimos libre y espontáneamente en celebrar el presente <strong>CONTRATO INDIVIDUAL DE TRABAJO A {{ c.tipo_contrato | upper }}</strong>, el cual se regirá por las siguientes cláusulas:
+        </p>
+
+        <div class="clause-title">CLÁUSULA PRIMERA: OBJETO DEL CONTRATO Y PUESTO ASIGNADO</div>
+        <p>
+            EL TRABAJADOR se compromete a prestar sus servicios personales bajo la subordinación jurídica y dirección de EL EMPLEADOR, desempeñando el cargo de <strong>{{ c.cargo }}</strong>, adscrito al área de <strong>{{ c.departamento }}</strong>. Las labores comprenderán todas las tareas descritas en el perfil ocupacional de su puesto, así como las directrices y normas técnicas dictadas para el buen funcionamiento de Taller y Lubricantes CR.
+        </p>
+
+        <div class="clause-title">CLÁUSULA SEGUNDA: LUGAR DE EJECUCIÓN DE LAS LABORES</div>
+        <p>
+            El servicio convenido se prestará ordinariamente en las <strong>{{ c.lugar_trabajo }}</strong>, pudiendo realizar traslados puntuales dentro del departamento de Managua en atención al giro comercial de la empresa.
+        </p>
+
+        <div class="clause-title">CLÁUSULA TERCERA: JORNADA Y HORARIO DE TRABAJO</div>
+        <p>
+            La jornada laboral ordinaria será de carácter <strong>{{ c.jornada }}</strong> (máximo 48 horas semanales conforme al Artículo 51 del Código del Trabajo), con horario establecido de <strong>{{ c.horario }}</strong>, con el descanso diario correspondiente para la toma de alimentos. EL TRABAJADOR gozará de su día de descanso semanal remunerado de conformidad con la ley.
+        </p>
+
+        <div class="clause-title">CLÁUSULA CUARTA: SALARIO, FORMA DE PAGO Y DEDUCCIONES LEGALES</div>
+        <p>
+            EL EMPLEADOR pagará a EL TRABAJADOR un salario ordinario mensual de <strong>C$ {{ "{:,.2f}".format(c.salario_pactado) }} Córdobas netos</strong>, pagaderos en dos cuotas quincenales iguales los días quince y último de cada mes.<br>
+            De este salario se deducirán únicamente las retenciones de ley:
+            <br>
+            <strong>1.</strong> Cuota de Seguridad Social (INSS Laboral) del <strong>7.0%</strong> (Decreto de Seguridad Social).<br>
+            <strong>2.</strong> Retención en la Fuente del Impuesto sobre la Renta (IR) sobre rentas del trabajo, calculada bajo la tarifa progresiva del <strong>Artículo 23 de la Ley N° 822 (Ley de Concertación Tributaria)</strong> de la DGI.
+        </p>
+
+        <div class="clause-title">CLÁUSULA QUINTA: PERÍODO DE PRUEBA</div>
+        <p>
+            De conformidad con el <strong>Artículo 28 de la Ley N° 185</strong>, las partes pactan un período de prueba de <strong>{{ c.periodo_prueba_dias }} días continuos</strong> a partir de la fecha de inicio. Superado este período sin manifestación en contrario, el contrato surtirá todos sus efectos por tiempo indeterminado.
+        </p>
+
+        <div class="clause-title">CLÁUSULA SEXTA: PRESTACIONES DE LEY (CÓDIGO DEL TRABAJO)</div>
+        <p>
+            EL EMPLEADOR reconoce a EL TRABAJADOR todos los derechos y prestaciones consagrados en el Código del Trabajo:
+            <br>
+            • <strong>Décimo Tercer Mes (Aguinaldo):</strong> Un mes de salario adicional al año o su parte proporcional (Art. 93).<br>
+            • <strong>Vacaciones Anuales:</strong> Quince días de descanso remunerado por cada seis meses de servicio continuo (Art. 76).<br>
+            • <strong>Indemnización por Antigüedad:</strong> Conforme al régimen y escala del <strong>Artículo 45</strong> de la Ley 185 en los supuestos legalmente procedentes.
+        </p>
+
+        <div class="clause-title">CLÁUSULA SÉPTIMA: CONFIDENCIALIDAD, HERRAMIENTAS Y SEGURIDAD</div>
+        <p>
+            EL TRABAJADOR se obliga a guardar estricta reserva sobre la información técnica y comercial de la empresa, y responderá por la debida custodia y conservación de los equipos, herramientas de taller y vehículos de clientes puestos a su cuidado.
+        </p>
+
+        <div class="clause-title">CLÁUSULA OCTAVA: VIGENCIA Y JURISDICCIÓN</div>
+        <p>
+            El presente contrato entra en plena vigencia a partir del <strong>{{ c.fecha_inicio }}</strong>. Ambas partes se someten voluntariamente a las autoridades laborales del Ministerio del Trabajo (MITRAB) y a los Juzgados del Trabajo de Managua.
+        </p>
+
+        <p style="margin-top: 18px;">
+            Leído que fue el presente contrato por ambas partes y conformes con su contenido y alcances legales, lo firmamos en dos ejemplares de igual valor legal en la ciudad de Managua, República de Nicaragua.
+        </p>
+
+        <div class="signatures">
+            <div class="sign-slot">
+                <strong>POR EL EMPLEADOR</strong><br>
+                Taller y Lubricantes CR<br>
+                RUC: J0310000123456<br>
+                Representación Legal y Sello
+            </div>
+            <div class="sign-slot">
+                <strong>POR EL TRABAJADOR</strong><br>
+                <strong>{{ c.nombre_trabajador }}</strong><br>
+                Cédula: {{ c.cedula }}<br>
+                Firma y Huella Digital
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

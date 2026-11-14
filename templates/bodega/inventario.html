@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}Inventario y Catálogo - Bodega{% endblock %}
+{% block page_title %}Inventario de Taller y Lubricantes CR{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Inventory Styles - Themed */
+    .inventory-toolbar { 
+        display: flex; justify-content: space-between; align-items: center; 
+        margin-bottom: 25px; flex-wrap: wrap; gap: 16px;
+        background: var(--bg-surface);
+        padding: 18px 22px;
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .filters { display: flex; gap: 12px; flex-wrap: wrap; flex: 1; }
+    
+    .filters input {
+        background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary);
+        padding: 10px 16px; border-radius: 10px; font-size: 0.92rem; flex: 1; min-width: 200px;
+        transition: all 0.25s ease;
+    }
+    .filters input:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+    
+    .filters select {
+        background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary);
+        padding: 10px 16px; border-radius: 10px; font-size: 0.92rem;
+        cursor: pointer; transition: all 0.25s ease;
+    }
+    .filters select:hover { border-color: var(--text-muted); }
+    .filters select:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+
+    .btn-new { 
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white; border: none; padding: 11px 22px; border-radius: 10px; 
+        font-weight: 600; font-size: 0.92rem; cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .btn-new:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4); }
+    
+    /* Advanced Grid Layout */
+    .product-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+        gap: 24px; 
+        margin-top: 15px;
+    }
+
+    .product-card { 
+        background: var(--bg-surface); 
+        border-radius: 16px; 
+        overflow: hidden; 
+        border: 1px solid var(--border-color); 
+        display: flex; flex-direction: column; 
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        position: relative; 
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .product-card:hover { 
+        transform: translateY(-6px); 
+        box-shadow: var(--shadow-md); 
+        border-color: #2563eb;
+    }
+
+    .product-img-container { 
+        height: 220px; 
+        background: #ffffff; 
+        display: flex; align-items: center; justify-content: center; 
+        padding: 20px; position: relative;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .product-img-container img { 
+        max-width: 100%; max-height: 100%; object-fit: contain; 
+        transition: transform 0.4s ease;
+        mix-blend-mode: multiply;
+    }
+    
+    .product-card:hover .product-img-container img { transform: scale(1.08); }
+    
+    .product-details { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+    
+    .product-sku { 
+        font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; 
+        font-family: 'SFMono-Regular', Consolas, monospace; letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    
+    .product-title { 
+        font-size: 1.15rem; font-weight: 700; color: var(--text-primary); 
+        margin: 0 0 12px 0; line-height: 1.35;
+    }
+    
+    .product-badges { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;}
+    .badge {
+        padding: 4px 9px; border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .cat-badge { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.25); }
+    .type-badge { background: rgba(59, 130, 246, 0.12); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.25); }
+
+    .product-stock { margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .stock-indicator { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+    .stock-text { font-size: 0.88rem; font-weight: 600; }
+    
+    .stock-high { color: #10b981; }
+    .stock-low { color: #f59e0b; }
+    .stock-out { color: #ef4444; }
+
+    .product-price-row { 
+        display: flex; justify-content: space-between; align-items: flex-end; 
+        margin-top: auto; border-top: 1px dashed var(--border-color); padding-top: 16px;
+    }
+    
+    .price-col { display: flex; flex-direction: column; }
+    .price-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; font-weight: 600;}
+    .price-val { 
+        font-size: 1.35rem; font-weight: 800; 
+        color: var(--text-primary);
+    }
+    .price-val-cost { font-size: 0.95rem; font-weight: 600; color: var(--text-muted); }
+    
+    .product-actions { 
+        position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; 
+        background: var(--bg-surface); padding: 5px; border-radius: 10px; 
+        border: 1px solid var(--border-color);
+        opacity: 0; transform: translateY(-6px); transition: all 0.25s ease;
+        z-index: 10;
+        box-shadow: var(--shadow-sm);
+    }
+    .product-card:hover .product-actions { opacity: 1; transform: translateY(0); }
+    
+    .action-btn { 
+        border: none; cursor: pointer; color: var(--text-secondary); border-radius: 6px; 
+        width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; 
+        background: var(--bg-primary); transition: all 0.2s;
+    }
+    .action-btn:hover { background: var(--border-color); color: var(--text-primary); transform: scale(1.05); }
+    .action-btn.btn-edit:hover { color: #2563eb; }
+    .action-btn.btn-toggle:hover { color: #ef4444; }
+    .action-btn.btn-toggle.inactive:hover { color: #10b981; }
+    .action-btn.btn-delete:hover { color: #dc2626; background: rgba(220, 38, 38, 0.15); }
+    
+    .no-image-placeholder { 
+        width: 100%; height: 100%; display: flex; flex-direction: column; 
+        align-items: center; justify-content: center; color: var(--text-muted); 
+        font-size: 3.5rem; opacity: 0.4;
+    }
+
+    /* Modal Styles */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .modal-content { background: var(--bg-surface); padding: 28px; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); color: var(--text-primary); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+    .modal-header h3 { margin: 0; color: var(--text-primary); font-weight: 700; font-size: 1.25rem; }
+    .close-btn { background: none; border: none; font-size: 1.6rem; color: var(--text-muted); cursor: pointer; line-height: 1; }
+    .close-btn:hover { color: var(--text-primary); }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-secondary); font-size: 0.88rem; }
+    .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.92rem; box-sizing: border-box; transition: all 0.25s; }
+    .form-group input:focus, .form-group select:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+
+    .modal-form-alert {
+        display: none;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.45);
+        color: #dc2626;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 14px;
+        line-height: 1.45;
+    }
+    [data-theme="dark"] .modal-form-alert {
+        color: #fca5a5;
+        background: rgba(239, 68, 68, 0.16);
+    }
+    .form-control.is-invalid-field {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+    }
+</style>
+
+<div class="inventory-toolbar">
+    <form class="filters" method="GET" action="{{ url_for('bodega.inventario') }}">
+        <input type="text" name="q" placeholder="Buscar por SKU o Nombre..." value="{{ current_q }}">
+        
+        <select name="categoria" onchange="this.form.submit()">
+            <option value="">Todas las Categorías</option>
+            {% for c in categorias %}
+            <option value="{{ c }}" {% if current_cat == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+            <option value="Accesorios">Accesorios</option>
+            <option value="Motor">Motor</option>
+            <option value="Frenos">Frenos</option>
+            <option value="Lubricantes">Lubricantes</option>
+        </select>
+        
+        <select name="tipo_moto" onchange="this.form.submit()">
+            <option value="">Todos los Tipos de Moto</option>
+            {% for tm in tipos_moto %}
+            <option value="{{ tm }}" {% if current_moto == tm %}selected{% endif %}>{{ tm }}</option>
+            {% endfor %}
+            <option value="Universal">Universal</option>
+            <option value="Scooter">Scooter</option>
+            <option value="Trabajo">Trabajo (Mensajería)</option>
+            <option value="Deportiva">Deportiva</option>
+            <option value="Enduro">Enduro/Cross</option>
+        </select>
+        
+        <button type="submit" style="display:none;"></button>
+    </form>
+    
+    <button class="btn-new" onclick="document.getElementById('newProductModal').style.display='flex'">
+        <i class="fa-solid fa-plus"></i> Nuevo Producto
+    </button>
+</div>
+
+<div class="product-grid">
+    {% for p in productos %}
+    <div class="product-card" style="{% if not p[8] %}opacity: 0.6; filter: grayscale(50%);{% endif %}">
+        
+        <div class="product-actions">
+            <button class="action-btn btn-edit" onclick="openEditModal({{ p[0] }}, '{{ p[2] }}', '{{ p[3] }}', '{{ p[4] }}', {{ p[6] }}, {{ p[7] }})" title="Editar">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button type="button" class="action-btn btn-delete" onclick="openDeleteModal({{ p[0] }}, '{{ p[2]|replace('\'', '\\\'') }}', '{{ p[1]|replace('\'', '\\\'') }}')" title="Eliminar Producto">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+            <form action="{{ url_for('bodega.toggle_producto', id=p[0]) }}" method="POST" style="display:inline;">
+                <button type="submit" class="action-btn btn-toggle {% if not p[8] %}inactive{% endif %}" title="{% if p[8] %}Desactivar{% else %}Activar{% endif %}">
+                    <i class="fa-solid {% if p[8] %}fa-ban{% else %}fa-check-circle{% endif %}"></i>
+                </button>
+            </form>
+        </div>
+
+        <div class="product-img-container">
+            {% if p[9] and not p[9].endswith('repuesto_generico.png') and p[9] not in ['none', '', 'null', 'None'] %}
+                <img src="{{ p[9] }}" alt="{{ p[2] }}">
+            {% else %}
+                <div class="no-image-placeholder"><i class="fa-solid fa-box-open"></i><span style="font-size:0.78rem;margin-top:8px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;">Sin imagen</span></div>
+            {% endif %}
+        </div>
+
+        <div class="product-details">
+            <div class="product-sku">SKU: {{ p[1] }}</div>
+            <h3 class="product-title">{{ p[2] }} {% if not p[8] %}<span style="color:#ef4444; font-size:0.8rem;">(Inactivo)</span>{% endif %}</h3>
+            
+            <div class="product-badges">
+                <span class="badge cat-badge">{{ p[3] }}</span>
+                <span class="badge type-badge">{{ p[4] }}</span>
+            </div>
+            
+            <div class="product-stock">
+                {% if p[5] <= 0 %}
+                    <div class="stock-indicator stock-out"></div>
+                    <span class="stock-text stock-out">Agotado (0)</span>
+                {% elif p[5] <= 5 %}
+                    <div class="stock-indicator stock-low"></div>
+                    <span class="stock-text stock-low">Bajo ({{ p[5] }})</span>
+                {% else %}
+                    <div class="stock-indicator stock-high"></div>
+                    <span class="stock-text stock-high">En Stock ({{ p[5] }})</span>
+                {% endif %}
+            </div>
+
+            <div class="product-price-row">
+                <div class="price-col">
+                    <span class="price-label">Costo</span>
+                    <span class="price-val-cost">C$ {{ "{:,.2f}".format(p[6]) }}</span>
+                </div>
+                <div class="price-col" style="text-align: right;">
+                    <span class="price-label">Precio Venta</span>
+                    <span class="price-val">C$ {{ "{:,.2f}".format(p[7]) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 50px; background: var(--bg-surface); border-radius: 16px;">
+        <i class="fa-solid fa-boxes-stacked" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 20px;"></i>
+        <h3 style="color: var(--text-primary);">No se encontraron productos</h3>
+        <p style="color: var(--text-secondary);">Intenta con otros filtros de búsqueda o agrega un nuevo producto.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal: Nuevo Producto -->
+<div id="newProductModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Registrar Nuevo Producto</h3>
+            <button class="close-btn" onclick="document.getElementById('newProductModal').style.display='none'">&times;</button>
+        </div>
+        <form id="newProductForm" action="{{ url_for('bodega.nuevo_producto') }}" method="POST" enctype="multipart/form-data" novalidate>
+            <div id="newProductAlert" class="modal-form-alert"></div>
+            <div class="form-group">
+                <label>Código SKU (Único)</label>
+                <input type="text" name="sku" required placeholder="Ej: LUB-MOT-10W40">
+            </div>
+            <div class="form-group">
+                <label>Nombre del Producto</label>
+                <input type="text" name="nombre" required placeholder="Ej: Aceite Motul 10W-40">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Categoría</label>
+                    <input type="text" name="categoria" required list="catList" placeholder="Ej: Lubricantes">
+                    <datalist id="catList">
+                        <option value="Lubricantes">
+                        <option value="Frenos">
+                        <option value="Motor">
+                        <option value="Eléctrico">
+                        <option value="Accesorios">
+                    </datalist>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Compatibilidad (Moto)</label>
+                    <input type="text" name="tipo_moto" required list="motoList" placeholder="Ej: Universal">
+                    <datalist id="motoList">
+                        <option value="Universal">
+                        <option value="Scooter">
+                        <option value="Trabajo">
+                        <option value="Deportiva">
+                        <option value="Enduro">
+                    </datalist>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Precio Compra (Costo) C$</label>
+                    <input type="number" step="0.01" name="precio_compra" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Precio Venta C$</label>
+                    <input type="number" step="0.01" name="precio_venta" required placeholder="0.00">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Imagen del Producto</label>
+                <input type="file" name="imagen" accept="image/*">
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px;">
+                <i class="fa-solid fa-info-circle"></i> El stock inicial será 0. Registre una compra en el módulo de Abastecimiento para ingresar existencias.
+            </p>
+            <button type="submit" class="btn-new" style="width: 100%;">Registrar Producto</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Editar Producto -->
+<div id="editProductModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Editar Producto</h3>
+            <button class="close-btn" onclick="document.getElementById('editProductModal').style.display='none'">&times;</button>
+        </div>
+        <form id="editForm" method="POST" enctype="multipart/form-data" novalidate>
+            <div id="editProductAlert" class="modal-form-alert"></div>
+            <div class="form-group">
+                <label>Nombre del Producto</label>
+                <input type="text" name="nombre" id="edit_nombre" required>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Categoría</label>
+                    <input type="text" name="categoria" id="edit_categoria" required list="catList">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Compatibilidad (Moto)</label>
+                    <input type="text" name="tipo_moto" id="edit_tipo_moto" required list="motoList">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Costo (Precio Compra) C$</label>
+                    <input type="number" step="0.01" name="precio_compra" id="edit_precio_compra" required>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Precio Venta C$</label>
+                    <input type="number" step="0.01" name="precio_venta" id="edit_precio_venta" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Actualizar Imagen (Opcional)</label>
+                <input type="file" name="imagen" accept="image/*">
+            </div>
+            <button type="submit" class="btn-new" style="width: 100%;">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function mostrarAlertaProducto(alertEl, errores) {
+        if (!alertEl) return;
+        if (!errores.length) {
+            alertEl.style.display = 'none';
+            alertEl.innerHTML = '';
+            return;
+        }
+        alertEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + errores.join('<br><i class="fa-solid fa-circle-dot" style="font-size:0.65rem;margin-right:4px;"></i>');
+        alertEl.style.display = 'block';
+    }
+
+    function validarFormularioProducto(formEl, alertEl, isEdit) {
+        const errores = [];
+        formEl.querySelectorAll('.is-invalid-field').forEach(el => el.classList.remove('is-invalid-field'));
+        const marcar = (inp, msg) => {
+            if (inp) inp.classList.add('is-invalid-field');
+            errores.push(msg);
+        };
+
+        if (!isEdit) {
+            const skuInp = formEl.querySelector('input[name="sku"]');
+            const sku = (skuInp ? skuInp.value : '').trim().toUpperCase();
+            if (!sku || sku.length < 3 || sku.length > 40 || !/^[A-Z0-9][A-Z0-9._-]{2,39}$/.test(sku) || !/[A-Z]/.test(sku)) {
+                marcar(skuInp, 'Código SKU inválido: usa 3-40 caracteres alfanuméricos con al menos una letra (Ej: LUB-MOT-10W40).');
+            }
+        }
+
+        const nomInp = formEl.querySelector('input[name="nombre"]');
+        const nombre = (nomInp ? nomInp.value : '').trim();
+        if (nombre.length < 3 || !/[A-Za-zÁÉÍÓÚáéíóúÑñ]{3,}/.test(nombre)) {
+            marcar(nomInp, 'Nombre inválido: ingresa al menos 3 letras descriptivas.');
+        }
+
+        const catInp = formEl.querySelector('input[name="categoria"]');
+        const categoria = (catInp ? catInp.value : '').trim();
+        if (categoria.length < 3 || !/[A-Za-zÁÉÍÓÚáéíóúÑñ]{3,}/.test(categoria)) {
+            marcar(catInp, 'Categoría inválida: ingresa una categoría válida con letras (Ej: Lubricantes).');
+        }
+
+        const tipoInp = formEl.querySelector('input[name="tipo_moto"]');
+        const tipoMoto = (tipoInp ? tipoInp.value : '').trim();
+        if (tipoMoto.length < 3 || !/[A-Za-zÁÉÍÓÚáéíóúÑñ]{3,}/.test(tipoMoto)) {
+            marcar(tipoInp, 'Compatibilidad inválida: especifica una moto o "Universal" usando letras.');
+        }
+
+        const compInp = formEl.querySelector('input[name="precio_compra"]');
+        const ventInp = formEl.querySelector('input[name="precio_venta"]');
+        const pCompra = parseFloat(compInp ? compInp.value : '');
+        const pVenta = parseFloat(ventInp ? ventInp.value : '');
+        if (!Number.isFinite(pCompra) || pCompra <= 0 || pCompra > 500000) {
+            marcar(compInp, 'El Precio de Compra (Costo) debe ser mayor a C$ 0.00.');
+        }
+        if (!Number.isFinite(pVenta) || pVenta <= 0 || pVenta > 1000000) {
+            marcar(ventInp, 'El Precio de Venta debe ser mayor a C$ 0.00.');
+        } else if (Number.isFinite(pCompra) && pCompra > 0 && pVenta < pCompra) {
+            marcar(ventInp, 'El Precio de Venta no puede ser menor al Precio de Compra (Costo).');
+        }
+
+        const fileInp = formEl.querySelector('input[name="imagen"]');
+        if (fileInp && fileInp.files && fileInp.files.length > 0) {
+            const fname = (fileInp.files[0].name || '').toLowerCase();
+            if (!/\.(png|jpg|jpeg|webp|gif)$/.test(fname)) {
+                marcar(fileInp, 'Imagen inválida: solo formatos PNG, JPG, JPEG, WEBP o GIF.');
+            }
+        }
+
+        mostrarAlertaProducto(alertEl, errores);
+        return errores.length === 0;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const newForm = document.getElementById('newProductForm');
+        const newAlert = document.getElementById('newProductAlert');
+        if (newForm) {
+            newForm.addEventListener('submit', (e) => {
+                if (!validarFormularioProducto(newForm, newAlert, false)) e.preventDefault();
+            });
+        }
+        const editForm = document.getElementById('editForm');
+        const editAlert = document.getElementById('editProductAlert');
+        if (editForm) {
+            editForm.addEventListener('submit', (e) => {
+                if (!validarFormularioProducto(editForm, editAlert, true)) e.preventDefault();
+            });
+        }
+    });
+
+    function openEditModal(id, nombre, categoria, tipo, costo, precio) {
+        const editAlert = document.getElementById('editProductAlert');
+        if (editAlert) { editAlert.style.display = 'none'; editAlert.innerHTML = ''; }
+        document.querySelectorAll('#editForm .is-invalid-field').forEach(el => el.classList.remove('is-invalid-field'));
+        document.getElementById('editForm').action = "/bodega/producto/editar/" + id;
+        document.getElementById('edit_nombre').value = nombre;
+        document.getElementById('edit_categoria').value = categoria;
+        document.getElementById('edit_tipo_moto').value = tipo;
+        document.getElementById('edit_precio_compra').value = costo;
+        document.getElementById('edit_precio_venta').value = precio;
+        document.getElementById('editProductModal').style.display = 'flex';
+    }
+    function openDeleteModal(id, nombre, sku) {
+        document.getElementById('deleteProductForm').action = "/bodega/producto/eliminar/" + id;
+        document.getElementById('deleteProductNameDisplay').textContent = nombre;
+        document.getElementById('deleteProductSkuDisplay').textContent = "SKU: " + sku;
+        document.getElementById('deleteProductModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteProductModal').style.display = 'none';
+    }
+</script>
+
+<!-- MODAL CONFIRMAR ELIMINACIÓN DE PRODUCTO (INTERNO DEL SISTEMA) -->
+<div id="deleteProductModal" class="modal" onclick="if(event.target === this) closeDeleteModal();">
+    <div class="modal-content" style="max-width: 440px; text-align: center; border-radius: 18px; padding: 26px;">
+        <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(239, 68, 68, 0.14); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+            <i class="fa-solid fa-trash-can" style="font-size: 1.6rem; color: #ef4444;"></i>
+        </div>
+        <h3 style="margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">¿Eliminar Producto?</h3>
+        <p id="deleteProductNameDisplay" style="margin: 0 0 4px 0; font-size: 1rem; color: var(--text-primary); font-weight: 700;"></p>
+        <p id="deleteProductSkuDisplay" style="margin: 0 0 16px 0; font-size: 0.82rem; color: var(--text-secondary);"></p>
+        <p style="margin: 0 0 24px 0; font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5;">
+            Si el producto tiene compras, ventas u órdenes registradas, se desactivará y ocultará de forma segura para preservar el historial contable.
+        </p>
+        <form id="deleteProductForm" method="POST" action="" style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" onclick="closeDeleteModal()" class="btn-cancel" style="padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-weight: 600; cursor: pointer;">Cancelar</button>
+            <button type="submit" class="btn-submit" style="padding: 10px 22px; border-radius: 8px; border: none; background: #dc2626; color: #fff; font-weight: 700; cursor: pointer;">
+                <i class="fa-solid fa-trash-can"></i> Sí, Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

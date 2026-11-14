@@ -1,0 +1,725 @@
+{% extends "base.html" %}
+
+{% block title %}Super Admin - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Panel de Control del Sistema (Super Administrador){% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos Atelier Global - Panel de Control Ejecutivo */
+    .dashboard-live-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .live-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(48, 209, 88, 0.12);
+        border: 1px solid rgba(48, 209, 88, 0.35);
+        border-radius: 30px;
+        padding: 7px 16px;
+        color: #30d158;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        box-shadow: 0 0 15px rgba(48, 209, 88, 0.15);
+    }
+
+    .pulse-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #30d158;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.7);
+        animation: pulseAnimation 1.8s infinite;
+    }
+
+    @keyframes pulseAnimation {
+        0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.8);
+        }
+        70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 10px rgba(48, 209, 88, 0);
+        }
+        100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(48, 209, 88, 0);
+        }
+    }
+
+    .live-sync-indicator {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-manual-sync {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text-primary);
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-manual-sync:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 22px;
+        margin-bottom: 35px;
+    }
+
+    .kpi-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 22px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 10px 24px -4px rgba(0, 0, 0, 0.04);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Top glowing accent bar */
+    .kpi-top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3.5px;
+    }
+    .bar-blue { background: linear-gradient(90deg, #2563eb, #60a5fa); box-shadow: 0 0 10px rgba(37, 99, 235, 0.5); }
+    .bar-purple { background: linear-gradient(90deg, #7c3aed, #c084fc); box-shadow: 0 0 10px rgba(124, 58, 237, 0.5); }
+    .bar-orange { background: linear-gradient(90deg, #ea580c, #fb923c); box-shadow: 0 0 10px rgba(234, 88, 12, 0.5); }
+    .bar-green { background: linear-gradient(90deg, #059669, #34d399); box-shadow: 0 0 10px rgba(5, 150, 105, 0.5); }
+    .bar-cyan { background: linear-gradient(90deg, #0891b2, #38bdf8); box-shadow: 0 0 10px rgba(8, 145, 178, 0.5); }
+    .bar-gold { background: linear-gradient(90deg, #d97706, #fbbf24); box-shadow: 0 0 10px rgba(217, 119, 6, 0.5); }
+
+    .kpi-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    /* Emblem Icons */
+    .kpi-icon-emblem {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        transition: transform 0.25s ease;
+    }
+    .kpi-card:hover .kpi-icon-emblem {
+        transform: scale(1.08);
+    }
+
+    .icon-blue { background: rgba(37, 99, 235, 0.12); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.25); }
+    .icon-purple { background: rgba(124, 58, 237, 0.12); color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.25); }
+    .icon-orange { background: rgba(234, 88, 12, 0.12); color: #ea580c; border: 1px solid rgba(234, 88, 12, 0.25); }
+    .icon-green { background: rgba(5, 150, 105, 0.12); color: #059669; border: 1px solid rgba(5, 150, 105, 0.25); }
+    .icon-cyan { background: rgba(8, 145, 178, 0.12); color: #0891b2; border: 1px solid rgba(8, 145, 178, 0.25); }
+    .icon-gold { background: rgba(217, 119, 6, 0.12); color: #d97706; border: 1px solid rgba(217, 119, 6, 0.25); }
+
+    /* Telemetry Pill Badges */
+    .kpi-live-pill {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .pill-blue { background: rgba(37, 99, 235, 0.1); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.25); }
+    .pill-purple { background: rgba(124, 58, 237, 0.1); color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.25); }
+    .pill-orange { background: rgba(234, 88, 12, 0.1); color: #ea580c; border: 1px solid rgba(234, 88, 12, 0.25); }
+    .pill-green { background: rgba(5, 150, 105, 0.1); color: #059669; border: 1px solid rgba(5, 150, 105, 0.25); }
+    .pill-cyan { background: rgba(8, 145, 178, 0.1); color: #0891b2; border: 1px solid rgba(8, 145, 178, 0.25); }
+    .pill-gold { background: rgba(217, 119, 6, 0.1); color: #d97706; border: 1px solid rgba(217, 119, 6, 0.25); }
+
+    /* Pulse Dots */
+    .kpi-pulse-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        position: relative;
+    }
+    .pulse-cyan {
+        background-color: #0891b2;
+        box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.7);
+        animation: kpiPulseCyan 1.8s infinite;
+    }
+    .pulse-gold {
+        background-color: #d97706;
+        box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7);
+        animation: kpiPulseGold 1.8s infinite;
+    }
+    @keyframes kpiPulseCyan {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(8, 145, 178, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(8, 145, 178, 0); }
+    }
+    @keyframes kpiPulseGold {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+    }
+
+    .kpi-body {
+        margin: 6px 0;
+    }
+
+    .kpi-counter {
+        margin: 0;
+        font-size: 2.6rem;
+        font-weight: 850;
+        letter-spacing: -1.2px;
+        line-height: 1.05;
+        color: var(--text-primary);
+        font-feature-settings: "tnum";
+        font-variant-numeric: tabular-nums;
+        transition: color 0.3s ease;
+    }
+
+    .kpi-label {
+        margin: 6px 0 0 0;
+        font-size: 0.94rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.2px;
+    }
+
+    .kpi-footer {
+        border-top: 1px solid var(--border-color);
+        padding-top: 12px;
+        margin-top: 12px;
+    }
+
+    .kpi-footer-tag {
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .kpi-card.card-highlight-pulse {
+        animation: highlightFlash 1.5s ease-out;
+    }
+
+    @keyframes highlightFlash {
+        0% {
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.7);
+            border-color: rgba(245, 158, 11, 0.9);
+        }
+        100% {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+            border-color: var(--border-color);
+        }
+    }
+
+    /* Light Theme specific polish */
+    [data-theme="light"] .kpi-card {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02), 0 8px 20px rgba(0,0,0,0.04) !important;
+    }
+    [data-theme="light"] .kpi-card:hover {
+        box-shadow: 0 16px 36px rgba(0,0,0,0.08) !important;
+        border-color: #cbd5e1 !important;
+    }
+    [data-theme="light"] .kpi-counter {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .kpi-label {
+        color: #334155 !important;
+    }
+    [data-theme="light"] .kpi-footer {
+        border-top-color: #f1f5f9 !important;
+    }
+    [data-theme="light"] .kpi-footer-tag {
+        color: #64748b !important;
+    }
+
+    .admin-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    .admin-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .admin-card h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .action-list li {
+        margin-bottom: 15px;
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px 20px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .action-btn:hover {
+        background: rgba(255, 69, 58, 0.05);
+        border-color: var(--accent-red);
+        color: var(--accent-red);
+    }
+
+    .action-btn .icon-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .action-btn i.fa-chevron-right {
+        color: var(--text-secondary);
+    }
+
+    .sys-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px;
+        background: rgba(48, 209, 88, 0.1);
+        border-radius: 12px;
+        color: #30d158;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+    /* Toast Notification de Actualización en Tiempo Real */
+    .live-toast-alert {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        background: rgba(20, 20, 25, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 159, 10, 0.4);
+        border-radius: 14px;
+        padding: 14px 20px;
+        color: #fff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 99999;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+    }
+
+    .live-toast-alert.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .admin-sections {
+            grid-template-columns: 1fr;
+        }
+        .dashboard-live-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<!-- Encabezado con Estado en Vivo en Tiempo Real -->
+<div class="dashboard-live-header">
+    <div>
+        <h2 style="color: var(--text-main); margin: 0 0 6px 0; font-size: 1.6rem; font-weight: 700;">
+            <i class="fa-solid fa-gauge-high" style="color: var(--accent-red); margin-right: 8px;"></i> Métricas Generales del Sistema
+        </h2>
+        <p style="margin: 0; color: var(--text-muted); font-size: 0.88rem;">
+            Monitoreo en tiempo real de operaciones, órdenes, inventario y usuarios de Taller y Lubricantes CR.
+        </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div class="live-status-pill">
+            <span class="pulse-dot"></span>
+            <span>EN VIVO</span>
+        </div>
+        <button type="button" class="btn-manual-sync" onclick="forzarActualizacionDashboard()" title="Recalcular métricas en vivo desde la Base de Datos">
+            <i class="fa-solid fa-rotate" id="syncSpinner"></i> Recalcular en Vivo
+        </button>
+    </div>
+</div>
+
+<!-- KPIs del Sistema con Arquitectura de Telemetría Ejecutiva -->
+<div class="kpi-grid">
+    <!-- 1. Usuarios Registrados -->
+    <div class="kpi-card" id="cardUsuarios">
+        <div class="kpi-top-bar bar-blue"></div>
+        <div class="kpi-card-header">
+            <div class="kpi-icon-emblem icon-blue">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <span class="kpi-live-pill pill-blue">
+                <i class="fa-solid fa-id-badge"></i> RRHH ACTIVO
+            </span>
+        </div>
+        <div class="kpi-body">
+            <h3 class="kpi-counter" id="statUsuarios">{{ stats.usuarios }}</h3>
+            <p class="kpi-label">Usuarios / Colaboradores</p>
+        </div>
+        <div class="kpi-footer">
+            <span class="kpi-footer-tag">
+                <i class="fa-solid fa-circle-check" style="color: #2563eb;"></i> 10 Colaboradores Activos en Nómina
+            </span>
+        </div>
+    </div>
+    
+    <!-- 2. Productos en BD -->
+    <div class="kpi-card" id="cardProductos">
+        <div class="kpi-top-bar bar-purple"></div>
+        <div class="kpi-card-header">
+            <div class="kpi-icon-emblem icon-purple">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <span class="kpi-live-pill pill-purple">
+                <i class="fa-solid fa-boxes-packing"></i> EN STOCK
+            </span>
+        </div>
+        <div class="kpi-body">
+            <h3 class="kpi-counter" id="statProductos">{{ stats.productos }}</h3>
+            <p class="kpi-label">Productos en Base de Datos</p>
+        </div>
+        <div class="kpi-footer">
+            <span class="kpi-footer-tag">
+                <i class="fa-solid fa-oil-can" style="color: #7c3aed;"></i> Motul, Liqui Moly y Repuestos Genuinos
+            </span>
+        </div>
+    </div>
+    
+    <!-- 3. Órdenes Históricas -->
+    <div class="kpi-card" id="cardOrdenes">
+        <div class="kpi-top-bar bar-orange"></div>
+        <div class="kpi-card-header">
+            <div class="kpi-icon-emblem icon-orange">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <span class="kpi-live-pill pill-orange">
+                <i class="fa-solid fa-wrench"></i> HISTORIAL
+            </span>
+        </div>
+        <div class="kpi-body">
+            <h3 class="kpi-counter" id="statOrdenes">{{ stats.ordenes }}</h3>
+            <p class="kpi-label">Órdenes Históricas</p>
+        </div>
+        <div class="kpi-footer">
+            <span class="kpi-footer-tag">
+                <i class="fa-solid fa-gauge-high" style="color: #ea580c;"></i> Servicios y Mantenimientos Totales
+            </span>
+        </div>
+    </div>
+    
+    <!-- 4. Proveedores -->
+    <div class="kpi-card" id="cardProveedores">
+        <div class="kpi-top-bar bar-green"></div>
+        <div class="kpi-card-header">
+            <div class="kpi-icon-emblem icon-green">
+                <i class="fa-solid fa-truck-field"></i>
+            </div>
+            <span class="kpi-live-pill pill-green">
+                <i class="fa-solid fa-handshake"></i> ALIADOS
+            </span>
+        </div>
+        <div class="kpi-body">
+            <h3 class="kpi-counter" id="statProveedores">{{ stats.proveedores }}</h3>
+            <p class="kpi-label">Proveedores Oficiales</p>
+        </div>
+        <div class="kpi-footer">
+            <span class="kpi-footer-tag">
+                <i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Cadena Logística Certificada
+            </span>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="admin-sections" style="margin-top: 30px;">
+    <!-- Administración -->
+    <div class="admin-card">
+        <h3><i class="fa-solid fa-shield-halved" style="color: var(--accent-red);"></i> Administración</h3>
+        <div class="sys-status" style="margin-bottom: 15px;">
+            <i class="fa-solid fa-circle-check"></i> BD Conectada • Alta Disponibilidad SQL Server
+        </div>
+        <ul class="action-list">
+            <li>
+                <a href="{{ url_for('settings.index') }}" class="action-btn">
+                    <div class="icon-title"><i class="fa-solid fa-gear" style="color: #0a84ff;"></i> Ajustes Generales</div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="action-btn" onclick="window.tallerAlert('La funcionalidad de respaldo automático programado se administra desde SQL Server Agent y Ajustes Generales.', 'info', 'Respaldos del Sistema'); return false;">
+                    <div class="icon-title"><i class="fa-solid fa-database" style="color: #8e8e93;"></i> Respaldos (Backups)</div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Toast flotante de actualización automática -->
+<div id="liveDashboardToast" class="live-toast-alert">
+    <i class="fa-solid fa-bolt" style="color: #FF9F0A; font-size: 1.3rem;"></i>
+    <div>
+        <div style="font-weight: 700; font-size: 0.88rem;" id="liveToastTitle">Datos Actualizados</div>
+        <div style="font-size: 0.76rem; color: #aaa;" id="liveToastMsg">El sistema detectó cambios en tiempo real.</div>
+    </div>
+</div>
+
+<script>
+    // Estado local para comparar cambios en tiempo real conforme entran o salen datos
+    let estadisticasLocales = {
+        usuarios: parseInt("{{ stats.usuarios }}") || 0,
+        productos: parseInt("{{ stats.productos }}") || 0,
+        ordenes: parseInt("{{ stats.ordenes }}") || 0,
+        proveedores: parseInt("{{ stats.proveedores }}") || 0,
+        citas_activas: null,
+        ordenes_activas: null
+    };
+
+    let intervalPollingDashboard = null;
+    let isFetchingStats = false;
+
+    // Función para animar números de forma fluida y elegante
+    function animateCount(elem, startVal, endVal, duration = 800) {
+        if (!elem) return;
+        if (isNaN(startVal)) startVal = 0;
+        if (isNaN(endVal)) endVal = 0;
+        if (startVal === endVal) {
+            elem.innerText = endVal.toLocaleString('es-NI');
+            return;
+        }
+
+        const startTime = performance.now();
+        const diff = endVal - startVal;
+
+        function updateStep(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Curva easeOutCubic
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            const currentVal = Math.round(startVal + diff * easeProgress);
+
+            elem.innerText = currentVal.toLocaleString('es-NI');
+
+            if (progress < 1) {
+                requestAnimationFrame(updateStep);
+            } else {
+                elem.innerText = endVal.toLocaleString('es-NI');
+            }
+        }
+
+        requestAnimationFrame(updateStep);
+    }
+
+    function mostrarToastEnVivo(titulo, mensaje) {
+        const toast = document.getElementById('liveDashboardToast');
+        const tTitle = document.getElementById('liveToastTitle');
+        const tMsg = document.getElementById('liveToastMsg');
+        if (!toast) return;
+
+        tTitle.innerText = titulo;
+        tMsg.innerText = mensaje;
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3500);
+    }
+
+    // Consulta en segundo plano al backend (Auto-Sync)
+    async function actualizarDashboardEnVivo() {
+        if (isFetchingStats) return;
+        isFetchingStats = true;
+
+        try {
+            const resp = await fetch('/api/dashboard/stats', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store'
+            });
+
+            if (!resp.ok) throw new Error('Respuesta HTTP no OK');
+            const data = await resp.json();
+
+            if (data.success) {
+                // Actualizar timestamp
+                const tsElem = document.getElementById('syncTimestamp');
+                if (tsElem && data.timestamp) {
+                    tsElem.innerText = data.timestamp;
+                }
+
+                let huboCambios = false;
+                let mensajeCambios = [];
+
+                // 1. Usuarios
+                if (data.usuarios !== estadisticasLocales.usuarios) {
+                    const diff = data.usuarios - estadisticasLocales.usuarios;
+                    animateCount(document.getElementById('statUsuarios'), estadisticasLocales.usuarios, data.usuarios);
+                    document.getElementById('cardUsuarios')?.classList.add('card-highlight-pulse');
+                    setTimeout(() => document.getElementById('cardUsuarios')?.classList.remove('card-highlight-pulse'), 1600);
+                    huboCambios = true;
+                    mensajeCambios.push(`Usuarios: ${diff > 0 ? '+' : ''}${diff}`);
+                    estadisticasLocales.usuarios = data.usuarios;
+                }
+
+                // 2. Productos
+                if (data.productos !== estadisticasLocales.productos) {
+                    const diff = data.productos - estadisticasLocales.productos;
+                    animateCount(document.getElementById('statProductos'), estadisticasLocales.productos, data.productos);
+                    document.getElementById('cardProductos')?.classList.add('card-highlight-pulse');
+                    setTimeout(() => document.getElementById('cardProductos')?.classList.remove('card-highlight-pulse'), 1600);
+                    huboCambios = true;
+                    mensajeCambios.push(`Productos: ${diff > 0 ? '+' : ''}${diff}`);
+                    estadisticasLocales.productos = data.productos;
+                }
+
+                // 3. Órdenes Históricas
+                if (data.ordenes !== estadisticasLocales.ordenes) {
+                    const diff = data.ordenes - estadisticasLocales.ordenes;
+                    animateCount(document.getElementById('statOrdenes'), estadisticasLocales.ordenes, data.ordenes);
+                    document.getElementById('cardOrdenes')?.classList.add('card-highlight-pulse');
+                    setTimeout(() => document.getElementById('cardOrdenes')?.classList.remove('card-highlight-pulse'), 1600);
+                    huboCambios = true;
+                    mensajeCambios.push(`Órdenes: ${diff > 0 ? '+' : ''}${diff}`);
+                    estadisticasLocales.ordenes = data.ordenes;
+                }
+
+                // 4. Proveedores
+                if (data.proveedores !== estadisticasLocales.proveedores) {
+                    const diff = data.proveedores - estadisticasLocales.proveedores;
+                    animateCount(document.getElementById('statProveedores'), estadisticasLocales.proveedores, data.proveedores);
+                    document.getElementById('cardProveedores')?.classList.add('card-highlight-pulse');
+                    setTimeout(() => document.getElementById('cardProveedores')?.classList.remove('card-highlight-pulse'), 1600);
+                    huboCambios = true;
+                    mensajeCambios.push(`Proveedores: ${diff > 0 ? '+' : ''}${diff}`);
+                    estadisticasLocales.proveedores = data.proveedores;
+                } else if (data.ordenes_activas !== estadisticasLocales.ordenes_activas) {
+                    const diff = data.ordenes_activas - estadisticasLocales.ordenes_activas;
+                    animateCount(elemOrdAct, estadisticasLocales.ordenes_activas, data.ordenes_activas);
+                    document.getElementById('cardOrdenesActivas')?.classList.add('card-highlight-pulse');
+                    setTimeout(() => document.getElementById('cardOrdenesActivas')?.classList.remove('card-highlight-pulse'), 1600);
+                    huboCambios = true;
+                    mensajeCambios.push(`Taller: ${diff > 0 ? '+' : ''}${diff} en bahía`);
+                    estadisticasLocales.ordenes_activas = data.ordenes_activas;
+                }
+
+                if (huboCambios && mensajeCambios.length > 0) {
+                    mostrarToastEnVivo('Actualización en Vivo', mensajeCambios.join(' • '));
+                }
+            }
+        } catch (err) {
+            console.debug('Polling dashboard:', err);
+        } finally {
+            isFetchingStats = false;
+        }
+    }
+
+    function forzarActualizacionDashboard() {
+        const spinner = document.getElementById('syncSpinner');
+        if (spinner) spinner.classList.add('fa-spin');
+        actualizarDashboardEnVivo().finally(() => {
+            setTimeout(() => {
+                if (spinner) spinner.classList.remove('fa-spin');
+            }, 600);
+        });
+    }
+
+    // Iniciar auto-polling en tiempo real (cada 3.5 segundos)
+    document.addEventListener('DOMContentLoaded', () => {
+        // Ejecución inmediata inicial
+        actualizarDashboardEnVivo();
+        // Polling recurrente
+        intervalPollingDashboard = setInterval(actualizarDashboardEnVivo, 3500);
+    });
+
+    // Pausar polling si la pestaña se oculta para ahorrar recursos, y reanudar al volver
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (intervalPollingDashboard) clearInterval(intervalPollingDashboard);
+        } else {
+            actualizarDashboardEnVivo();
+            intervalPollingDashboard = setInterval(actualizarDashboardEnVivo, 3500);
+        }
+    });
+</script>
+
+{% endblock %}

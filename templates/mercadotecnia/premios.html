@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Premios de la Rifa - Mercadotecnia{% endblock %}
+{% block page_title %}Mercadotecnia • Gestión de Premios de la Rifa{% endblock %}
+
+{% block content %}
+<style>
+    .merca-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        padding: 20px 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .grid-2col {
+        display: grid;
+        grid-template-columns: 1fr 1.3fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 992px) {
+        .grid-2col {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-panel, .list-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .form-panel h4, .list-panel h4 {
+        margin: 0 0 16px 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .input-label {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .btn-submit-premio {
+        width: 100%;
+        background: #f2c029;
+        color: #000;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s;
+        margin-top: 15px;
+    }
+
+    .btn-submit-premio:hover {
+        background: #e0b020;
+        transform: translateY(-1px);
+    }
+
+    .prize-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 14px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        transition: all 0.2s;
+    }
+
+    .prize-card:hover {
+        border-color: rgba(242, 192, 41, 0.4);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .prize-thumb {
+        width: 65px;
+        height: 65px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: #000;
+        border: 1px solid var(--border-color);
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+
+    .status-badge.activa {
+        background: rgba(242, 192, 41, 0.15);
+        color: #f2c029;
+        border: 1px solid rgba(242, 192, 41, 0.3);
+    }
+
+    .status-badge.sorteada {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-badge.entregado {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+</style>
+
+<div class="merca-header">
+    <div>
+        <h3 style="margin: 0 0 6px 0; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-boxes-stacked" style="color: #f2c029;"></i> Selección de Premios desde Inventario
+        </h3>
+        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+            El producto seleccionado para la rifa mensual se <strong>descuenta automáticamente del stock</strong> del taller.
+        </p>
+    </div>
+</div>
+
+<div class="grid-2col">
+    <!-- Panel Izquierdo: Formulario de Asignación de Premio -->
+    <div class="form-panel">
+        <h4><i class="fa-solid fa-plus-circle" style="color: #f2c029;"></i> Asignar Producto de Tienda</h4>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px;">
+            Elige el producto que se sorteará este mes. Al confirmarlo, el sistema restará 1 unidad del inventario físico disponible.
+        </p>
+
+        <form method="POST" action="{{ url_for('mercadotecnia.premios') }}" onsubmit="return window.tallerConfirmSubmit(event, { title: 'Asignar Producto para Rifa', message: '¿Confirmas asignar este producto para la rifa? Se descontará 1 unidad del inventario inmediatamente.', confirmText: 'Sí, Asignar y Descontar', confirmColor: '#d97706', iconClass: 'fa-solid fa-gift' });">
+            <input type="hidden" name="action" value="asignar_premio">
+
+            <div style="margin-bottom: 16px;">
+                <label class="input-label">Mes / Periodo de la Rifa</label>
+                <input type="text" name="mes_periodo" value="{{ mes_sugerido }}" required class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="input-label">Producto del Inventario (Stock Disponible)</label>
+                <select name="producto_id" required class="form-control select2" style="width: 100%;" onchange="mostrarDetalleProducto(this)">
+                    <option value="">-- Selecciona un producto para rifar --</option>
+                    {% for p in productos %}
+                    <option value="{{ p.producto_id }}" data-precio="{{ p.precio }}" data-stock="{{ p.stock }}" data-sku="{{ p.sku }}" data-img="{{ p.imagen }}" data-categoria="{{ p.categoria }}">
+                        {{ p.nombre }} (Stock: {{ p.stock }} | C$ {{ "{:,.2f}".format(p.precio) }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Vista Previa del Producto Seleccionado -->
+            <div id="previewProducto" style="display: none; padding: 14px; border-radius: 10px; background: rgba(242, 192, 41, 0.05); border: 1px solid rgba(242, 192, 41, 0.2); margin-bottom: 16px;">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <img id="prevImg" src="" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
+                    <div id="prevNoImg" style="display: none; width: 50px; height: 50px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); align-items: center; justify-content: center; color: var(--text-secondary); font-size: 1.25rem;"><i class="fa-solid fa-box-open"></i></div>
+                    <div style="font-size: 0.85rem;">
+                        <strong id="prevNombre" style="color: #f2c029;"></strong><br>
+                        <span id="prevSku" style="color: var(--text-secondary);"></span> • 
+                        <span id="prevPrecio" style="color: #10b981; font-weight: 700;"></span><br>
+                        <span style="color: #f59e0b; font-size: 0.8rem;"><i class="fa-solid fa-triangle-exclamation"></i> Se descontará 1 unidad del stock disponible.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="input-label">Notas / Observaciones</label>
+                <textarea name="observaciones" rows="2" placeholder="Ej: Rifa exclusiva para clientes con compras de C$ 1,000 en el mes" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); box-sizing: border-box;"></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit-premio">
+                <i class="fa-solid fa-gift"></i> Confirmar y Descontar de Inventario
+            </button>
+        </form>
+    </div>
+
+    <!-- Panel Derecho: Historial de Premios y Ganadores -->
+    <div class="list-panel">
+        <h4><i class="fa-solid fa-clock-rotate-left" style="color: var(--text-secondary);"></i> Premios Registrados para Rifa</h4>
+
+        {% if rifas %}
+            {% for r in rifas %}
+            <div class="prize-card">
+                {% if r.imagen %}
+                <img src="{{ r.imagen }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" class="prize-thumb">
+                <div class="prize-thumb" style="display:none; background: var(--bg-secondary); align-items:center; justify-content:center; color: var(--text-secondary); font-size:1.3rem;"><i class="fa-solid fa-box-open"></i></div>
+                {% else %}
+                <div class="prize-thumb" style="display:flex; background: var(--bg-secondary); align-items:center; justify-content:center; color: var(--text-secondary); font-size:1.3rem;"><i class="fa-solid fa-box-open"></i></div>
+                {% endif %}
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span class="status-badge {{ r.estado.lower() }}">{{ r.estado }}</span>
+                        <strong style="color: #f2c029; font-size: 0.95rem;">{{ r.mes }}</strong>
+                    </div>
+
+                    <h5 style="margin: 0 0 4px 0; font-size: 1rem; color: var(--text-primary);">{{ r.nombre }}</h5>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">
+                        <span>SKU: {{ r.sku }}</span> • 
+                        <span style="color: #10b981; font-weight: 700;">Valor: C$ {{ "{:,.2f}".format(r.precio) }}</span>
+                    </div>
+
+                    {% if r.estado == 'Sorteada' or r.estado == 'Entregado' %}
+                    <div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 6px 10px; border-radius: 4px; font-size: 0.82rem; color: #10b981; margin-top: 6px;">
+                        <i class="fa-solid fa-crown"></i> <strong>Ganador:</strong> {{ r.ganador_nombre }} 
+                        {% if r.ganador_telefono %}(Tel: {{ r.ganador_telefono }}){% endif %}
+                        • <small>{{ r.fecha_sorteo }}</small>
+                    </div>
+                    {% else %}
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
+                        <i class="fa-solid fa-hourglass-half" style="color: #f2c029;"></i> En espera del sorteo mensual con los clientes participantes.
+                    </div>
+                    {% endif %}
+
+                    {% if r.estado == 'Sorteada' %}
+                    <form method="POST" action="{{ url_for('mercadotecnia.premios') }}" style="margin-top: 8px;">
+                        <input type="hidden" name="action" value="entregar_premio">
+                        <input type="hidden" name="rifa_id" value="{{ r.rifa_id }}">
+                        <button type="submit" style="background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-handshake"></i> Marcar como Entregado al Cliente
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+            <i class="fa-solid fa-box-open" style="font-size: 2.5rem; opacity: 0.3; margin-bottom: 12px;"></i>
+            <p style="margin: 0;">Aún no se ha asignado ningún producto para rifar este mes. Utiliza el formulario de la izquierda para seleccionar un producto del inventario.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function mostrarDetalleProducto(selectElem) {
+        const option = selectElem.options[selectElem.selectedIndex];
+        if (!option.value) {
+            document.getElementById('previewProducto').style.display = 'none';
+            return;
+        }
+
+        const precio = option.getAttribute('data-precio');
+        const sku = option.getAttribute('data-sku');
+        const img = option.getAttribute('data-img');
+
+        document.getElementById('prevNombre').innerText = option.text.split('(')[0];
+        document.getElementById('prevSku').innerText = "SKU: " + sku;
+        document.getElementById('prevPrecio').innerText = "C$ " + Number(precio).toLocaleString('es-NI', {minimumFractionDigits: 2});
+        const prevImg = document.getElementById('prevImg');
+        const prevNoImg = document.getElementById('prevNoImg');
+        let resolvedImg = (img || '').trim();
+        if (resolvedImg && !resolvedImg.startsWith('/') && !resolvedImg.startsWith('http://') && !resolvedImg.startsWith('https://')) {
+            resolvedImg = '/static/img/' + resolvedImg.replace(/^static\/img\//, '');
+        }
+        if (resolvedImg) {
+            prevImg.style.display = 'block';
+            if (prevNoImg) prevNoImg.style.display = 'none';
+            prevImg.onerror = function() {
+                this.style.display = 'none';
+                if (prevNoImg) prevNoImg.style.display = 'flex';
+            };
+            prevImg.src = resolvedImg;
+        } else {
+            prevImg.removeAttribute('src');
+            prevImg.style.display = 'none';
+            if (prevNoImg) prevNoImg.style.display = 'flex';
+        }
+        document.getElementById('previewProducto').style.display = 'block';
+    }
+</script>
+{% endblock %}

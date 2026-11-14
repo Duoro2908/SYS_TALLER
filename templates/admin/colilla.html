@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colilla de Pago - {{ data.nombre }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f0f13;
+            --surface-color: #1a1a24;
+            --text-main: #f5f5f7;
+            --text-secondary: #8e8e93;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --accent-primary: #0A84FF;
+            --accent-green: #30D158;
+            --accent-red: #FF453A;
+            --accent-orange: #FF9F0A;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .receipt-container {
+            background-color: var(--surface-color);
+            width: 100%;
+            max-width: 650px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            padding: 35px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 22px;
+        }
+
+        .header h1 {
+            margin: 0 0 4px 0;
+            font-size: 1.6rem;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .employee-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 18px;
+            border-radius: 14px;
+        }
+
+        .info-group label {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        .info-group div {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #fff;
+        }
+
+        .section-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .line-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.9rem;
+        }
+
+        .line-item:last-child {
+            border-bottom: none;
+        }
+
+        .line-title {
+            color: #d1d1d6;
+        }
+
+        .line-value {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .value-positive { color: #fff; }
+        .value-negative { color: var(--accent-red); }
+
+        .net-total {
+            background: linear-gradient(135deg, rgba(10, 132, 255, 0.25), rgba(48, 209, 88, 0.25));
+            border: 1px solid rgba(48, 209, 88, 0.4);
+            color: white;
+            padding: 18px 22px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0 25px 0;
+        }
+
+        .net-total-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .net-total-value {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: var(--accent-green);
+        }
+
+        .accumulated-box {
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 22px;
+        }
+
+        .accumulated-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .acc-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 8px;
+            border-radius: 10px;
+        }
+
+        .acc-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            display: block;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .acc-value {
+            font-weight: 700;
+            color: #fff;
+            font-size: 0.95rem;
+        }
+
+        .signatures-colilla {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 35px;
+            padding-top: 15px;
+        }
+
+        .sign-line {
+            text-align: center;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 8px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .colilla-banner {
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .colilla-pending-banner {
+            background: rgba(255, 159, 10, 0.12);
+            border: 1px solid rgba(255, 159, 10, 0.4);
+        }
+
+        .colilla-paid-banner {
+            background: rgba(48, 209, 88, 0.12);
+            border: 1px solid rgba(48, 209, 88, 0.4);
+        }
+
+        .btn-colilla-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-colilla-pagar {
+            background: linear-gradient(135deg, #0A84FF 0%, #0066CC 100%);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(10, 132, 255, 0.4);
+        }
+
+        .btn-colilla-pagar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(10, 132, 255, 0.6);
+        }
+
+        .btn-colilla-revertir {
+            background: rgba(255, 69, 58, 0.15);
+            color: #FF453A;
+            border: 1px solid rgba(255, 69, 58, 0.4);
+        }
+
+        .btn-colilla-revertir:hover {
+            background: #FF453A;
+            color: #fff;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+            width: 100%;
+        }
+
+        .btn-colilla {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+        }
+
+        .btn-print {
+            background: var(--accent-primary);
+            color: #fff;
+        }
+        .btn-print:hover { opacity: 0.9; }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid var(--border-color);
+        }
+        .btn-back:hover { background: rgba(255, 255, 255, 0.15); }
+
+        @media print {
+            body { background: white; color: #000; padding: 0; }
+            .receipt-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                max-width: 100%;
+                background: white;
+                color: #000;
+                padding: 15px;
+            }
+            .header h1, .employee-info div, .section-title, .line-value, .acc-value, .net-total-title {
+                color: #000 !important;
+            }
+            .employee-info, .accumulated-box, .acc-item {
+                background: #fcfcfc !important;
+                border: 1px solid #ccc !important;
+            }
+            .net-total {
+                background: #eee !important;
+                border: 1px solid #bbb !important;
+                color: #000 !important;
+            }
+            .net-total-value { color: #000 !important; }
+            .nav-actions { display: none !important; }
+            .sign-line { border-top-color: #333 !important; color: #333 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="receipt-container">
+        <div class="header">
+            <i class="fa-solid fa-wrench" style="font-size: 2rem; color: var(--accent-primary); margin-bottom: 8px;"></i>
+            <h1>TALLER Y LUBRICANTES CR</h1>
+            <p>RUC: <strong>J0310000123456</strong> • Managua, Nicaragua</p>
+            <p style="margin-top: 4px; font-weight: 600; color: #fff;">COMPROBANTE Y COLILLA DE PAGO MENSUAL</p>
+            <p style="font-size: 0.78rem; margin-top: 2px;">Conforme a la Ley N° 185 (Código del Trabajo) y Ley N° 822 (DGI)</p>
+        </div>
+
+        {% if data.pagado %}
+        <div class="colilla-banner colilla-paid-banner">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-circle-check" style="font-size: 1.5rem; color: #30D158;"></i>
+                <div>
+                    <div style="font-weight: 700; color: #30D158; font-size: 0.92rem;">DESEMBOLSO AUTORIZADO Y PAGADO</div>
+                    <div style="font-size: 0.78rem; color: #d1d1d6; margin-top: 2px;">
+                        Planilla legal calculada según Ley 185 y Ley 822 • {{ data.dias_trabajados }}/30 días trabajados.
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-colilla-action btn-colilla-revertir" onclick="togglePagoColilla({{ data.id }}, false)">
+                <i class="fa-solid fa-ban"></i> Revertir a No Pagado
+            </button>
+        </div>
+        {% else %}
+        <div class="colilla-banner colilla-pending-banner">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.5rem; color: #FF9F0A;"></i>
+                <div>
+                    <div style="font-weight: 700; color: #FF9F0A; font-size: 0.92rem;">PAGO PENDIENTE DE AUTORIZACIÓN (C$ 0.00)</div>
+                    <div style="font-size: 0.78rem; color: #d1d1d6; margin-top: 2px;">
+                        Este colaborador no ha sido marcado como PAGADO. Todos los rubros impositivos y salariales permanecen en C$ 0.00.
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-colilla-action btn-colilla-pagar" onclick="togglePagoColilla({{ data.id }}, true)">
+                <i class="fa-solid fa-money-bill-wave"></i> Autorizar y Pagar Ahora
+            </button>
+        </div>
+        {% endif %}
+
+        {% if data.es_asesor %}
+        <div style="margin-bottom: 18px; padding: 10px 16px; background: rgba(255, 159, 10, 0.12); border: 1px solid rgba(255, 159, 10, 0.35); border-radius: 12px; font-size: 0.82rem; color: #FF9F0A; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span style="font-weight: 700;"><i class="fa-solid fa-calendar-check" style="margin-right: 6px;"></i> ASESORÍA EXTERNA • CIERRE MENSUAL</span>
+            <span style="background: rgba(255, 159, 10, 0.2); padding: 3px 10px; border-radius: 8px; font-weight: 600;">1 Día al Mes • Pago Único por Cierre</span>
+        </div>
+        {% else %}
+        <div style="margin-bottom: 18px; padding: 10px 16px; background: rgba(10, 132, 255, 0.12); border: 1px solid rgba(10, 132, 255, 0.3); border-radius: 12px; font-size: 0.82rem; color: #0A84FF; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span style="font-weight: 700;"><i class="fa-solid fa-building-user" style="margin-right: 6px;"></i> PLANTA PERMANENTE • PRESENCIAL DIARIO</span>
+            <span style="background: rgba(10, 132, 255, 0.2); padding: 3px 10px; border-radius: 8px; font-weight: 600;">Turno Ordinario (48 hrs semanales)</span>
+        </div>
+        {% endif %}
+
+        <div class="employee-info">
+            <div class="info-group">
+                <label>Trabajador</label>
+                <div>{{ data.nombre }}</div>
+            </div>
+            <div class="info-group">
+                <label>Cédula de Identidad</label>
+                <div>{{ data.cedula }}</div>
+            </div>
+            <div class="info-group">
+                <label>Cargo / Puesto</label>
+                <div>{{ data.cargo }}</div>
+            </div>
+            <div class="info-group">
+                <label>Departamento</label>
+                <div>{{ data.depto }}</div>
+            </div>
+            <div class="info-group">
+                <label>Modalidad Laboral</label>
+                <div style="color: {% if data.es_asesor %}#FF9F0A{% else %}#0A84FF{% endif %}; font-size: 0.85rem;">
+                    {{ data.categoria_nombre }} ({{ data.modalidad }})
+                </div>
+            </div>
+            <div class="info-group">
+                <label>N° de Contrato</label>
+                <div style="color: var(--accent-primary);">{{ data.num_contrato }}</div>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <i class="fa-solid fa-money-bill-wave" style="color: var(--accent-primary);"></i> Desglose de Percepciones y Deducciones (MIPYME)
+        </div>
+        
+        <div>
+            <!-- Salario Base -->
+            <div class="line-item">
+                <span class="line-title">
+                    {{ data.tipo_pago_label }}
+                    <span style="font-size: 0.74rem; color: var(--text-secondary); display: block;">
+                        {% if data.pagado %}
+                            Salario base mensual pactado en contrato ({{ data.dias_trabajados }}/30 días trabajados)
+                        {% else %}
+                            Salario base pactado: C$ {{ "{:,.2f}".format(data.calc_salario_base) }} • <strong style="color: #FF9F0A;">Pendiente de Autorización</strong>
+                        {% endif %}
+                    </span>
+                </span>
+                <span class="line-value {{ 'value-positive' if data.pagado else '' }}" style="{{ '' if data.pagado else 'color: #8E8E93;' }}">
+                    C$ {{ "{:,.2f}".format(data.salario_base) }}
+                </span>
+            </div>
+
+            <!-- Bono de Productividad Mecánicos (por cada 5 vehículos) -->
+            {% if (data.bono_vehiculos > 0 or data.es_mecanico) and data.pagado %}
+            <div class="line-item" style="background: rgba(48,209,88,0.03);">
+                <span class="line-title">
+                    <i class="fa-solid fa-car-burst" style="color: #30D158; margin-right: 4px;"></i> Bono de Productividad Taller (Cada 5 Vehículos)
+                    <span style="font-size: 0.74rem; color: #30D158; display: block;">
+                        {{ data.vehiculos_atendidos }} vehículos atendidos en el mes • Tasa: C$ 500.00 por cada 5 vehículos
+                    </span>
+                </span>
+                <span class="line-value" style="color: #30D158; font-weight: 700;">
+                    {% if data.bono_vehiculos > 0 %}
+                        + C$ {{ "{:,.2f}".format(data.bono_vehiculos) }}
+                    {% else %}
+                        C$ 0.00 (Faltan {{ 5 - (data.vehiculos_atendidos % 5) }} para meta)
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+
+            <!-- Bonos Extraordinarios -->
+            {% if data.bonos_extras > 0 and data.pagado %}
+            <div class="line-item">
+                <span class="line-title">
+                    <i class="fa-solid fa-gift" style="color: #30D158; margin-right: 4px;"></i> Bonos e Incentivos Extras
+                    <span style="font-size: 0.74rem; color: var(--text-secondary); display: block;">{{ data.motivo_bono or 'Incentivo de rendimiento' }}</span>
+                </span>
+                <span class="line-value" style="color: #30D158; font-weight: 700;">+ C$ {{ "{:,.2f}".format(data.bonos_extras) }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Deducción por Inasistencias / Días Faltados -->
+            {% if (data.deduccion_faltas > 0 or data.dias_faltados > 0) and data.pagado %}
+            <div class="line-item" style="background: rgba(255,69,58,0.03);">
+                <span class="line-title">
+                    <i class="fa-solid fa-calendar-xmark" style="color: #FF453A; margin-right: 4px;"></i> Deducción por Inasistencia ({{ data.dias_faltados }} día{{ 's' if data.dias_faltados > 1 else '' }})
+                    <span style="font-size: 0.74rem; color: #ff8b85; display: block;">
+                        Cálculo legal: (Salario Base / 30 días) × {{ data.dias_faltados }} días faltados
+                    </span>
+                </span>
+                <span class="line-value value-negative">- C$ {{ "{:,.2f}".format(data.deduccion_faltas) }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Otras Deducciones -->
+            {% if data.otras_deducciones > 0 and data.pagado %}
+            <div class="line-item">
+                <span class="line-title">
+                    <i class="fa-solid fa-receipt" style="color: #FF453A; margin-right: 4px;"></i> Otras Deducciones / Anticipos
+                    <span style="font-size: 0.74rem; color: var(--text-secondary); display: block;">{{ data.motivo_deduccion or 'Anticipo/Deducción autorizada' }}</span>
+                </span>
+                <span class="line-value value-negative">- C$ {{ "{:,.2f}".format(data.otras_deducciones) }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Salario Bruto Devengado Total -->
+            <div class="line-item" style="background: rgba(255,255,255,0.04); font-weight: 700; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 11px;">
+                <span class="line-title" style="color: #fff; font-weight: 700;">
+                    Total Salario Bruto Devengado:
+                    <span style="font-size: 0.74rem; color: var(--text-muted); display: block; font-weight: 400;">Base + Bonos - Deducciones</span>
+                </span>
+                <span class="line-value" style="color: #fff; font-size: 1.05rem;">C$ {{ "{:,.2f}".format(data.salario_bruto) }}</span>
+            </div>
+
+            <!-- INSS Laboral (7%) -->
+            <div class="line-item">
+                <span class="line-title">
+                    Deducción INSS Laboral (7.0%)
+                    <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">No gravable de IR según Art. 19 Ley 822 DGI</span>
+                </span>
+                <span class="line-value value-negative">- C$ {{ "{:,.2f}".format(data.inss_laboral) }}</span>
+            </div>
+
+            <!-- Base Imponible IR -->
+            <div class="line-item">
+                <span class="line-title">
+                    Base Imponible Mensual Gravable DGI
+                    <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">Proyección Anual: C$ {{ "{:,.2f}".format(data.renta_anual_proyectada) }} (Tramo {{ data.tramo_dgi }})</span>
+                </span>
+                <span class="line-value" style="color: #a1a1aa;">C$ {{ "{:,.2f}".format(data.base_imponible_mensual) }}</span>
+            </div>
+
+            <!-- Retención Fiscal IR DGI -->
+            <div class="line-item">
+                <span class="line-title">
+                    Retención en la Fuente IR Salarial (DGI - Art. 23 Ley 822)
+                    <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">Tarifa Progresiva {{ data.tasa_dgi }}% sobre estrato anual</span>
+                </span>
+                <span class="line-value value-negative">
+                    {% if data.ir > 0 %}
+                        - C$ {{ "{:,.2f}".format(data.ir) }}
+                    {% else %}
+                        <span style="color: #30D158;">C$ 0.00 (Exento)</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="net-total">
+            <div>
+                <div class="net-total-title">Salario Neto Líquido a Pagar</div>
+                <div style="font-size: 0.75rem; opacity: 0.85;">Quincenal: C$ {{ "{:,.2f}".format(data.salario_neto / 2) }}</div>
+            </div>
+            <div class="net-total-value">C$ {{ "{:,.2f}".format(data.salario_neto) }}</div>
+        </div>
+
+        <!-- Fondos y Provisiones Sociales Ley 185 -->
+        <div class="accumulated-box">
+            <div class="section-title" style="margin-bottom: 4px; font-size: 0.88rem;">
+                <i class="fa-solid fa-piggy-bank" style="color: var(--accent-orange);"></i> Prestaciones Sociales Acumuladas (Ley N° 185)
+            </div>
+            <p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary);">
+                Garantizadas por la empresa de conformidad con el Código del Trabajo (Calculadas por {{ data.meses }} meses de antigüedad).
+            </p>
+            
+            <div class="accumulated-grid">
+                <div class="acc-item">
+                    <span class="acc-label">Aguinaldo (Art. 93)</span>
+                    <span class="acc-value">C$ {{ "{:,.2f}".format(data.aguinaldo) }}</span>
+                </div>
+                <div class="acc-item">
+                    <span class="acc-label">Vacaciones (Art. 76)</span>
+                    <span class="acc-value">C$ {{ "{:,.2f}".format(data.vacaciones) }}</span>
+                </div>
+                <div class="acc-item">
+                    <span class="acc-label">Indemnización (Art. 45)</span>
+                    <span class="acc-value">C$ {{ "{:,.2f}".format(data.indemnizacion) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aportes del Empleador (Informativo) -->
+        <div style="font-size: 0.78rem; color: var(--text-secondary); background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
+            <strong>Aportes asumidos por el Empleador:</strong> INSS Patronal (22.5%): C$ {{ "{:,.2f}".format(data.inss_patronal) }} • INATEC (2.0%): C$ {{ "{:,.2f}".format(data.inatec) }}
+        </div>
+
+        <!-- Firmas Formales -->
+        <div class="signatures-colilla">
+            <div class="sign-line">
+                <strong>TALLER Y LUBRICANTES CR</strong><br>
+                RUC: J0310000123456<br>
+                Firma y Sello de la Empresa
+            </div>
+            <div class="sign-line">
+                <strong>{{ data.nombre }}</strong><br>
+                Cédula: {{ data.cedula }}<br>
+                Firma del Trabajador (Recibí Conforme)
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <a href="{{ url_for('planilla.index') }}" class="btn-colilla btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Volver a Planilla
+            </a>
+            <button class="btn-colilla btn-print" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> Imprimir Colilla Oficial
+            </button>
+        </div>
+    </div>
+
+    <div id="colillaSysBackdrop" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.72); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:18px;">
+        <div style="background:var(--bg-surface, #ffffff); color:var(--text-primary, #0f172a); border:1px solid var(--border-color, #e2e8f0); border-radius:16px; max-width:420px; width:100%; padding:24px; text-align:center; box-shadow:0 20px 45px rgba(0,0,0,0.4);">
+            <h3 id="colillaSysTitle" style="margin:0 0 8px 0; font-size:1.1rem; font-weight:800;">Confirmar Pago</h3>
+            <p id="colillaSysMsg" style="margin:0 0 20px 0; font-size:0.9rem; color:var(--text-secondary, #64748b); line-height:1.5;"></p>
+            <div style="display:flex; justify-content:center; gap:10px;">
+                <button type="button" id="colillaSysCancel" onclick="closeColillaDialog(false)" style="padding:9px 18px; border-radius:9px; border:1px solid var(--border-color, #cbd5e1); background:transparent; color:inherit; font-weight:700; cursor:pointer;">Cancelar</button>
+                <button type="button" id="colillaSysOk" onclick="closeColillaDialog(true)" style="padding:9px 20px; border-radius:9px; border:none; background:#10b981; color:#fff; font-weight:700; cursor:pointer;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let _colillaCb = null;
+        function openColillaDialog(title, msg, okText, okColor, hideCancel, cb) {
+            document.getElementById('colillaSysTitle').textContent = title;
+            document.getElementById('colillaSysMsg').textContent = msg;
+            const okBtn = document.getElementById('colillaSysOk');
+            okBtn.textContent = okText || 'Confirmar';
+            okBtn.style.background = okColor || '#10b981';
+            document.getElementById('colillaSysCancel').style.display = hideCancel ? 'none' : 'inline-block';
+            _colillaCb = cb || null;
+            document.getElementById('colillaSysBackdrop').style.display = 'flex';
+        }
+        function closeColillaDialog(res) {
+            document.getElementById('colillaSysBackdrop').style.display = 'none';
+            const cb = _colillaCb;
+            _colillaCb = null;
+            if (res && typeof cb === 'function') cb();
+        }
+        function togglePagoColilla(usuarioId, nuevoEstado) {
+            const accion = nuevoEstado ? 'autorizar y procesar el desembolso con deducciones de ley' : 'revertir el pago a C$ 0.00';
+            openColillaDialog(
+                'Confirmar Movimiento de Planilla',
+                `¿Está seguro de ${accion} para este colaborador?`,
+                nuevoEstado ? 'Sí, Procesar Pago' : 'Sí, Revertir',
+                nuevoEstado ? '#10b981' : '#f59e0b',
+                false,
+                () => {
+                    fetch('/admin/planilla/toggle_pago', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usuario_id: usuarioId, pagado: nuevoEstado })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            window.location.reload();
+                        } else {
+                            openColillaDialog('Error en Planilla', 'Error al actualizar pago: ' + (res.message || 'Error desconocido'), 'Entendido', '#ef4444', true);
+                        }
+                    })
+                    .catch(err => openColillaDialog('Error de Conexión', 'Error de conexión: ' + err, 'Entendido', '#ef4444', true));
+                }
+            );
+        }
+    </script>
+</body>
+</html>

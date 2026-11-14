@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Control de Cajas - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Historial de Cajas{% endblock %}
+
+{% block content %}
+<style>
+    .sales-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .sales-table-container {
+        background: var(--bg-surface);
+        backdrop-filter: var(--backdrop-blur);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        overflow-x: auto;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table th, .table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .table th {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table td {
+        color: var(--text-primary);
+        vertical-align: middle;
+        font-size: 0.95rem;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-edit-caja {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-edit-caja:hover {
+        background: #3b82f6;
+        color: #ffffff;
+        border-color: #3b82f6;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Modal Styles */
+    .modal-backdrop-custom {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(6px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+
+    .modal-card-custom {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 520px;
+        padding: 26px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalScaleIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .form-input-caja {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        font-weight: 600;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+
+    .form-input-caja:focus {
+        border-color: var(--accent-primary);
+    }
+
+    .btn-cancelar-caja {
+        padding: 9px 18px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-cancelar-caja:hover {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+
+    .btn-guardar-caja {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 20px;
+        border-radius: 10px;
+        border: none;
+        background: #3b82f6;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-guardar-caja:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+    }
+</style>
+
+<div class="sales-header">
+    <h2 style="color: var(--text-main); margin: 0;"><i class="fa-solid fa-cash-register"></i> Registros de Caja</h2>
+</div>
+
+<div class="sales-table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID Caja</th>
+                <th>Cajero/a</th>
+                <th>Apertura</th>
+                <th>Cierre</th>
+                <th>Fondo Inicial</th>
+                <th>Sistema</th>
+                <th>Físico (Arqueo)</th>
+                <th>Sobrante/Faltante</th>
+                <th>Estado</th>
+                <th style="text-align: center;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in cierres %}
+            <tr>
+                <td><strong>#{{ c.CajaID }}</strong></td>
+                <td>{{ c.NombreCompleto }}</td>
+                <td>{{ c.FechaApertura.strftime('%Y-%m-%d %H:%M') if c.FechaApertura else '-' }}</td>
+                <td>{{ c.FechaCierre.strftime('%Y-%m-%d %H:%M') if c.FechaCierre else '-' }}</td>
+                <td>C$ {{ "{:,.2f}".format(c.MontoInicial) }}</td>
+                <td>C$ {{ "{:,.2f}".format(c.MontoFinal) if c.MontoFinal is not none else '0.00' }}</td>
+                <td style="font-weight: bold;">C$ {{ "{:,.2f}".format(c.EfectivoFisico) if c.EfectivoFisico is not none else '0.00' }}</td>
+                <td style="color: {{ '#ef4444' if c.Diferencia and c.Diferencia < 0 else ('#10b981' if c.Diferencia and c.Diferencia == 0 else 'var(--accent-primary)') }}; font-weight: bold;">
+                    C$ {{ "{:,.2f}".format(c.Diferencia) if c.Diferencia is not none else '0.00' }}
+                </td>
+                <td>
+                    {% if c.Estado == 'Abierta' %}
+                        <span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">Abierta</span>
+                    {% else %}
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Cerrada</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    <button type="button" class="btn-edit-caja"
+                            data-id="{{ c.CajaID }}"
+                            data-cajero="{{ c.NombreCompleto }}"
+                            data-inicial="{{ c.MontoInicial }}"
+                            data-final="{{ c.MontoFinal if c.MontoFinal is not none else 0.0 }}"
+                            data-fisico="{{ c.EfectivoFisico if c.EfectivoFisico is not none else 0.0 }}"
+                            data-estado="{{ c.Estado }}"
+                            onclick="abrirModalEditarCaja(this)"
+                            title="Editar Arqueo y Control de Caja">
+                        <i class="fa-solid fa-pen-to-square"></i> Editar
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="10" class="text-center" style="padding: 30px; color: var(--text-secondary);">No hay registros de control de caja.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Editar Registro de Caja -->
+<div id="modalEditarCaja" class="modal-backdrop-custom" style="display: none;">
+    <div class="modal-card-custom">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 10px; font-size: 1.25rem;">
+                <i class="fa-solid fa-pen-to-square" style="color: #3b82f6;"></i>
+                <span>Editar Registro de Caja <span id="modalCajaIdTitulo" style="color: #3b82f6;"></span></span>
+            </h3>
+            <button type="button" onclick="cerrarModalEditarCaja()" style="background: none; border: none; font-size: 1.4rem; color: var(--text-secondary); cursor: pointer; padding: 0 4px;">&times;</button>
+        </div>
+
+        <form id="formEditarCaja" method="POST" action="">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">Cajero/a Responsable:</label>
+                    <input type="text" id="modalCajero" class="form-input-caja" readonly style="opacity: 0.75; cursor: not-allowed;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">Fondo Inicial (C$):</label>
+                        <input type="number" step="0.01" min="0" name="monto_inicial" id="modalMontoInicial" class="form-input-caja" required oninput="calcularDiferenciaEnVivo()">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">Monto Sistema / Ventas (C$):</label>
+                        <input type="number" step="0.01" min="0" name="monto_final" id="modalMontoFinal" class="form-input-caja" required oninput="calcularDiferenciaEnVivo()">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">Efectivo Físico Arqueado (C$):</label>
+                        <input type="number" step="0.01" min="0" name="efectivo_fisico" id="modalEfectivoFisico" class="form-input-caja" required oninput="calcularDiferenciaEnVivo()">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">Estado de la Caja:</label>
+                        <select name="estado" id="modalEstado" class="form-input-caja">
+                            <option value="Cerrada">Cerrada</option>
+                            <option value="Abierta">Abierta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Preview de Sobrante / Faltante en vivo -->
+                <div id="boxDiferenciaPreview" style="padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Balance de Arqueo (Diferencia):</span>
+                    <strong id="modalDiferenciaTexto" style="font-size: 1.2rem;">C$ 0.00</strong>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+                    <button type="button" onclick="cerrarModalEditarCaja()" class="btn-cancelar-caja">Cancelar</button>
+                    <button type="submit" class="btn-guardar-caja"><i class="fa-solid fa-save"></i> Guardar Cambios</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function abrirModalEditarCaja(btn) {
+        const id = btn.getAttribute('data-id');
+        const cajero = btn.getAttribute('data-cajero') || '';
+        const inicial = parseFloat(btn.getAttribute('data-inicial') || 0);
+        const final = parseFloat(btn.getAttribute('data-final') || 0);
+        const fisico = parseFloat(btn.getAttribute('data-fisico') || 0);
+        const estado = btn.getAttribute('data-estado') || 'Cerrada';
+
+        document.getElementById('modalCajaIdTitulo').textContent = '#' + id;
+        document.getElementById('modalCajero').value = cajero;
+        document.getElementById('modalMontoInicial').value = inicial.toFixed(2);
+        document.getElementById('modalMontoFinal').value = final.toFixed(2);
+        document.getElementById('modalEfectivoFisico').value = fisico.toFixed(2);
+        document.getElementById('modalEstado').value = estado;
+
+        document.getElementById('formEditarCaja').action = '/caja/editar_cierre/' + id;
+        calcularDiferenciaEnVivo();
+        document.getElementById('modalEditarCaja').style.display = 'flex';
+    }
+
+    function cerrarModalEditarCaja() {
+        document.getElementById('modalEditarCaja').style.display = 'none';
+    }
+
+    function calcularDiferenciaEnVivo() {
+        const sistema = parseFloat(document.getElementById('modalMontoFinal').value) || 0;
+        const fisico = parseFloat(document.getElementById('modalEfectivoFisico').value) || 0;
+        const dif = fisico - sistema;
+        
+        const textoEl = document.getElementById('modalDiferenciaTexto');
+        const boxEl = document.getElementById('boxDiferenciaPreview');
+
+        if (Math.abs(dif) < 0.01) {
+            textoEl.textContent = 'C$ 0.00 (Cuadrada)';
+            textoEl.style.color = '#10b981';
+            boxEl.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+            boxEl.style.background = 'rgba(16, 185, 129, 0.08)';
+        } else if (dif > 0) {
+            textoEl.textContent = '+C$ ' + dif.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' (Sobrante)';
+            textoEl.style.color = '#3b82f6';
+            boxEl.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+            boxEl.style.background = 'rgba(59, 130, 246, 0.08)';
+        } else {
+            textoEl.textContent = 'C$ ' + dif.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' (Faltante)';
+            textoEl.style.color = '#ef4444';
+            boxEl.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            boxEl.style.background = 'rgba(239, 68, 68, 0.08)';
+        }
+    }
+
+    // Cerrar modal al hacer clic en el backdrop
+    window.addEventListener('click', function(e) {
+        const modal = document.getElementById('modalEditarCaja');
+        if (e.target === modal) {
+            cerrarModalEditarCaja();
+        }
+    });
+</script>
+{% endblock %}

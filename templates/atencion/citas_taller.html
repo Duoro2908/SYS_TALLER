@@ -1,0 +1,653 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Citas Programadas{% endblock %}
+
+{% block content %}
+<style>
+    .taller-citas-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 22px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .taller-header-left h1 {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0 0 6px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .taller-header-left p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 0.94rem;
+    }
+
+    .taller-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-taller-nav {
+        padding: 10px 18px;
+        border-radius: 12px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        border: 1px solid rgba(242, 192, 41, 0.35);
+        background: rgba(242, 192, 41, 0.14);
+        color: #f2c029;
+        transition: all 0.2s ease;
+    }
+
+    .btn-taller-nav:hover {
+        background: #f2c029;
+        color: #111827;
+        transform: translateY(-2px);
+    }
+
+    .btn-taller-blue {
+        background: #0284c7;
+        border-color: #0284c7;
+        color: #ffffff;
+    }
+
+    .btn-taller-blue:hover {
+        background: #0369a1;
+        color: #ffffff;
+    }
+
+    .taller-info-banner {
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-left: 4px solid #f59e0b;
+        color: var(--text-primary);
+        border-radius: 14px;
+        padding: 14px 20px;
+        margin-bottom: 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 0.9rem;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .kpi-card {
+        background: rgba(30, 30, 35, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 18px 20px;
+        transition: all 0.25s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(242, 192, 41, 0.3);
+    }
+
+    .kpi-title {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+    }
+
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+
+    .main-panel-box {
+        background: rgba(25, 25, 30, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 20px;
+        padding: 24px;
+    }
+
+    .panel-header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .panel-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .controls-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .tab-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-secondary);
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+        background: #0284c7;
+        border-color: #0284c7;
+        color: #ffffff;
+    }
+
+    .search-box {
+        position: relative;
+        min-width: 260px;
+        flex: 1;
+        max-width: 360px;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 14px 10px 38px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        outline: none;
+    }
+
+    .citas-list-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .cita-card {
+        background: rgba(34, 36, 44, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-left: 4px solid #f59e0b;
+        border-radius: 16px;
+        padding: 20px 22px;
+        transition: all 0.2s ease;
+    }
+
+    .cita-card:hover {
+        border-color: rgba(242, 192, 41, 0.45);
+        transform: translateY(-2px);
+    }
+
+    .cita-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .cita-id-tag {
+        font-weight: 800;
+        font-size: 1.05rem;
+        color: var(--text-primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .badge-tipo, .badge-origen, .badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 11px;
+        border-radius: 20px;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
+    .badge-tipo {
+        background: rgba(14, 165, 233, 0.15);
+        color: #38bdf8;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+    }
+
+    .badge-origen {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .status-Pendiente { background: rgba(245, 158, 11, 0.14); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .status-Confirmada { background: rgba(16, 185, 129, 0.14); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); }
+    .status-Cancelada, .status-No-Asistio { background: rgba(239, 68, 68, 0.14); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); }
+
+    .cita-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 14px;
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+    }
+
+    .info-label {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--text-muted);
+        margin-bottom: 3px;
+        font-weight: 700;
+    }
+
+    .info-val {
+        display: block;
+        font-size: 0.94rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .cita-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn-sm-action {
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .btn-action-orden { background: rgba(16, 185, 129, 0.14); color: #10b981; border-color: rgba(16, 185, 129, 0.35); }
+    .btn-action-orden:hover { background: #10b981; color: #fff; }
+    .btn-action-edit { background: rgba(14, 165, 233, 0.14); color: #38bdf8; border-color: rgba(14, 165, 233, 0.35); }
+    .btn-action-edit:hover { background: #0284c7; color: #fff; }
+    .btn-action-del { background: rgba(239, 68, 68, 0.14); color: #ef4444; border-color: rgba(239, 68, 68, 0.35); }
+    .btn-action-del:hover { background: #ef4444; color: #fff; }
+
+    /* Modal Interno Confirmacion & Edicion */
+    .taller-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.72);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .taller-modal-dialog {
+        width: 100%;
+        max-width: 480px;
+        background: #181a20;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        padding: 26px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Soporte Modo Claro ([data-theme="light"] / body.light-theme) */
+    [data-theme="light"] .kpi-card,
+    body.light-theme .kpi-card,
+    [data-theme="light"] .main-panel-box,
+    body.light-theme .main-panel-box {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05) !important;
+    }
+    [data-theme="light"] .kpi-title,
+    body.light-theme .kpi-title { color: #64748b !important; }
+    [data-theme="light"] .kpi-value,
+    body.light-theme .kpi-value,
+    [data-theme="light"] .panel-title,
+    body.light-theme .panel-title,
+    [data-theme="light"] .cita-id-tag,
+    body.light-theme .cita-id-tag,
+    [data-theme="light"] .info-val,
+    body.light-theme .info-val { color: #0f172a !important; }
+    [data-theme="light"] .panel-header-bar,
+    body.light-theme .panel-header-bar { border-bottom-color: #e2e8f0 !important; }
+    [data-theme="light"] .taller-info-banner,
+    body.light-theme .taller-info-banner {
+        background: #fffbeb !important;
+        border-color: #fde68a !important;
+        color: #78350f !important;
+    }
+    [data-theme="light"] .tab-btn,
+    body.light-theme .tab-btn {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #475569 !important;
+    }
+    [data-theme="light"] .tab-btn.active,
+    body.light-theme .tab-btn.active {
+        background: #0284c7 !important;
+        border-color: #0284c7 !important;
+        color: #ffffff !important;
+    }
+    [data-theme="light"] .search-input,
+    body.light-theme .search-input {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .cita-card,
+    body.light-theme .cita-card {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .cita-info-grid,
+    body.light-theme .cita-info-grid {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .badge-tipo,
+    body.light-theme .badge-tipo {
+        background: #e0f2fe !important;
+        color: #0369a1 !important;
+        border-color: #bae6fd !important;
+    }
+    [data-theme="light"] .badge-origen,
+    body.light-theme .badge-origen {
+        background: #fef3c7 !important;
+        color: #b45309 !important;
+        border-color: #fde68a !important;
+    }
+    [data-theme="light"] .btn-taller-nav,
+    body.light-theme .btn-taller-nav {
+        background: #fef3c7 !important;
+        border-color: #f59e0b !important;
+        color: #b45309 !important;
+    }
+    [data-theme="light"] .btn-taller-blue,
+    body.light-theme .btn-taller-blue {
+        background: #0284c7 !important;
+        color: #ffffff !important;
+        border-color: #0284c7 !important;
+    }
+    [data-theme="light"] .taller-modal-dialog,
+    body.light-theme .taller-modal-dialog {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+</style>
+
+<div class="taller-citas-header">
+    <div class="taller-header-left">
+        <h1><i class="fa-solid fa-calendar-week" style="color: #f59e0b;"></i> Citas Programadas</h1>
+        <p>Reservas agendadas directamente desde la web y recepción del taller (separadas de Citas WhatsApp)</p>
+    </div>
+    <div class="taller-header-actions">
+        <a href="{{ url_for('atencion.gestion_citas') }}" class="btn-taller-nav">
+            <i class="fa-solid fa-users-gear"></i> Panel de Asignación de Mecánicos
+        </a>
+        <a href="{{ url_for('auth.agendar_cita') }}" target="_blank" class="btn-taller-nav btn-taller-blue">
+            <i class="fa-solid fa-calendar-plus"></i> Portal Público de Citas
+        </a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="padding: 14px 18px; border-radius: 12px; margin-bottom: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; background: {% if category == 'success' %}rgba(16, 185, 129, 0.12){% else %}rgba(239, 68, 68, 0.12){% endif %}; border: 1px solid {% if category == 'success' %}rgba(16, 185, 129, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %}; color: {% if category == 'success' %}#10b981{% else %}#ef4444{% endif %};">
+                <i class="fa-solid {% if category == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="taller-info-banner">
+    <div>
+        <i class="fa-solid fa-shield-halved" style="color: #f59e0b; margin-right: 8px;"></i>
+        <strong>Control de Canal Taller:</strong> Aquí se muestran únicamente las citas agendadas vía portal web/taller. Las citas recibidas por WhatsApp se administran de forma independiente en <strong>Citas WhatsApp</strong>.
+    </div>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-title"><i class="fa-solid fa-calendar-check" style="color: #0ea5e9;"></i> Total Citas Taller</div>
+        <div class="kpi-value">{{ stats.total }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title"><i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i> Pendientes</div>
+        <div class="kpi-value" style="color: #f59e0b;">{{ stats.pendientes }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title"><i class="fa-solid fa-wrench" style="color: #10b981;"></i> Confirmadas</div>
+        <div class="kpi-value" style="color: #10b981;">{{ stats.confirmadas }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title"><i class="fa-solid fa-clock" style="color: #8b5cf6;"></i> Programadas Próximas</div>
+        <div class="kpi-value" style="color: #8b5cf6;">{{ stats.proximas }}</div>
+    </div>
+</div>
+
+<div class="main-panel-box">
+    <div class="panel-header-bar">
+        <div class="panel-title">
+            <i class="fa-solid fa-clipboard-list" style="color: #f59e0b;"></i> Agenda de Citas de Taller
+        </div>
+    </div>
+
+    <div class="controls-row">
+        <div class="filter-tabs">
+            <button type="button" class="tab-btn active" id="tabBtnTodos" onclick="filtrarCitasTaller('todos', this)">Todas ({{ stats.total }})</button>
+            <button type="button" class="tab-btn" id="tabBtnPendiente" onclick="filtrarCitasTaller('Pendiente', this)">Pendientes ({{ stats.pendientes }})</button>
+            <button type="button" class="tab-btn" id="tabBtnConfirmada" onclick="filtrarCitasTaller('Confirmada', this)">Confirmadas ({{ stats.confirmadas }})</button>
+            <button type="button" class="tab-btn" id="tabBtnCancelada" onclick="filtrarCitasTaller('Cancelada', this)">Canceladas</button>
+        </div>
+
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="busquedaTallerInput" class="search-input" placeholder="Buscar cliente, teléfono, placa o moto..." onkeyup="aplicarFiltrosTaller()">
+        </div>
+    </div>
+
+    <div id="taller-citas-empty" style="text-align: center; padding: 50px 20px; color: var(--text-muted); {% if citas %}display: none;{% endif %}">
+        <i class="fa-solid fa-calendar-xmark" style="font-size: 3.2rem; margin-bottom: 14px; color: #f59e0b; opacity: 0.7;"></i>
+        <p style="font-size: 1.15rem; margin-bottom: 6px; color: var(--text-primary); font-weight: 700;">No hay citas programadas en este filtro</p>
+        <p style="font-size: 0.9rem; max-width: 480px; margin: 0 auto;">Las citas agendadas desde el formulario web oficial aparecerán aquí automáticamente sin mezclarse con WhatsApp.</p>
+    </div>
+
+    <div class="citas-list-grid" id="taller-citas-container" {% if not citas %}style="display: none;"{% endif %}>
+        {% for c in citas %}
+            <div class="cita-card" data-estado="{{ c.estado }}" data-search="{{ (c.cliente_nombre ~ ' ' ~ c.telefono ~ ' ' ~ c.moto_info ~ ' ' ~ c.placa ~ ' ' ~ c.mecanico_nombre) | lower }}">
+                <div class="cita-card-top">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span class="cita-id-tag">
+                            <i class="fa-solid fa-ticket" style="color: #0ea5e9;"></i> Cita Taller #{{ c.cita_id }}
+                        </span>
+                        <span class="badge-tipo">{{ c.tipo }}</span>
+                        <span class="badge-origen"><i class="fa-solid fa-globe"></i> {{ c.origen }}</span>
+                    </div>
+                    <span class="badge-status status-{{ c.estado.replace(' ', '-') }}">{{ c.estado }}</span>
+                </div>
+
+                <div class="cita-info-grid">
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-user" style="color: #0ea5e9;"></i> Cliente</span>
+                        <span class="info-val">{{ c.cliente_nombre }}</span>
+                    </div>
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-phone" style="color: #10b981;"></i> Teléfono</span>
+                        <span class="info-val">{{ c.telefono }}</span>
+                    </div>
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i> Fecha y Hora Programada</span>
+                        <span class="info-val">{{ c.fecha_formateada }}</span>
+                    </div>
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-motorcycle" style="color: #a855f7;"></i> Motocicleta / Placa</span>
+                        <span class="info-val">{{ c.moto_info }}{% if c.placa %} • Placa: {{ c.placa }}{% endif %}</span>
+                    </div>
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-user-gear" style="color: #38bdf8;"></i> Mecánico Asignado</span>
+                        <span class="info-val">{{ c.mecanico_nombre or 'Pendiente de asignar' }}</span>
+                    </div>
+                </div>
+
+                <div class="cita-actions">
+                    <a href="{{ url_for('atencion.gestion_citas') }}" class="btn-sm-action btn-action-edit">
+                        <i class="fa-solid fa-users-gear"></i> Gestionar Mecánico
+                    </a>
+
+                    {% if not c.tiene_orden and c.estado != 'Cancelada' %}
+                    <button type="button" class="btn-sm-action btn-action-orden"
+                            onclick="abrirModalConfirmTaller('{{ url_for('atencion.crear_orden_desde_cita', cita_id=c.cita_id) }}', 'Generar Orden de Trabajo', '¿Deseas convertir la Cita de Taller #{{ c.cita_id }} ({{ c.cliente_nombre | escape }}) en una Orden de Trabajo activa?', 'Sí, Generar Orden', '#10b981')">
+                        <i class="fa-solid fa-wrench"></i> Generar Orden de Taller
+                    </button>
+                    {% elif c.tiene_orden %}
+                    <span class="btn-sm-action" style="background: rgba(16, 185, 129, 0.12); color: #10b981; cursor: default;">
+                        <i class="fa-solid fa-circle-check"></i> Orden ya Generada
+                    </span>
+                    {% endif %}
+
+                    <button type="button" class="btn-sm-action btn-action-del"
+                            onclick="abrirModalConfirmTaller('{{ url_for('atencion.citas_whatsapp_eliminar', cita_id=c.cita_id) }}', 'Eliminar Cita de Taller', '¿Estás seguro de eliminar permanentemente la Cita #{{ c.cita_id }} de {{ c.cliente_nombre | escape }}?', 'Sí, Eliminar', '#ef4444')">
+                        <i class="fa-solid fa-trash-can"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Interno de Confirmación del Sistema -->
+<div id="modalConfirmTaller" class="taller-modal-backdrop" onclick="if(event.target === this) cerrarModalConfirmTaller();">
+    <div class="taller-modal-dialog" style="text-align: center;">
+        <div id="tallerModalIconWrap" style="width: 56px; height: 56px; margin: 0 auto 14px auto; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center;">
+            <i id="tallerModalIcon" class="fa-solid fa-circle-question" style="font-size: 1.6rem; color: #f59e0b;"></i>
+        </div>
+        <h4 id="tallerModalTitle" style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 800; color: var(--text-primary);">Confirmar Acción</h4>
+        <p id="tallerModalMsg" style="margin: 0 0 22px 0; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.5;"></p>
+        <form id="formConfirmTaller" method="POST" style="display: flex; justify-content: center; gap: 10px;">
+            <input type="hidden" name="next_url" value="{{ url_for('atencion.citas_taller') }}">
+            <button type="button" onclick="cerrarModalConfirmTaller()" class="tab-btn" style="padding: 10px 20px;">Cancelar</button>
+            <button type="submit" id="tallerModalBtnSubmit" class="tab-btn" style="background: #10b981; color: #ffffff; border: none; padding: 10px 22px; font-weight: 700;">Confirmar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let filtroEstadoTaller = 'todos';
+
+    function filtrarCitasTaller(estado, btn) {
+        filtroEstadoTaller = estado;
+        document.querySelectorAll('.filter-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        aplicarFiltrosTaller();
+    }
+
+    function aplicarFiltrosTaller() {
+        const q = (document.getElementById('busquedaTallerInput')?.value || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('#taller-citas-container .cita-card');
+        let visibles = 0;
+
+        cards.forEach(card => {
+            const est = card.getAttribute('data-estado') || '';
+            const data = card.getAttribute('data-search') || '';
+            const okEst = (filtroEstadoTaller === 'todos' || est === filtroEstadoTaller);
+            const okTxt = (!q || data.includes(q));
+            if (okEst && okTxt) {
+                card.style.display = 'block';
+                visibles++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        const emptyEl = document.getElementById('taller-citas-empty');
+        const contEl = document.getElementById('taller-citas-container');
+        if (emptyEl) emptyEl.style.display = (visibles === 0) ? 'block' : 'none';
+        if (contEl) contEl.style.display = (visibles === 0) ? 'none' : 'flex';
+    }
+
+    function abrirModalConfirmTaller(actionUrl, title, message, btnText, accentColor) {
+        const form = document.getElementById('formConfirmTaller');
+        const btn = document.getElementById('tallerModalBtnSubmit');
+        const iconWrap = document.getElementById('tallerModalIconWrap');
+        const icon = document.getElementById('tallerModalIcon');
+        form.action = actionUrl;
+        document.getElementById('tallerModalTitle').innerText = title;
+        document.getElementById('tallerModalMsg').innerText = message;
+        btn.innerText = btnText || 'Confirmar';
+        btn.style.background = accentColor || '#10b981';
+        icon.style.color = accentColor || '#f59e0b';
+        iconWrap.style.background = (accentColor === '#ef4444') ? 'rgba(239, 68, 68, 0.14)' : 'rgba(16, 185, 129, 0.14)';
+        document.getElementById('modalConfirmTaller').style.display = 'flex';
+    }
+
+    function cerrarModalConfirmTaller() {
+        document.getElementById('modalConfirmTaller').style.display = 'none';
+    }
+</script>
+{% endblock %}
+

@@ -1,0 +1,483 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Factura Digital #{{ factura[1] }}{% endblock %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    .invoice-wrapper {
+        display: flex;
+        justify-content: center;
+        padding: 40px 20px;
+        background: #f5f5f7; /* Apple light gray */
+        min-height: calc(100vh - 100px);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .invoice-card {
+        background: #ffffff;
+        color: #1d1d1f;
+        width: 100%;
+        max-width: 700px;
+        padding: 60px 70px;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 50px;
+        padding-bottom: 30px;
+        border-bottom: 1px solid #e5e5ea;
+    }
+
+    .company-info {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .invoice-logo {
+        font-size: 2rem;
+        color: #1d1d1f;
+        margin-bottom: 12px;
+    }
+
+    .invoice-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin: 0;
+        color: #1d1d1f;
+    }
+    
+    .company-details {
+        font-size: 0.9rem;
+        color: #86868b;
+        font-weight: 400;
+    }
+
+    .invoice-meta {
+        text-align: right;
+    }
+    
+    .invoice-label {
+        font-size: 0.85rem;
+        color: #86868b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .invoice-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: #1d1d1f;
+    }
+
+    .bill-to-section {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 40px;
+    }
+
+    .bill-to-block {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .bill-to-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1d1d1f;
+    }
+
+    .bill-to-text {
+        font-size: 0.95rem;
+        color: #515154;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 30px;
+    }
+
+    .invoice-table th {
+        text-align: left;
+        color: #86868b;
+        font-weight: 500;
+        font-size: 0.85rem;
+        padding: 15px 10px;
+        border-bottom: 1px solid #e5e5ea;
+    }
+
+    .invoice-table td {
+        padding: 20px 10px;
+        border-bottom: 1px solid #f2f2f7;
+        font-size: 0.95rem;
+        color: #1d1d1f;
+    }
+
+    .invoice-table th.right, .invoice-table td.right { text-align: right; }
+    .invoice-table th.center, .invoice-table td.center { text-align: center; }
+    
+    .item-desc { font-weight: 500; }
+
+    .totals-container {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 30px;
+    }
+
+    .invoice-totals {
+        width: 360px;
+        background: #fbfbfd;
+        border: 1px solid #e5e5ea;
+        border-radius: 18px;
+        padding: 24px 26px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+    }
+
+    .total-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+        color: #6e6e73;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .total-line span:last-child {
+        font-weight: 600;
+        color: #1d1d1f;
+    }
+
+    .total-line.grand-total {
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #1d1d1f;
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid #e5e5ea;
+    }
+
+    .total-line.grand-total span:last-child {
+        color: #0071e3;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .discount-line span:last-child {
+        color: #ff3b30 !important;
+    }
+
+    .apple-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 6px;
+        margin-top: 4px;
+        letter-spacing: 0.2px;
+    }
+    
+    .tag-labor {
+        background: rgba(0, 113, 227, 0.08);
+        color: #0071e3;
+        border: 1px solid rgba(0, 113, 227, 0.2);
+    }
+    
+    .tag-part {
+        background: rgba(142, 142, 147, 0.1);
+        color: #48484a;
+        border: 1px solid rgba(142, 142, 147, 0.2);
+    }
+
+    .invoice-footer {
+        text-align: center;
+        margin-top: 60px;
+        padding-top: 30px;
+        border-top: 1px solid #e5e5ea;
+        font-size: 0.9rem;
+        color: #86868b;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+        padding-bottom: 40px;
+    }
+
+    .btn-apple {
+        background: #0071e3;
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 980px; /* pill shape */
+        font-size: 1rem;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+    
+    .btn-apple:hover { background: #0077ED; }
+    
+    .btn-apple.secondary {
+        background: #e8e8ed;
+        color: #1d1d1f;
+    }
+    
+    .btn-apple.secondary:hover { background: #d2d2d7; }
+
+    .ruc-dgi-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 6px 0;
+        width: fit-content;
+    }
+    
+    .ruc-dgi-badge .ruc-title {
+        color: #2563eb;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 700;
+    }
+
+    .ruc-dgi-badge .ruc-val {
+        font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
+        letter-spacing: 0.8px;
+        color: #1e3a8a;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .fiscal-stamp {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        color: #0369a1;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        padding: 3px 8px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-top: 6px;
+    }
+
+    .client-ruc-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+        font-size: 0.88rem;
+        color: #374151;
+    }
+
+    .client-ruc-badge {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        background: #f3f4f6;
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-weight: 600;
+        color: #111827;
+        border: 1px solid #e5e7eb;
+    }
+
+    @media print {
+        body * { visibility: hidden; }
+        .invoice-wrapper { background: white; padding: 0; min-height: 0; }
+        .invoice-card, .invoice-card * { visibility: visible; }
+        .invoice-card { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border-radius: 0; padding: 20px; }
+        .actions { display: none !important; }
+        .ruc-dgi-badge { background: #f0f4ff !important; border: 1px solid #a5b4fc !important; color: #1e3a8a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+
+<div class="invoice-wrapper">
+    <div class="invoice-card">
+        <div class="invoice-header">
+            <div class="company-info">
+                <div class="invoice-logo"><i class="fa-solid fa-motorcycle"></i></div>
+                <h1 class="invoice-title">Taller & Lubricantes CR</h1>
+                <div class="ruc-dgi-badge">
+                    <span class="ruc-title"><i class="fa-solid fa-shield-halved"></i> RUC DGI:</span>
+                    <span class="ruc-val">{{ factura[12] if factura|length > 12 and factura[12] else 'J0310000123456' }}</span>
+                </div>
+                <div class="company-details">
+                    <div>Managua, Nicaragua • Tel: +505 8888-9999</div>
+                    <div style="font-size: 0.8rem; color: #86868b; margin-top: 2px;">
+                        Régimen General de Contribuyentes • DGI Nicaragua
+                    </div>
+                </div>
+            </div>
+            <div class="invoice-meta">
+                <div class="invoice-label">Factura No.</div>
+                <div class="invoice-number">{{ factura[1] }}</div>
+                <div><span class="fiscal-stamp"><i class="fa-solid fa-stamp"></i> Comprobante Fiscal DGI</span></div>
+                <div style="font-size: 0.75rem; color: #86868b; margin-top: 4px;">Aut. DGI: No. 0401-2024-CR</div>
+            </div>
+        </div>
+
+        <div class="bill-to-section">
+            <div class="bill-to-block">
+                <div class="invoice-label">Facturado a (Cliente)</div>
+                <div class="bill-to-name">
+                    {% if factura[8] %}
+                        {{ factura[8] }} <span style="font-size:0.8rem; color:#86868b; font-weight:normal;">(Cliente Fijo)</span>
+                    {% elif factura[9] %}
+                        {{ factura[9] }}
+                    {% else %}
+                        Consumidor Final
+                    {% endif %}
+                </div>
+                <div class="client-ruc-box">
+                    <span>RUC / Cédula:</span>
+                    <span class="client-ruc-badge">
+                        {% if factura|length > 11 and factura[11] %}
+                            {{ factura[11] }}
+                        {% else %}
+                            Consumidor Final
+                        {% endif %}
+                    </span>
+                </div>
+                {% if factura|length > 13 and factura[13] %}
+                <div class="bill-to-text" style="font-size: 0.85rem; color: #86868b; margin-top: 2px;">
+                    <i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> {{ factura[13] }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="bill-to-block" style="text-align: right;">
+                <div class="invoice-label">Fecha de Emisión</div>
+                <div class="bill-to-text">{{ factura[2].strftime('%d/%m/%Y %H:%M') }}</div>
+                
+                <div class="invoice-label" style="margin-top:15px;">Método de Pago</div>
+                <div class="bill-to-text">{{ factura[6] }}</div>
+                
+                {% if factura[10] %}
+                <div class="invoice-label" style="margin-top:10px;">Orden de Taller</div>
+                <div class="bill-to-text" style="color: #0071e3; font-weight: 600;">#{{ factura[10] }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Descripción</th>
+                    <th class="center">Cant</th>
+                    <th class="right">Precio Unitario</th>
+                    <th class="right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in detalles %}
+                <tr>
+                    <td class="item-desc">
+                        <div style="font-weight: 600; color: #1d1d1f; font-size: 0.96rem;">{{ d[0] }}</div>
+                        {% if d[3] is none %}
+                            <span class="apple-tag tag-labor"><i class="fa-solid fa-screwdriver-wrench"></i> Mano de Obra / Servicio</span>
+                        {% else %}
+                            <span class="apple-tag tag-part"><i class="fa-solid fa-cube"></i> Repuesto / Producto</span>
+                        {% endif %}
+                    </td>
+                    <td class="center" style="font-weight: 500; color: #3a3a3c;">{{ d[1] }}</td>
+                    <td class="right" style="color: #6e6e73; font-variant-numeric: tabular-nums;">C$ {{ "{:,.2f}".format(d[2]) }}</td>
+                    <td class="right" style="font-weight: 600; color: #1d1d1f; font-variant-numeric: tabular-nums;">C$ {{ "{:,.2f}".format(d[1] * d[2]) }}</td>
+                </tr>
+                {% endfor %}
+                
+                {% for mo in mano_obra %}
+                <tr>
+                    <td class="item-desc">
+                        <div style="font-weight: 600; color: #1d1d1f; font-size: 0.96rem;">{{ mo[0] }}</div>
+                        <span class="apple-tag tag-labor"><i class="fa-solid fa-screwdriver-wrench"></i> Mano de Obra / Servicio</span>
+                    </td>
+                    <td class="center" style="font-weight: 500; color: #3a3a3c;">1</td>
+                    <td class="right" style="color: #6e6e73; font-variant-numeric: tabular-nums;">C$ {{ "{:,.2f}".format(mo[1]) }}</td>
+                    <td class="right" style="font-weight: 600; color: #1d1d1f; font-variant-numeric: tabular-nums;">C$ {{ "{:,.2f}".format(mo[1]) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals-container">
+            <div class="invoice-totals">
+                {% set desc = (desc | default(0) | float) %}
+                {% set subtotal_bruto = (factura[5] | float) + desc %}
+                <div class="total-line">
+                    <span>Subtotal Bruto</span>
+                    <span>C$ {{ "{:,.2f}".format(subtotal_bruto) }}</span>
+                </div>
+                
+                {% if desc > 0 %}
+                <div class="total-line discount-line">
+                    <span>Descuento Aplicado</span>
+                    <span>- C$ {{ "{:,.2f}".format(desc) }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="total-line">
+                    <span>Subtotal Neto Gravado</span>
+                    <span>C$ {{ "{:,.2f}".format(factura[3]) }}</span>
+                </div>
+                <div class="total-line">
+                    <span>IVA (15% DGI)</span>
+                    <span>C$ {{ "{:,.2f}".format(factura[4]) }}</span>
+                </div>
+                <div class="total-line grand-total">
+                    <span>Total a Pagar</span>
+                    <span>C$ {{ "{:,.2f}".format(factura[5]) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="invoice-footer">
+            <div style="font-weight: 700; color: #1d1d1f; margin-bottom: 6px; font-size: 0.95rem;">
+                TALLER & LUBRICANTES CR • RUC DGI: <span style="font-family: monospace;">{{ factura[12] if factura|length > 12 and factura[12] else 'J0310000123456' }}</span>
+            </div>
+            <p style="margin: 4px 0; font-size: 0.85rem; line-height: 1.4;">
+                Documento tributario emitido de conformidad con las disposiciones y regulaciones fiscales de la Dirección General de Ingresos (DGI) de la República de Nicaragua.
+            </p>
+            <div style="font-size: 0.78rem; color: #86868b; margin-top: 8px;">
+                Serie Autorizada por DGI • Original: Cliente • Copia: Contabilidad / Archivo Fiscal
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="actions">
+    <button class="btn-apple" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir Factura</button>
+    <a href="{{ url_for('cashier.ventas_recibidas') }}" class="btn-apple secondary"><i class="fa-solid fa-arrow-left"></i> Volver a Caja</a>
+</div>
+
+{% endblock %}
+

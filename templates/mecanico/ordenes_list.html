@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Control Diario de Órdenes de Trabajo{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos Premium Apple-like */
+    .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg-surface);
+        padding: 20px 30px;
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        margin-top: 40px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .day-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .day-status {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .status-abierta { background: rgba(52, 199, 89, 0.15); color: var(--accent-green); border: 1px solid rgba(52, 199, 89, 0.3); }
+    .status-cerrada { background: rgba(255, 69, 58, 0.15); color: var(--accent-red); border: 1px solid rgba(255, 69, 58, 0.3); }
+
+    .orders-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .order-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .order-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+    .order-id { font-weight: 700; color: var(--text-main); }
+    .order-time { color: var(--text-secondary); font-size: 0.85rem; }
+
+    .order-body p {
+        margin: 5px 0;
+        font-size: 0.95rem;
+    }
+    .order-total {
+        margin-top: 15px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--accent-green);
+        text-align: right;
+    }
+    .btn-cerrar {
+        background: var(--accent-red);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: opacity 0.2s;
+    }
+    .btn-cerrar:hover { opacity: 0.9; }
+
+    .badge {
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.1);
+    }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>Control Diario de Órdenes</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="padding: 15px; border-radius: 10px; margin-bottom: 20px; background: {% if category == 'success' %}rgba(52, 199, 89, 0.15); color: var(--accent-green); border: 1px solid rgba(52,199,89,0.3);{% else %}rgba(255, 69, 58, 0.15); color: var(--accent-red); border: 1px solid rgba(255,69,58,0.3);{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if not ordenes_por_dia %}
+    <div style="text-align: center; padding: 50px; background: var(--bg-surface); border-radius: 16px; border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-folder-open" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 15px;"></i>
+        <h3>No hay órdenes de trabajo registradas.</h3>
+    </div>
+{% endif %}
+
+{% for fecha, ordenes in ordenes_por_dia.items() %}
+    <div class="day-header">
+        <div class="day-title">
+            <i class="fa-regular fa-calendar-check" style="color: var(--accent-primary);"></i> 
+            Día: {{ fecha }}
+            {% if estado_caja_por_dia[fecha] == 'Abierta' %}
+                <span class="day-status status-abierta">Caja Abierta</span>
+            {% elif estado_caja_por_dia[fecha] == 'Abierta (Emergencia)' %}
+                <span class="day-status status-abierta" style="background: rgba(255, 159, 10, 0.15); color: #FF9F0A; border-color: rgba(255, 159, 10, 0.3);"><i class="fa-solid fa-triangle-exclamation"></i> Caja Abierta (Emergencia)</span>
+            {% else %}
+                <span class="day-status status-cerrada"><i class="fa-solid fa-lock"></i> Caja Cerrada (Corte Realizado)</span>
+            {% endif %}
+        </div>
+        
+        {% if estado_caja_por_dia[fecha] == 'Abierta' %}
+            <!-- Removed Cerrar Caja button from here, it now belongs to Cajera -->
+        {% endif %}
+    </div>
+
+        <div class="orders-grid">
+            {% for o in ordenes %}
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-id">ORD-{{ "%04d" | format(o.id) }}</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="order-time">{{ o.fecha }}</span>
+                            {% if o.estado != 'Facturada' %}
+                            <form action="{{ url_for('mechanic.eliminar_orden', orden_id=o.id) }}" method="POST" style="margin: 0; display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar la orden ORD-{{ "%04d" | format(o.id) }}?');">
+                                <button type="submit" title="Eliminar orden" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 0.78rem; display: flex; align-items: center; gap: 4px; transition: all 0.2s ease;">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="order-body">
+                        <p><i class="fa-solid fa-user" style="color: var(--text-secondary); width: 20px;"></i> {{ o.cliente }}</p>
+                        <p><i class="fa-solid fa-motorcycle" style="color: var(--text-secondary); width: 20px;"></i> {{ o.placa }}</p>
+                        <p>
+                            <i class="fa-solid fa-wrench" style="color: var(--text-secondary); width: 20px;"></i> 
+                            {{ o.tipo }}
+                            <span class="badge" style="float: right;">{{ o.estado }}</span>
+                        </p>
+                    </div>
+                    <div class="order-total">
+                        C$ {{ "{:,.0f}".format(o.total) }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+{% endfor %}
+
+{% endblock %}

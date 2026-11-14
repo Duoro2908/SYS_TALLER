@@ -1,0 +1,893 @@
+{% extends "base.html" %}
+
+{% block title %}Resumen Contable - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Resumen Contable Ejecutivo{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos Corporativos Internacionales - Resumen Contable */
+    .resumen-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding-bottom: 50px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Barra Superior de Control y Período */
+    .header-control-bar {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .header-info-group {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .header-titles h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.3px;
+    }
+
+    .header-titles p {
+        margin: 4px 0 0 0;
+        font-size: 0.86rem;
+        color: var(--text-secondary);
+    }
+
+    .period-select-custom {
+        padding: 9px 16px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .period-select-custom:focus {
+        border-color: var(--accent-primary);
+    }
+
+    .header-actions-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-exec-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border-radius: 10px;
+        font-size: 0.86rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+    }
+
+    .btn-exec-action:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-exec-action.primary {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+    .btn-exec-action.primary:hover { background: #1d4ed8; }
+
+    .btn-exec-action.success {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    .btn-exec-action.success:hover { background: #059669; }
+
+    /* Badges de Estado */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    .status-badge.live {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    /* Grid de Indicadores Clave de Desempeño (KPIs) */
+    .kpi-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    .kpi-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--kpi-color, var(--accent-primary));
+    }
+
+    .kpi-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-card-header i {
+        font-size: 1.15rem;
+        color: var(--kpi-color, var(--accent-primary));
+    }
+
+    .kpi-card-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
+    }
+
+    .kpi-card-sub {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Paneles de 2 Columnas */
+    .cards-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+        .cards-2col {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .accounting-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel-top-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-top-title h4 {
+        margin: 0;
+        font-size: 1.12rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .panel-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+
+    /* Lista de Rubros y Métricas */
+    .rubro-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .rubro-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 11px 15px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+        font-size: 0.9rem;
+        transition: background 0.15s;
+    }
+
+    .rubro-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    [data-theme="light"] .rubro-item:hover {
+        background: rgba(0, 0, 0, 0.02);
+    }
+
+    .rubro-label {
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+    }
+
+    .rubro-label i {
+        width: 18px;
+        text-align: center;
+    }
+
+    .rubro-val {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .rubro-item.highlight-primary {
+        background: rgba(37, 99, 235, 0.08);
+        border-color: rgba(37, 99, 235, 0.25);
+    }
+
+    .rubro-item.highlight-success {
+        background: rgba(16, 185, 129, 0.08);
+        border-color: rgba(16, 185, 129, 0.25);
+    }
+
+    .rubro-item.highlight-danger {
+        background: rgba(239, 68, 68, 0.08);
+        border-color: rgba(239, 68, 68, 0.25);
+    }
+
+    /* Barra de Progreso Contable */
+    .progress-bar-container {
+        margin-top: 14px;
+        margin-bottom: 20px;
+        background: var(--bg-primary);
+        border-radius: 10px;
+        padding: 14px;
+        border: 1px solid var(--border-color);
+    }
+
+    .progress-bar-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: var(--text-secondary);
+    }
+
+    .progress-track {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+    }
+
+    .progress-segment {
+        height: 100%;
+        transition: width 0.3s;
+    }
+
+    /* Tabla de Cierres Diarios */
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+
+    .custom-table th {
+        text-align: left;
+        padding: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-size: 0.74rem;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .custom-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .custom-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge-status {
+        padding: 4px 10px;
+        border-radius: 14px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+    .badge-status.success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .badge-status.warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+    /* Modal de Detalle Transaccional */
+    .drilldown-modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(4px);
+    }
+
+    .drilldown-content {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 850px;
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 28px;
+        box-shadow: var(--shadow-lg);
+    }
+</style>
+
+<div class="resumen-wrapper">
+
+    <!-- BARRA SUPERIOR DE CONTROL -->
+    <div class="header-control-bar">
+        <div class="header-info-group">
+            <div class="header-titles">
+                <h3>
+                    <i class="fa-solid fa-chart-pie" style="color: #2563eb;"></i>
+                    Resumen Contable y Financiero
+                    <span class="status-badge live"><i class="fa-solid fa-bolt"></i> 100% Automatizado</span>
+                </h3>
+                <p>Taller y Lubricantes CR • Consolidación Integral del Período: <strong>{{ fin.periodo_texto }}</strong></p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="periodoSelect" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Período:</label>
+                <select id="periodoSelect" class="period-select-custom" onchange="cambiarPeriodo(this.value)">
+                    {% for p in fin.periodos_disponibles %}
+                    <option value="{{ p.mes }}-{{ p.anio }}" {% if p.mes == mes_seleccionado and p.anio == anio_seleccionado %}selected{% endif %}>
+                        {{ p.texto }}{% if p.es_actual %} (Actual){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="header-actions-group">
+            <button type="button" class="btn-exec-action" onclick="abrirModalDetalle('facturas')" title="Ver facturas pagadas del período">
+                <i class="fa-solid fa-receipt"></i> Facturas ({{ fin.facturas_cantidad }})
+            </button>
+            <button type="button" class="btn-exec-action" onclick="abrirModalDetalle('gastos')" title="Ver gastos del período">
+                <i class="fa-solid fa-list-check"></i> Gastos
+            </button>
+            <a href="{{ url_for('contador.balance', mes=fin.mes, anio=fin.anio) }}" class="btn-exec-action primary">
+                <i class="fa-solid fa-scale-balanced"></i> Balance General ➔
+            </a>
+            <a href="{{ url_for('contador.estado_resultados', mes=fin.mes, anio=fin.anio) }}" class="btn-exec-action success">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Estado de Resultados ➔
+            </a>
+        </div>
+    </div>
+
+    <!-- TARJETAS DE INDICADORES CLAVE (KPIS) -->
+    <div class="kpi-summary-grid">
+        <div class="kpi-card" style="--kpi-color: #2563eb;">
+            <div class="kpi-card-header">
+                <span>Ventas Netas</span>
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.ventas_netas) }}</div>
+            <div class="kpi-card-sub">
+                <span>{{ fin.facturas_cantidad }} facturas en {{ fin.nombre_mes }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: #10b981;">
+            <div class="kpi-card-header">
+                <span>Utilidad Bruta</span>
+                <i class="fa-solid fa-arrow-trend-up"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.utilidad_bruta) }}</div>
+            <div class="kpi-card-sub">
+                <span>Margen Bruto: <strong>{{ fin.margen_bruto_pct }}%</strong></span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: #8b5cf6;">
+            <div class="kpi-card-header">
+                <span>Total Activos</span>
+                <i class="fa-solid fa-building-columns"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.activo_total) }}</div>
+            <div class="kpi-card-sub">
+                <span>Circulante: C$ {{ "{:,.2f}".format(fin.activo_circulante) }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: #f59e0b;">
+            <div class="kpi-card-header">
+                <span>Liquidez Corriente</span>
+                <i class="fa-solid fa-droplet"></i>
+            </div>
+            <div class="kpi-card-value">{{ fin.razon_circulante }}x</div>
+            <div class="kpi-card-sub">
+                <span>Cap. Trabajo: C$ {{ "{:,.2f}".format(fin.capital_trabajo) }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: {% if fin.utilidad_neta >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+            <div class="kpi-card-header">
+                <span>Utilidad Neta Mes</span>
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div class="kpi-card-value" style="color: {% if fin.utilidad_neta >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+                C$ {{ "{:,.2f}".format(fin.utilidad_neta) }}
+            </div>
+            <div class="kpi-card-sub">
+                <span>Margen Neto: <strong>{{ fin.margen_neto_pct }}%</strong></span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: #06b6d4;">
+            <div class="kpi-card-header">
+                <span>Cuadre Contable</span>
+                <i class="fa-solid fa-check-double"></i>
+            </div>
+            <div class="kpi-card-value" style="color: #10b981; font-size: 1.35rem;">100% Cuadrado</div>
+            <div class="kpi-card-sub">
+                <span>Activo = Pasivo + Patrimonio</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOS COLUMNAS PRINCIPALES: ESTADO DE RESULTADOS VS BALANCE GENERAL -->
+    <div class="cards-2col">
+        
+        <!-- COLUMNA 1: CONCILIACIÓN DEL ESTADO DE RESULTADOS -->
+        <div class="accounting-panel">
+            <div class="panel-top-title">
+                <h4>
+                    <i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i>
+                    Insumos del Estado de Resultados
+                </h4>
+                <span class="panel-badge">{{ fin.periodo_texto }}</span>
+            </div>
+
+            <!-- Desglose Gráfico de Ingresos -->
+            {% if fin.ventas_netas > 0 %}
+            <div class="progress-bar-container">
+                <div class="progress-bar-labels">
+                    <span>Mano de Obra ({{ "{:,.1f}".format((fin.mano_obra_mes / fin.ventas_netas) * 100) }}%)</span>
+                    <span>Repuestos y Mostrador ({{ "{:,.1f}".format(((fin.repuestos_taller_mes + fin.mostrador_mes) / fin.ventas_netas) * 100) }}%)</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-segment" style="width: {{ (fin.mano_obra_mes / fin.ventas_netas) * 100 }}%; background: #2563eb;" title="Mano de Obra"></div>
+                    <div class="progress-segment" style="width: {{ ((fin.repuestos_taller_mes + fin.mostrador_mes) / fin.ventas_netas) * 100 }}%; background: #10b981;" title="Repuestos"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <ul class="rubro-list">
+                <li class="rubro-item" onclick="abrirModalDetalle('facturas')" style="cursor: pointer;" title="Ver órdenes de taller">
+                    <span class="rubro-label"><i class="fa-solid fa-wrench" style="color: #2563eb;"></i> Mano de Obra Facturada (Taller)</span>
+                    <span class="rubro-val" style="color: #2563eb;">+ C$ {{ "{:,.2f}".format(fin.mano_obra_mes) }}</span>
+                </li>
+                <li class="rubro-item" onclick="abrirModalDetalle('facturas')" style="cursor: pointer;">
+                    <span class="rubro-label"><i class="fa-solid fa-gears" style="color: #10b981;"></i> Repuestos Facturados en Órdenes</span>
+                    <span class="rubro-val" style="color: #10b981;">+ C$ {{ "{:,.2f}".format(fin.repuestos_taller_mes) }}</span>
+                </li>
+                <li class="rubro-item" onclick="abrirModalDetalle('facturas')" style="cursor: pointer;">
+                    <span class="rubro-label"><i class="fa-solid fa-store" style="color: #06b6d4;"></i> Ventas de Mostrador y Tienda</span>
+                    <span class="rubro-val" style="color: #06b6d4;">+ C$ {{ "{:,.2f}".format(fin.mostrador_mes) }}</span>
+                </li>
+                <li class="rubro-item highlight-primary">
+                    <span class="rubro-label"><i class="fa-solid fa-receipt" style="color: #2563eb;"></i> <strong>Total Ventas Netas Facturadas</strong></span>
+                    <span class="rubro-val" style="color: #2563eb; font-size: 1.05rem;">C$ {{ "{:,.2f}".format(fin.ventas_netas) }}</span>
+                </li>
+                <li class="rubro-item" onclick="abrirModalDetalle('compras')" style="cursor: pointer;">
+                    <span class="rubro-label"><i class="fa-solid fa-truck" style="color: #f59e0b;"></i> Compras de Repuestos a Proveedores</span>
+                    <span class="rubro-val" style="color: #f59e0b;">- C$ {{ "{:,.2f}".format(fin.compras_mes) }}</span>
+                </li>
+                <li class="rubro-item">
+                    <span class="rubro-label"><i class="fa-solid fa-boxes-packing" style="color: #ef4444;"></i> Costo de Ventas (COGS Repuestos)</span>
+                    <span class="rubro-val" style="color: #ef4444;">- C$ {{ "{:,.2f}".format(fin.costo_ventas) }}</span>
+                </li>
+                <li class="rubro-item highlight-success">
+                    <span class="rubro-label"><i class="fa-solid fa-coins" style="color: #10b981;"></i> <strong>Utilidad Bruta en Ventas</strong></span>
+                    <span class="rubro-val" style="color: #10b981; font-size: 1.05rem;">C$ {{ "{:,.2f}".format(fin.utilidad_bruta) }}</span>
+                </li>
+                <li class="rubro-item">
+                    <span class="rubro-label"><i class="fa-solid fa-users" style="color: #ef4444;"></i> Nómina de Taller y Cargas Sociales</span>
+                    <span class="rubro-val" style="color: #ef4444;">- C$ {{ "{:,.2f}".format(fin.gastos_nomina_total) }}</span>
+                </li>
+                <li class="rubro-item" onclick="abrirModalDetalle('gastos')" style="cursor: pointer;">
+                    <span class="rubro-label"><i class="fa-solid fa-bolt" style="color: #ef4444;"></i> Gastos Operativos (Servicios, Local)</span>
+                    <span class="rubro-val" style="color: #ef4444;">- C$ {{ "{:,.2f}".format(fin.gastos_operativos - fin.gastos_nomina_total) }}</span>
+                </li>
+                <li class="rubro-item highlight-primary">
+                    <span class="rubro-label"><i class="fa-solid fa-trophy" style="color: #2563eb;"></i> <strong>Utilidad Neta del Ejercicio</strong></span>
+                    <span class="rubro-val" style="color: {% if fin.utilidad_neta >= 0 %}#10b981{% else %}#ef4444{% endif %}; font-size: 1.15rem;">
+                        C$ {{ "{:,.2f}".format(fin.utilidad_neta) }}
+                    </span>
+                </li>
+            </ul>
+
+            <div style="margin-top: 24px;">
+                <a href="{{ url_for('contador.estado_resultados', mes=fin.mes, anio=fin.anio) }}" class="btn-exec-action success" style="width: 100%; justify-content: center;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Ver Estado de Resultados Completo
+                </a>
+            </div>
+        </div>
+
+        <!-- COLUMNA 2: CONCILIACIÓN DEL BALANCE GENERAL -->
+        <div class="accounting-panel">
+            <div class="panel-top-title">
+                <h4>
+                    <i class="fa-solid fa-scale-balanced" style="color: #2563eb;"></i>
+                    Insumos del Balance General
+                </h4>
+                <span class="panel-badge">Posición Financiera</span>
+            </div>
+
+            <!-- Desglose Gráfico de Activos -->
+            {% if fin.activo_total > 0 %}
+            <div class="progress-bar-container">
+                <div class="progress-bar-labels">
+                    <span>Activo Corriente ({{ "{:,.1f}".format((fin.activo_circulante / fin.activo_total) * 100) }}%)</span>
+                    <span>Activo No Corriente / Fijo ({{ "{:,.1f}".format((fin.activo_fijo_total / fin.activo_total) * 100) }}%)</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-segment" style="width: {{ (fin.activo_circulante / fin.activo_total) * 100 }}%; background: #06b6d4;" title="Activo Corriente"></div>
+                    <div class="progress-segment" style="width: {{ (fin.activo_fijo_total / fin.activo_total) * 100 }}%; background: #3b82f6;" title="Activo Fijo"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <ul class="rubro-list">
+                <li class="rubro-item">
+                    <span class="rubro-label"><i class="fa-solid fa-cash-register" style="color: #10b981;"></i> Efectivo Disponible en Caja / Bóveda</span>
+                    <span class="rubro-val">C$ {{ "{:,.2f}".format(fin.efectivo_caja) }}</span>
+                </li>
+                <li class="rubro-item" onclick="abrirModalDetalle('inventario')" style="cursor: pointer;">
+                    <span class="rubro-label"><i class="fa-solid fa-boxes-stacked" style="color: #3b82f6;"></i> Inventario de Mercaderías (Al Costo)</span>
+                    <span class="rubro-val">C$ {{ "{:,.2f}".format(fin.inventario_costo) }}</span>
+                </li>
+                <li class="rubro-item" onclick="abrirModalDetalle('facturas')" style="cursor: pointer;">
+                    <span class="rubro-label"><i class="fa-solid fa-hand-holding-dollar" style="color: #f59e0b;"></i> Cuentas por Cobrar (Clientes Taller)</span>
+                    <span class="rubro-val">C$ {{ "{:,.2f}".format(fin.cuentas_por_cobrar) }}</span>
+                </li>
+                <li class="rubro-item highlight-primary">
+                    <span class="rubro-label"><i class="fa-solid fa-circle-check" style="color: #2563eb;"></i> <strong>Total Activo Corriente (Circulante)</strong></span>
+                    <span class="rubro-val" style="color: #2563eb; font-size: 1.05rem;">C$ {{ "{:,.2f}".format(fin.activo_circulante) }}</span>
+                </li>
+                <li class="rubro-item">
+                    <span class="rubro-label"><i class="fa-solid fa-toolbox" style="color: #8b5cf6;"></i> Activo No Corriente (Maquinaria y Equipos)</span>
+                    <span class="rubro-val">C$ {{ "{:,.2f}".format(fin.activo_fijo_total) }}</span>
+                </li>
+                <li class="rubro-item highlight-success">
+                    <span class="rubro-label"><i class="fa-solid fa-building-columns" style="color: #10b981;"></i> <strong>Activo Total Consolidado</strong></span>
+                    <span class="rubro-val" style="color: #10b981; font-size: 1.05rem;">C$ {{ "{:,.2f}".format(fin.activo_total) }}</span>
+                </li>
+                <li class="rubro-item" onclick="abrirModalDetalle('compras')" style="cursor: pointer;">
+                    <span class="rubro-label"><i class="fa-solid fa-credit-card" style="color: #ef4444;"></i> Pasivo Corriente (Proveedores + DGI)</span>
+                    <span class="rubro-val" style="color: #ef4444;">C$ {{ "{:,.2f}".format(fin.pasivo_circulante) }}</span>
+                </li>
+                <li class="rubro-item">
+                    <span class="rubro-label"><i class="fa-solid fa-landmark" style="color: #ef4444;"></i> Pasivo No Corriente (Largo Plazo)</span>
+                    <span class="rubro-val" style="color: #ef4444;">C$ {{ "{:,.2f}".format(fin.pasivo_largo_plazo) }}</span>
+                </li>
+                <li class="rubro-item highlight-primary">
+                    <span class="rubro-label"><i class="fa-solid fa-shield-halved" style="color: #2563eb;"></i> <strong>Patrimonio Neto (Capital + Utilidad)</strong></span>
+                    <span class="rubro-val" style="color: #2563eb; font-size: 1.15rem;">C$ {{ "{:,.2f}".format(fin.patrimonio) }}</span>
+                </li>
+            </ul>
+
+            <div style="margin-top: 24px;">
+                <a href="{{ url_for('contador.balance', mes=fin.mes, anio=fin.anio) }}" class="btn-exec-action primary" style="width: 100%; justify-content: center;">
+                    <i class="fa-solid fa-scale-balanced"></i> Ver Balance General Completo
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TABLA DE HISTORIAL DIARIO DE CIERRES Y RECAUDACIÓN -->
+    <div class="accounting-panel">
+        <div class="panel-top-title">
+            <h4>
+                <i class="fa-solid fa-calendar-days" style="color: #8b5cf6;"></i>
+                Flujo Diario de Caja y Ventas Registradas en el Período
+            </h4>
+            <span class="panel-badge">Conciliación Operativa</span>
+        </div>
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Ventas Mostrador</th>
+                        <th>Ingresos Mano de Obra Taller</th>
+                        <th>Total Recaudado</th>
+                        <th style="text-align: center;">Estado Caja</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dia in fin.cierres_diarios %}
+                    <tr>
+                        <td><strong>{{ dia.fecha }}</strong></td>
+                        <td>C$ {{ "{:,.2f}".format(dia.ventas) }}</td>
+                        <td>C$ {{ "{:,.2f}".format(dia.taller) }}</td>
+                        <td style="font-weight: 700; color: var(--accent-primary);">C$ {{ "{:,.2f}".format(dia.total) }}</td>
+                        <td style="text-align: center;">
+                            {% if dia.estado == 'Cerrada' %}
+                                <span class="badge-status success"><i class="fa-solid fa-lock"></i> Cerrada</span>
+                            {% else %}
+                                <span class="badge-status warning"><i class="fa-solid fa-lock-open"></i> {{ dia.estado }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 24px;">
+                            <i class="fa-solid fa-calendar-xmark fa-2x" style="margin-bottom: 8px; display: block; opacity: 0.5;"></i>
+                            No se registran cierres de caja en este mes.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DRILL-DOWN ANALÍTICO -->
+<div id="drillModal" class="drilldown-modal" onclick="if(event.target===this) cerrarModalDetalle()">
+    <div class="drilldown-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+            <h3 id="drillTitle" style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Detalle de Transacciones</h3>
+            <button type="button" onclick="cerrarModalDetalle()" style="background: transparent; border: none; font-size: 1.3rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        </div>
+        <div id="drillBody" style="font-size: 0.9rem;">
+            <div style="text-align: center; padding: 30px; color: var(--text-secondary);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                <p style="margin-top: 10px;">Cargando registros conciliados...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function cambiarPeriodo(val) {
+        if (!val) return;
+        const [mes, anio] = val.split('-');
+        window.location.href = `{{ url_for('contador.resumen_contable') }}?mes=${mes}&anio=${anio}`;
+    }
+
+    function abrirModalDetalle(tipo) {
+        const modal = document.getElementById('drillModal');
+        const title = document.getElementById('drillTitle');
+        const body = document.getElementById('drillBody');
+        
+        modal.style.display = 'flex';
+        body.innerHTML = `
+            <div style="text-align: center; padding: 30px; color: var(--text-secondary);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                <p style="margin-top: 10px;">Consultando base de datos...</p>
+            </div>
+        `;
+
+        if (tipo === 'facturas') {
+            title.innerHTML = '<i class="fa-solid fa-receipt"></i> Facturas Pagadas del Período';
+        } else if (tipo === 'inventario') {
+            title.innerHTML = '<i class="fa-solid fa-boxes-stacked"></i> Inventario Valorado al Costo';
+        } else if (tipo === 'compras') {
+            title.innerHTML = '<i class="fa-solid fa-truck"></i> Compras de Bodega a Proveedores';
+        } else if (tipo === 'gastos') {
+            title.innerHTML = '<i class="fa-solid fa-list-check"></i> Gastos Operativos Registrados';
+        }
+
+        fetch(`{{ url_for('contador.api_detalle_transacciones') }}?tipo=${tipo}&mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.items || data.items.length === 0) {
+                    body.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-secondary);"><i class="fa-solid fa-inbox fa-2x"></i><p style="margin-top: 10px;">No se registraron movimientos en este período.</p></div>`;
+                    return;
+                }
+
+                if (tipo === 'facturas') {
+                    let html = `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">N° FACTURA</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px;">TIPO</th>
+                                    <th style="padding: 8px;">SUBTOTAL</th>
+                                    <th style="padding: 8px;">IVA (15%)</th>
+                                    <th style="padding: 8px; text-align: right;">TOTAL NETO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700; color: var(--accent-primary);">${item.numero}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${item.fecha}</td>
+                                <td style="padding: 8px;"><span style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">${item.tipo}</span></td>
+                                <td style="padding: 8px;">C$ ${item.subtotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; color: var(--text-secondary);">C$ ${item.iva.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${item.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'gastos') {
+                    let html = `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">CATEGORÍA</th>
+                                    <th style="padding: 8px;">DESCRIPCIÓN</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px; text-align: right;">MONTO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700; color: #f59e0b;">${item.categoria}</td>
+                                <td style="padding: 8px;">${item.descripcion}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${item.fecha}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #ef4444;">C$ ${item.monto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'inventario') {
+                    let html = `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">SKU</th>
+                                    <th style="padding: 8px;">PRODUCTO</th>
+                                    <th style="padding: 8px;">CATEGORÍA</th>
+                                    <th style="padding: 8px; text-align: center;">STOCK</th>
+                                    <th style="padding: 8px;">COSTO UNIT.</th>
+                                    <th style="padding: 8px; text-align: right;">VALOR TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-family: monospace;">${item.sku}</td>
+                                <td style="padding: 8px; font-weight: 600;">${item.nombre}</td>
+                                <td style="padding: 8px; color: var(--text-secondary);">${item.categoria}</td>
+                                <td style="padding: 8px; text-align: center; font-weight: 700;">${item.stock}</td>
+                                <td style="padding: 8px;">C$ ${item.costo_unit.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #3b82f6;">C$ ${item.costo_total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'compras') {
+                    let html = `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">ORDEN COMPRA</th>
+                                    <th style="padding: 8px;">PROVEEDOR</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px; text-align: right;">TOTAL COMPRA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700;">#COM-${item.id}</td>
+                                <td style="padding: 8px;">${item.proveedor}</td>
+                                <td style="padding: 8px; color: var(--text-secondary);">${item.fecha}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #ef4444;">C$ ${item.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                }
+            })
+            .catch(err => {
+                body.innerHTML = `<p style="color: #ef4444; padding: 20px; text-align: center;">Error al cargar registros: ${err}</p>`;
+            });
+    }
+
+    function cerrarModalDetalle() {
+        document.getElementById('drillModal').style.display = 'none';
+    }
+</script>
+{% endblock %}

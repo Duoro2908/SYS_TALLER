@@ -1,0 +1,1191 @@
+{% extends "base.html" %}
+
+{% block title %}Estadística del Taller - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Estadística del Taller{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --dash-primary: #3b82f6;
+        --dash-success: #10b981;
+        --dash-warning: #f59e0b;
+        --dash-danger: #ef4444;
+        --dash-info: #06b6d4;
+        --dash-purple: #8b5cf6;
+        --dash-amber: #d97706;
+    }
+
+    /* Contenedor general */
+    .dashboard-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding-bottom: 40px;
+    }
+
+    /* Barra superior de herramientas del taller */
+    .dashboard-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        padding: 16px 22px;
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .toolbar-info h3 {
+        margin: 0 0 4px 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .toolbar-info p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+    }
+
+    .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        background: rgba(16, 185, 129, 0.12);
+        color: var(--dash-success);
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .live-badge .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--dash-success);
+        box-shadow: 0 0 8px var(--dash-success);
+        animation: pulseAnimation 2s infinite;
+    }
+
+    @keyframes pulseAnimation {
+        0% { transform: scale(0.95); opacity: 0.8; }
+        50% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .btn-action-tool {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+    }
+
+    .btn-action-tool:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-action-tool.primary {
+        background: var(--dash-primary);
+        color: #ffffff;
+        border-color: var(--dash-primary);
+    }
+    .btn-action-tool.primary:hover {
+        background: #2563eb;
+    }
+
+    /* Grid de KPIs principales */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+    }
+
+    .kpi-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+    }
+
+    .kpi-card.facturacion::before { background: linear-gradient(90deg, #10b981, #059669); }
+    .kpi-card.ordenes::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .kpi-card.mano-obra::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+    .kpi-card.ticket::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+
+    .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .kpi-title {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+
+    .kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.25rem;
+    }
+
+    .kpi-icon.facturacion { background: rgba(16, 185, 129, 0.12); color: var(--dash-success); }
+    .kpi-icon.ordenes { background: rgba(245, 158, 11, 0.12); color: var(--dash-warning); }
+    .kpi-icon.mano-obra { background: rgba(6, 182, 212, 0.12); color: var(--dash-info); }
+    .kpi-icon.ticket { background: rgba(139, 92, 246, 0.12); color: var(--dash-purple); }
+
+    .kpi-value {
+        font-size: 1.95rem;
+        color: var(--text-primary);
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+    }
+
+    .kpi-subtitle {
+        font-size: 0.84rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .kpi-subtitle strong {
+        color: var(--text-primary);
+    }
+
+    /* Gráficos Layout */
+    .charts-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+    }
+
+    .charts-row-equal {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 1024px) {
+        .charts-row, .charts-row-equal {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .panel-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .panel-title i {
+        color: var(--dash-primary);
+    }
+
+    .panel-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+
+    .chart-container-lg {
+        position: relative;
+        height: 330px;
+        width: 100%;
+    }
+
+    .chart-container-md {
+        position: relative;
+        height: 280px;
+        width: 100%;
+    }
+
+    /* Tablas operativas */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+
+    .custom-table th {
+        text-align: left;
+        padding: 10px 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .custom-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .custom-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .custom-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Badges de Estado */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .status-badge.facturada { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .status-badge.en-proceso { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .status-badge.en-diagnostico { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-badge.aprobado { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+    .status-badge.cotizado { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+    .status-badge.finalizado { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-badge.danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    /* Tarjetas de Mecánicos */
+    .mechanic-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    .mechanic-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .mechanic-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .mechanic-avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.1rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .mechanic-info h4 {
+        margin: 0 0 4px 0;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .mechanic-info p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    .mechanic-info strong {
+        color: var(--dash-success);
+    }
+
+    /* Pipeline de estados */
+    .pipeline-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .pipeline-step {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 14px;
+        text-align: center;
+    }
+
+    .pipeline-step-title {
+        font-size: 0.76rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .pipeline-step-val {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    /* Modo Claro High-Contrast para Estadísticas y Gráficas */
+    [data-theme="light"] .panel-badge,
+    body.light-theme .panel-badge {
+        background: #f1f5f9 !important;
+        color: #334155 !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    [data-theme="light"] .btn-action-tool,
+    body.light-theme .btn-action-tool {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    [data-theme="light"] .btn-action-tool:hover,
+    body.light-theme .btn-action-tool:hover {
+        background: #e2e8f0 !important;
+    }
+    [data-theme="light"] .btn-action-tool.primary,
+    body.light-theme .btn-action-tool.primary {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+    }
+    [data-theme="light"] .custom-table tr:hover td,
+    body.light-theme .custom-table tr:hover td {
+        background: #f8fafc !important;
+    }
+    [data-theme="light"] .mechanic-card,
+    body.light-theme .mechanic-card,
+    [data-theme="light"] .pipeline-step,
+    body.light-theme .pipeline-step {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    [data-theme="light"] .mechanic-info h4,
+    body.light-theme .mechanic-info h4,
+    [data-theme="light"] .pipeline-step-val,
+    body.light-theme .pipeline-step-val {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .mechanic-info p,
+    body.light-theme .mechanic-info p,
+    [data-theme="light"] .pipeline-step-title,
+    body.light-theme .pipeline-step-title {
+        color: #475569 !important;
+    }
+    [data-theme="light"] .dashboard-toolbar,
+    body.light-theme .dashboard-toolbar,
+    [data-theme="light"] .panel-card,
+    body.light-theme .panel-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05) !important;
+    }
+    [data-theme="light"] .panel-card div[style*="rgba(255,255,255,0.02)"],
+    body.light-theme .panel-card div[style*="rgba(255,255,255,0.02)"] {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+    }
+
+    /* Impresión */
+    @media print {
+        @page {
+            size: letter landscape;
+            margin: 10mm;
+        }
+        html, body, .app-container, .main-content, .content, .dashboard-wrapper {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            position: static !important;
+            width: 100% !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .sidebar, .dashboard-toolbar, .topbar, .flash-messages {
+            display: none !important;
+        }
+        .panel-card, .kpi-card {
+            border: 1px solid #ccc !important;
+            box-shadow: none !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- ============================================== -->
+    <!-- BARRA SUPERIOR DE CONTROL / APARTADO GERENCIAL -->
+    <!-- ============================================== -->
+    <div class="dashboard-toolbar">
+        <div class="toolbar-info">
+            <h3><i class="fa-solid fa-screwdriver-wrench" style="color: var(--dash-warning);"></i> Estadística del Taller</h3>
+            <p>Métricas operacionales, rendimiento técnico de mecánicos, flujo de bahía y facturación de servicios.</p>
+        </div>
+        <div class="toolbar-actions">
+            <span class="live-badge">
+                <span class="pulse-dot"></span> Taller Activo
+            </span>
+            <button class="btn-action-tool" onclick="location.reload();" title="Refrescar estadísticas">
+                <i class="fa-solid fa-arrows-rotate"></i> Actualizar
+            </button>
+            <button class="btn-action-tool primary" onclick="window.print();" title="Imprimir o Guardar PDF">
+                <i class="fa-solid fa-print"></i> Reporte
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- BLOQUE 1: KPIs CLAVE DEL TALLER                -->
+    <!-- ============================================== -->
+    <div class="kpi-grid">
+        <!-- Facturación Mes -->
+        <div class="kpi-card facturacion">
+            <div class="kpi-header">
+                <span class="kpi-title">Facturación Taller (Mes)</span>
+                <div class="kpi-icon facturacion"><i class="fa-solid fa-coins"></i></div>
+            </div>
+            <div class="kpi-value">C$ {{ "{:,.2f}".format(stats.ingresos_mes) }}</div>
+            <div class="kpi-subtitle">
+                <span>Utilidad Neta: <strong>C$ {{ "{:,.2f}".format(stats.utilidad_neta) }}</strong></span>
+                <span style="color: {% if stats.margen_beneficio >= 20 %}var(--dash-success){% else %}var(--dash-warning){% endif %}; font-weight: 700;">
+                    {{ stats.margen_beneficio }}% Margen
+                </span>
+            </div>
+        </div>
+
+        <!-- Órdenes de Trabajo -->
+        <div class="kpi-card ordenes">
+            <div class="kpi-header">
+                <span class="kpi-title">Órdenes Facturadas (Mes)</span>
+                <div class="kpi-icon ordenes"><i class="fa-solid fa-clipboard-check"></i></div>
+            </div>
+            <div class="kpi-value">{{ stats.ordenes_facturadas_mes }}</div>
+            <div class="kpi-subtitle">
+                <span>En Bahía/Proceso: <strong style="color: var(--dash-warning);">{{ stats.ordenes_activas }} activas</strong></span>
+                <span>Total Histórico: <strong>{{ stats.total_ordenes_historico }}</strong></span>
+            </div>
+        </div>
+
+        <!-- Mano de Obra vs Repuestos -->
+        <div class="kpi-card mano-obra">
+            <div class="kpi-header">
+                <span class="kpi-title">Mano de Obra Generada</span>
+                <div class="kpi-icon mano-obra"><i class="fa-solid fa-wrench"></i></div>
+            </div>
+            <div class="kpi-value">C$ {{ "{:,.2f}".format(stats.total_mano_obra) }}</div>
+            <div class="kpi-subtitle">
+                <span>Participación: <strong>{{ stats.pct_mano_obra }}% M.O.</strong></span>
+                <span>Repuestos: <strong>C$ {{ "{:,.2f}".format(stats.total_repuestos) }}</strong></span>
+            </div>
+        </div>
+
+        <!-- Ticket Promedio -->
+        <div class="kpi-card ticket">
+            <div class="kpi-header">
+                <span class="kpi-title">Ticket Promedio por Moto</span>
+                <div class="kpi-icon ticket"><i class="fa-solid fa-receipt"></i></div>
+            </div>
+            <div class="kpi-value">C$ {{ "{:,.2f}".format(stats.ticket_promedio) }}</div>
+            <div class="kpi-subtitle">
+                <span>Clientes Activos: <strong>{{ stats.total_clientes }}</strong></span>
+                <span>Inasistencias Citas: <strong style="color: {% if stats.citas_no_asistidas > 0 %}var(--dash-danger){% else %}var(--dash-success){% endif %};">{{ stats.citas_no_asistidas }}</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- BLOQUE 2: GRÁFICOS PRINCIPALES DEL TALLER       -->
+    <!-- ============================================== -->
+    <!-- Fila 1: Evolución de Facturación & Tipo de Servicio -->
+    <div class="charts-row">
+        <!-- Evolución y Volumen -->
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-chart-line"></i> Evolución Mensual: Facturación y Órdenes de Trabajo
+                </div>
+                <span class="panel-badge">Últimos 6 meses</span>
+            </div>
+            <div class="chart-container-lg">
+                <canvas id="evolucionTallerChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Distribución por Tipo de Servicio -->
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-chart-pie"></i> Tipos de Servicios Realizados
+                </div>
+                <span class="panel-badge">Proporción</span>
+            </div>
+            <div class="chart-container-lg">
+                <canvas id="serviciosChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fila 2: Rendimiento por Mecánico & Composición Mano de Obra vs Repuestos -->
+    <div class="charts-row-equal">
+        <!-- Mecánicos Productividad -->
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-users-gear"></i> Productividad y Órdenes por Mecánico
+                </div>
+                <span class="panel-badge">Técnicos de Bahía</span>
+            </div>
+            <div class="chart-container-md">
+                <canvas id="mecanicosChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Mano de Obra vs Repuestos -->
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-scale-balanced"></i> Composición: Mano de Obra vs Repuestos
+                </div>
+                <span class="panel-badge">Ingresos Facturados</span>
+            </div>
+            <div class="chart-container-md">
+                <canvas id="composicionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fila 3: Marcas Atendidas & Pipeline del Taller -->
+    <div class="charts-row-equal">
+        <!-- Marcas de Motocicletas -->
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-motorcycle"></i> Marcas de Motocicletas Más Atendidas
+                </div>
+                <span class="panel-badge">Flota de Clientes</span>
+            </div>
+            <div class="chart-container-md">
+                <canvas id="marcasChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Pipeline del Taller -->
+        <div class="panel-card" style="justify-content: space-between;">
+            <div>
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-filter"></i> Embudo Operativo de Órdenes de Trabajo
+                    </div>
+                    <span class="panel-badge">Estado de Bahía</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+                    Distribución de órdenes en cada una de las fases del flujo de trabajo del taller.
+                </p>
+                <div class="pipeline-container">
+                    <div class="pipeline-step">
+                        <div class="pipeline-step-title">Diagnóstico</div>
+                        <div class="pipeline-step-val" style="color: var(--dash-warning);">{{ stats.estados_pipeline['En Diagnostico'] }}</div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-step-title">Cotizado</div>
+                        <div class="pipeline-step-val" style="color: var(--dash-info);">{{ stats.estados_pipeline['Cotizado'] }}</div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-step-title">Aprobado</div>
+                        <div class="pipeline-step-val" style="color: var(--dash-purple);">{{ stats.estados_pipeline['Aprobado'] }}</div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-step-title">En Proceso</div>
+                        <div class="pipeline-step-val" style="color: var(--dash-primary);">{{ stats.estados_pipeline['En Proceso'] }}</div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-step-title">Finalizado</div>
+                        <div class="pipeline-step-val" style="color: #22c55e;">{{ stats.estados_pipeline['Finalizado'] }}</div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-step-title">Facturada</div>
+                        <div class="pipeline-step-val" style="color: var(--dash-success);">{{ stats.estados_pipeline['Facturada'] }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen Inventario / Repuestos -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-top: 18px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary); display: block;">Valor en Almacén Taller:</span>
+                    <strong style="font-size: 1.1rem; color: var(--text-primary);">C$ {{ "{:,.2f}".format(stats.valor_inventario) }}</strong>
+                </div>
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary); display: block;">Alertas Stock Bajo:</span>
+                    <span class="status-badge {% if stats.alertas_stock > 0 %}danger{% else %}facturada{% endif %}">
+                        <i class="fa-solid fa-triangle-exclamation"></i> {{ stats.alertas_stock }} productos
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- BLOQUE 3: DETALLES Y COSAS DEL TALLER           -->
+    <!-- ============================================== -->
+    <!-- Técnicos de Bahía -->
+    {% if stats.mecanicos_cards %}
+    <div class="panel-card">
+        <div class="panel-header">
+            <div class="panel-title">
+                <i class="fa-solid fa-id-badge"></i> Desempeño Individual de Técnicos
+            </div>
+            <span class="panel-badge">Equipo Taller</span>
+        </div>
+        <div class="mechanic-cards-grid">
+            {% for mec in stats.mecanicos_cards %}
+            <div class="mechanic-card">
+                <div class="mechanic-avatar">
+                    {{ mec.nombre[0] }}
+                </div>
+                <div class="mechanic-info">
+                    <h4>{{ mec.nombre }}</h4>
+                    <p>{{ mec.ordenes }} órdenes completadas</p>
+                    <p>Mano de obra: <strong>C$ {{ "{:,.2f}".format(mec.monto) }}</strong></p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tablas: Top Servicios y Repuestos -->
+    <div class="charts-row-equal">
+        <!-- Top Servicios Más Demandados -->
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-ranking-star"></i> Servicios de Mano de Obra Más Solicitados
+                </div>
+                <span class="panel-badge">Ranking Taller</span>
+            </div>
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Servicio / Mantenimiento</th>
+                            <th style="text-align: center;">Frecuencia</th>
+                            <th style="text-align: right;">Costo Prom.</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for serv in stats.top_servicios %}
+                        <tr>
+                            <td>
+                                <strong style="color: var(--text-primary); display: block;">{{ serv.descripcion }}</strong>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="status-badge cotizado">{{ serv.frecuencia }} veces</span>
+                            </td>
+                            <td style="text-align: right;">C$ {{ "{:,.2f}".format(serv.promedio) }}</td>
+                            <td style="text-align: right; font-weight: 700; color: var(--dash-success);">
+                                C$ {{ "{:,.2f}".format(serv.total) }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-secondary);">No hay registros de servicios aún.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Repuestos e Insumos Consumidos -->
+        <div class="panel-card">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-box-archive"></i> Repuestos y Consumibles Más Utilizados
+                </div>
+                <span class="panel-badge">Bodega & Taller</span>
+            </div>
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Repuesto / Producto</th>
+                            <th style="text-align: center;">Instalados</th>
+                            <th style="text-align: center;">Stock</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rep in stats.top_repuestos %}
+                        <tr>
+                            <td>
+                                <strong style="color: var(--text-primary); display: block;">{{ rep.nombre }}</strong>
+                                <span style="font-size: 0.78rem; color: var(--text-secondary);">C$ {{ "{:,.2f}".format(rep.precio) }} c/u</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="status-badge en-proceso">{{ rep.cantidad }} uds</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="status-badge {% if rep.stock < 5 %}danger{% else %}facturada{% endif %}">
+                                    {{ rep.stock }} en stock
+                                </span>
+                            </td>
+                            <td style="text-align: right; font-weight: 700; color: var(--dash-info);">
+                                C$ {{ "{:,.2f}".format(rep.total) }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-secondary);">No hay repuestos registrados en órdenes aún.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitoreo en Vivo de Órdenes Recientes -->
+    <div class="panel-card">
+        <div class="panel-header">
+            <div class="panel-title">
+                <i class="fa-solid fa-list-check"></i> Registro Reciente de Órdenes del Taller
+            </div>
+            <a href="{{ url_for('mechanic.ordenes_list') }}" class="btn-action-tool" style="font-size: 0.78rem;">
+                Ver Todas <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th># Orden</th>
+                        <th>Cliente</th>
+                        <th>Motocicleta</th>
+                        <th>Mecánico</th>
+                        <th>Servicio</th>
+                        <th>Fecha Ingreso</th>
+                        <th style="text-align: center;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ord in stats.ordenes_recientes %}
+                    <tr>
+                        <td><strong>#{{ ord.orden_id }}</strong></td>
+                        <td>{{ ord.cliente }}</td>
+                        <td>{{ ord.moto }}</td>
+                        <td>
+                            <i class="fa-solid fa-user-gear" style="color: var(--dash-info); font-size: 0.8rem;"></i> {{ ord.mecanico }}
+                        </td>
+                        <td>{{ ord.servicio }}</td>
+                        <td style="color: var(--text-secondary);">{{ ord.fecha }}</td>
+                        <td style="text-align: center;">
+                            {% if ord.estado == 'Facturada' %}
+                                <span class="status-badge facturada"><i class="fa-solid fa-check"></i> Facturada</span>
+                            {% elif ord.estado == 'En Proceso' %}
+                                <span class="status-badge en-proceso"><i class="fa-solid fa-spinner fa-spin"></i> En Proceso</span>
+                            {% elif ord.estado == 'En Diagnostico' %}
+                                <span class="status-badge en-diagnostico"><i class="fa-solid fa-stethoscope"></i> Diagnóstico</span>
+                            {% elif ord.estado == 'Aprobado' %}
+                                <span class="status-badge aprobado"><i class="fa-solid fa-thumbs-up"></i> Aprobado</span>
+                            {% elif ord.estado == 'Cotizado' %}
+                                <span class="status-badge cotizado"><i class="fa-solid fa-file-lines"></i> Cotizado</span>
+                            {% elif ord.estado == 'Finalizado' %}
+                                <span class="status-badge finalizado"><i class="fa-solid fa-circle-check"></i> Finalizado</span>
+                            {% else %}
+                                <span class="status-badge">{{ ord.estado }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-secondary);">No hay órdenes registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+window.initEstadisticasCharts = function() {
+    if (typeof Chart === 'undefined') {
+        setTimeout(window.initEstadisticasCharts, 60);
+        return;
+    }
+
+    const canvasEv = document.getElementById('evolucionTallerChart');
+    if (!canvasEv) return;
+
+    if (window._estadisticasChartInstances && window._estadisticasChartInstances.length) {
+        window._estadisticasChartInstances.forEach(c => { try { c.destroy(); } catch(e){} });
+    }
+    window._estadisticasChartInstances = [];
+
+    function getChartThemeTokens() {
+        const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const isLight = (theme === 'light');
+        return {
+            textColor: isLight ? '#334155' : '#cbd5e1',
+            legendColor: isLight ? '#0f172a' : '#e2e8f0',
+            gridColor: isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+            surfaceBorder: isLight ? '#ffffff' : '#121316'
+        };
+    }
+
+    let tokens = getChartThemeTokens();
+    Chart.defaults.color = tokens.textColor;
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    // 1. Gráfico Evolución
+    const ctxEvolucion = canvasEv.getContext('2d');
+    let labelsHist = {{ stats.labels_grafico | tojson | safe }};
+    let datosIngresos = {{ stats.datos_grafico | tojson | safe }};
+    let datosOrdenes = {{ stats.ordenes_grafico | tojson | safe }};
+
+    if (!labelsHist || labelsHist.length === 0) {
+        labelsHist = ['Jun 2026', 'Jul 2026', 'Ago 2026', 'Sep 2026', 'Oct 2026', 'Nov 2026'];
+        datosIngresos = [0, 0, 0, 0, 0, {{ stats.ingresos_mes | default(0.0) }}];
+        datosOrdenes = [0, 0, 0, 0, 0, {{ stats.ordenes_facturadas_mes | default(0) }}];
+    }
+
+    const gradienteIngresos = ctxEvolucion.createLinearGradient(0, 0, 0, 300);
+    gradienteIngresos.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+    gradienteIngresos.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
+
+    window._estadisticasChartInstances.push(new Chart(ctxEvolucion, {
+        type: 'bar',
+        data: {
+            labels: labelsHist,
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'Facturación (C$)',
+                    data: datosIngresos,
+                    borderColor: '#f59e0b',
+                    backgroundColor: gradienteIngresos,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#d97706',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    yAxisID: 'y'
+                },
+                {
+                    type: 'bar',
+                    label: 'Órdenes Facturadas',
+                    data: datosOrdenes,
+                    backgroundColor: 'rgba(59, 130, 246, 0.65)',
+                    borderColor: '#2563eb',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    barPercentage: 0.45,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: tokens.legendColor, font: { weight: '600', size: 12 }, padding: 15 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(c) {
+                            return c.dataset.yAxisID === 'y'
+                                ? c.dataset.label + ': C$ ' + Number(c.raw).toLocaleString('es-NI', {minimumFractionDigits: 2})
+                                : c.dataset.label + ': ' + c.raw + ' órdenes';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { grid: { color: tokens.gridColor }, ticks: { color: tokens.textColor } },
+                y: {
+                    type: 'linear', position: 'left',
+                    grid: { color: tokens.gridColor },
+                    ticks: {
+                        color: tokens.textColor,
+                        callback: v => 'C$ ' + Number(v).toLocaleString('es-NI')
+                    }
+                },
+                y1: {
+                    type: 'linear', position: 'right',
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: tokens.textColor, precision: 0 }
+                }
+            }
+        }
+    }));
+
+    // 2. Gráfico Servicios (Doughnut)
+    const canvasSrv = document.getElementById('serviciosChart');
+    if (canvasSrv) {
+        let srvLabels = {{ stats.servicios_labels | tojson | safe }};
+        let srvCounts = {{ stats.servicios_counts | tojson | safe }};
+        if (!srvLabels || srvLabels.length === 0) {
+            srvLabels = ['Preventivo', 'Correctivo', 'General'];
+            srvCounts = [1, 0, 0];
+        }
+        window._estadisticasChartInstances.push(new Chart(canvasSrv.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: srvLabels,
+                datasets: [{
+                    data: srvCounts,
+                    backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6'],
+                    borderColor: tokens.surfaceBorder,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: tokens.legendColor, font: { weight: '600', size: 11 } } }
+                },
+                cutout: '68%'
+            }
+        }));
+    }
+
+    // 3. Gráfico Mecánicos
+    const canvasMec = document.getElementById('mecanicosChart');
+    if (canvasMec) {
+        let mecLabels = {{ stats.mecanicos_labels | tojson | safe }};
+        let mecOrdenes = {{ stats.mecanicos_ordenes | tojson | safe }};
+        if (!mecLabels || mecLabels.length === 0) {
+            mecLabels = ['Jose Mecánico'];
+            mecOrdenes = [{{ stats.ordenes_facturadas_mes | default(1) }}];
+        }
+        window._estadisticasChartInstances.push(new Chart(canvasMec.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: mecLabels,
+                datasets: [{
+                    label: 'Órdenes Atendidas',
+                    data: mecOrdenes,
+                    backgroundColor: '#10b981',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: tokens.textColor } },
+                    y: { grid: { color: tokens.gridColor }, ticks: { precision: 0, color: tokens.textColor } }
+                }
+            }
+        }));
+    }
+
+    // 4. Gráfico Composición (Mano de Obra vs Repuestos)
+    const canvasComp = document.getElementById('composicionChart');
+    if (canvasComp) {
+        window._estadisticasChartInstances.push(new Chart(canvasComp.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Mano de Obra', 'Repuestos'],
+                datasets: [{
+                    data: [{{ stats.pct_mano_obra | default(50) }}, {{ stats.pct_repuestos | default(50) }}],
+                    backgroundColor: ['#06b6d4', '#f59e0b'],
+                    borderColor: tokens.surfaceBorder,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: tokens.legendColor, font: { weight: '600', size: 11 } } }
+                },
+                cutout: '68%'
+            }
+        }));
+    }
+
+    // 5. Gráfico Marcas
+    const canvasMarcas = document.getElementById('marcasChart');
+    if (canvasMarcas) {
+        let marcasLabels = {{ stats.marcas_labels | tojson | safe }};
+        let marcasCounts = {{ stats.marcas_counts | tojson | safe }};
+        if (!marcasLabels || marcasLabels.length === 0) {
+            marcasLabels = ['Genesis', 'Serpento', 'Yamaha'];
+            marcasCounts = [1, 0, 0];
+        }
+        window._estadisticasChartInstances.push(new Chart(canvasMarcas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: marcasLabels,
+                datasets: [{
+                    label: 'Motos Atendidas',
+                    data: marcasCounts,
+                    backgroundColor: '#8b5cf6',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: tokens.textColor } },
+                    y: { grid: { color: tokens.gridColor }, ticks: { precision: 0, color: tokens.textColor } }
+                }
+            }
+        }));
+    }
+
+    function refreshChartsTheme() {
+        const t = getChartThemeTokens();
+        Chart.defaults.color = t.textColor;
+        (window._estadisticasChartInstances || []).forEach(chart => {
+            if (chart.options?.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = t.legendColor;
+            if (chart.options?.scales) {
+                Object.values(chart.options.scales).forEach(scale => {
+                    if (scale.ticks) scale.ticks.color = t.textColor;
+                    if (scale.grid && scale.grid.display !== false && scale.grid.drawOnChartArea !== false) scale.grid.color = t.gridColor;
+                });
+            }
+            if (chart.config?.type === 'doughnut' && chart.data?.datasets) {
+                chart.data.datasets.forEach(ds => { ds.borderColor = t.surfaceBorder; });
+            }
+            chart.update('none');
+        });
+    }
+
+    if (window._themeObserverCharts) {
+        try { window._themeObserverCharts.disconnect(); } catch(e){}
+    }
+    window._themeObserverCharts = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+            if (m.attributeName === 'data-theme') {
+                refreshChartsTheme();
+                break;
+            }
+        }
+    });
+    window._themeObserverCharts.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+};
+
+// Inicialización inmediata o al cargar el DOM
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", window.initEstadisticasCharts);
+} else {
+    window.initEstadisticasCharts();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1903 @@
+{% extends 'base.html' %}
+{% block title %}Centro de Mando - Asignación y Bahías de Taller | Taller CR{% endblock %}
+
+{% block page_title %}Asignación y Bahías de Taller{% endblock %}
+
+{% block content %}
+<style>
+    /* Reset and constraint */
+    .gestion-citas-wrapper,
+    .gestion-citas-wrapper *,
+    .gestion-citas-wrapper *::before,
+    .gestion-citas-wrapper *::after {
+        box-sizing: border-box;
+    }
+
+    :root {
+        --gold-primary: #f2c029;
+        --gold-secondary: #d49b13;
+        --gold-gradient: linear-gradient(135deg, #f2c029 0%, #d49b13 100%);
+        --gold-glow: rgba(242, 192, 41, 0.35);
+        --dark-surface-1: rgba(18, 20, 26, 0.95);
+        --dark-surface-2: rgba(26, 29, 38, 0.88);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --danger-red: #ef4444;
+        --danger-glow: rgba(239, 68, 68, 0.4);
+        --emerald-green: #10b981;
+        --emerald-glow: rgba(16, 185, 129, 0.35);
+        --cyan-blue: #0ea5e9;
+    }
+
+    /* Outer Wrapper: Clean, fluid, no ugly outer box */
+    .gestion-citas-wrapper {
+        width: 100%;
+        max-width: 100%;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* 1. Command Header Bar */
+    .workshop-command-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-bottom: 24px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .command-title-box {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .command-title-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, rgba(242, 192, 41, 0.2) 0%, rgba(242, 192, 41, 0.05) 100%);
+        border: 1px solid rgba(242, 192, 41, 0.4);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold-primary);
+        font-size: 1.35rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 14px rgba(242, 192, 41, 0.15);
+    }
+
+    .command-heading {
+        color: #ffffff;
+        font-family: 'Inter', -apple-system, sans-serif;
+        font-weight: 800;
+        font-size: 1.6rem;
+        letter-spacing: -0.4px;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .command-subheading {
+        color: #94a3b8;
+        font-size: 0.88rem;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .command-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .live-pulse-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 30px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+    }
+
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #10b981;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulse-green 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+    @keyframes pulse-green {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .telemetry-counter-badge {
+        background: linear-gradient(135deg, rgba(242, 192, 41, 0.15) 0%, rgba(242, 192, 41, 0.05) 100%);
+        color: var(--gold-primary);
+        border: 1px solid rgba(242, 192, 41, 0.35);
+        padding: 7px 16px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+
+    .btn-header-shortcut {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 15px;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        background: rgba(255, 255, 255, 0.04);
+        color: #d1d5db;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-header-shortcut:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        transform: translateY(-2px);
+    }
+
+    /* 2. Telemetry KPI Grid (Top 4 cards) */
+    .workshop-telemetry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 26px;
+        width: 100%;
+    }
+
+    .telemetry-card {
+        background: var(--dark-surface-1);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .telemetry-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(242, 192, 41, 0.4), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .telemetry-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(242, 192, 41, 0.3);
+        box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+    }
+
+    .telemetry-card:hover::before {
+        opacity: 1;
+    }
+
+    .telemetry-card-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .telemetry-card-icon.amber {
+        background: rgba(242, 192, 41, 0.12);
+        color: var(--gold-primary);
+        border: 1px solid rgba(242, 192, 41, 0.3);
+    }
+
+    .telemetry-card-icon.cyan {
+        background: rgba(14, 165, 233, 0.12);
+        color: #38bdf8;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+    }
+
+    .telemetry-card-icon.emerald {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .telemetry-card-icon.violet {
+        background: rgba(168, 85, 247, 0.12);
+        color: #c084fc;
+        border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .telemetry-card-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .telemetry-card-val {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.3px;
+        line-height: 1.1;
+    }
+
+    .telemetry-card-label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-top: 4px;
+        font-weight: 500;
+    }
+
+    /* 3. Section Title for Pending Queue */
+    .queue-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+    .queue-title {
+        color: #ffffff;
+        font-size: 1.15rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Grid Layout for Pending Appointments */
+    .citas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+        gap: 20px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Luxury Workshop Card */
+    .cita-card {
+        background: var(--dark-surface-2);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid var(--card-border);
+        border-radius: 18px;
+        padding: 22px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        width: 100%;
+    }
+
+    .cita-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, rgba(242, 192, 41, 0.7), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .cita-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 36px rgba(0,0,0,0.5), 0 0 20px rgba(242, 192, 41, 0.15);
+        border-color: rgba(242, 192, 41, 0.35);
+    }
+
+    .cita-card:hover::before {
+        opacity: 1;
+    }
+
+    .cita-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding-bottom: 14px;
+        gap: 10px;
+    }
+
+    .cita-date {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cita-time {
+        font-size: 0.95rem;
+        color: var(--gold-primary);
+        font-weight: 600;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .card-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .badge-origen {
+        padding: 5px 11px;
+        border-radius: 20px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
+    }
+
+    .badge-whatsapp { 
+        background: rgba(37, 211, 102, 0.12); 
+        color: #25D366; 
+        border: 1px solid rgba(37, 211, 102, 0.3); 
+    }
+    
+    .badge-web { 
+        background: rgba(14, 165, 233, 0.12); 
+        color: #38bdf8; 
+        border: 1px solid rgba(14, 165, 233, 0.3); 
+    }
+
+    .badge-status-pendiente {
+        background: rgba(242, 192, 41, 0.12);
+        color: var(--gold-primary);
+        border: 1px solid rgba(242, 192, 41, 0.35);
+        padding: 5px 11px;
+        border-radius: 20px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
+    }
+
+    .btn-circle-delete {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: #f87171;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 0;
+        font-size: 0.8rem;
+        outline: none;
+        flex-shrink: 0;
+    }
+
+    .btn-circle-delete:hover {
+        background: var(--danger-red);
+        color: #ffffff;
+        border-color: var(--danger-red);
+        transform: scale(1.15) rotate(90deg);
+        box-shadow: 0 0 16px var(--danger-glow);
+    }
+
+    .cita-details {
+        flex: 1;
+        margin-bottom: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        min-width: 0;
+    }
+
+    .detail-icon {
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .detail-content {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .detail-content strong {
+        display: block;
+        color: #ffffff;
+        font-size: 0.92rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .detail-label {
+        font-size: 0.76rem;
+        color: #8b8ea0;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 500;
+    }
+
+    .badge-service {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .service-preventivo { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .service-general { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .service-correctivo { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .service-express { background: rgba(242, 192, 41, 0.12); color: var(--gold-primary); border: 1px solid rgba(242, 192, 41, 0.3); }
+
+    .assignment-box {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        padding: 14px;
+        margin-top: auto;
+    }
+
+    .assignment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #94a3b8;
+    }
+
+    .assignment-tag {
+        font-size: 0.7rem;
+        color: var(--gold-primary);
+        background: rgba(242, 192, 41, 0.1);
+        padding: 2px 7px;
+        border-radius: 6px;
+        border: 1px solid rgba(242, 192, 41, 0.25);
+    }
+
+    .form-control-dark {
+        background-color: rgba(15, 17, 23, 0.95);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-size: 0.88rem;
+        width: 100%;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+
+    .form-control-dark:focus {
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 12px var(--gold-glow);
+    }
+
+    .btn-assign {
+        width: 100%;
+        margin-top: 10px;
+        background: var(--gold-gradient);
+        color: #000000;
+        border: none;
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 14px rgba(242, 192, 41, 0.3);
+    }
+
+    .btn-assign:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(242, 192, 41, 0.5);
+    }
+
+    /* 4. WORLD-CLASS WORKSHOP OPERATIONS HUB CONSOLE (WHEN 0 CITAS) */
+    .workshop-hub-card {
+        grid-column: 1 / -1;
+        background: var(--dark-surface-1);
+        border: 1px solid var(--card-border);
+        border-radius: 22px;
+        padding: 36px 32px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+
+    .workshop-hub-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #10b981, #f2c029, #0ea5e9);
+    }
+
+    .hub-header-banner {
+        text-align: center;
+        max-width: 680px;
+        margin: 0 auto 34px auto;
+    }
+
+    .hub-emblem-wrapper {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hub-emblem-ring {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px dashed rgba(16, 185, 129, 0.45);
+        animation: spin-slow 20s linear infinite;
+    }
+
+    @keyframes spin-slow {
+        100% { transform: rotate(360deg); }
+    }
+
+    .hub-emblem-center {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.05) 100%);
+        border: 1.5px solid rgba(16, 185, 129, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #10b981;
+        font-size: 1.9rem;
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
+    }
+
+    .hub-title {
+        color: #ffffff;
+        font-size: 1.6rem;
+        font-weight: 800;
+        letter-spacing: -0.4px;
+        margin: 0 0 10px 0;
+    }
+
+    .hub-description {
+        color: #94a3b8;
+        font-size: 0.96rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Live Workstation Bay Grid */
+    .bay-section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .bay-section-title {
+        color: #ffffff;
+        font-size: 1.05rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .bay-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .bay-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .bay-card:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(242, 192, 41, 0.35);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+    }
+
+    .bay-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .bay-badge {
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.8px;
+        color: var(--gold-primary);
+        background: rgba(242, 192, 41, 0.12);
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(242, 192, 41, 0.25);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .bay-status-chip {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .bay-status-chip.online {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .bay-body {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .bay-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 1.35rem;
+        flex-shrink: 0;
+    }
+
+    .bay-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .bay-mechanic-name {
+        color: #ffffff;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .bay-role {
+        color: #94a3b8;
+        font-size: 0.78rem;
+        display: block;
+        margin-top: 3px;
+    }
+
+    .bay-telemetry-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        margin-bottom: 16px;
+        text-align: center;
+    }
+
+    .bay-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-num {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    .stat-num.status-ready {
+        color: #34d399;
+        font-size: 0.78rem;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-lbl {
+        font-size: 0.7rem;
+        color: #64748b;
+        margin-top: 2px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .bay-footer {
+        margin-top: auto;
+    }
+
+    .btn-bay-action {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 9px;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        background: rgba(255, 255, 255, 0.05);
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-bay-action:hover {
+        background: rgba(242, 192, 41, 0.15);
+        border-color: rgba(242, 192, 41, 0.35);
+        color: var(--gold-primary);
+    }
+
+    /* Fast Action Dispatch Toolbar */
+    .hub-actions-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding-top: 14px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .btn-hub-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 11px 22px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-hub-action.primary {
+        background: var(--gold-gradient);
+        color: #000000;
+        box-shadow: 0 4px 16px rgba(242, 192, 41, 0.3);
+    }
+
+    .btn-hub-action.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(242, 192, 41, 0.5);
+    }
+
+    .btn-hub-action.whatsapp {
+        background: rgba(37, 211, 102, 0.12);
+        color: #25d366;
+        border: 1px solid rgba(37, 211, 102, 0.35);
+    }
+
+    .btn-hub-action.whatsapp:hover {
+        background: #25d366;
+        color: #ffffff;
+        box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .btn-hub-action.secondary {
+        background: rgba(255, 255, 255, 0.05);
+        color: #cbd5e1;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-hub-action.secondary:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        transform: translateY(-2px);
+    }
+
+    /* Modal Styling */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.78);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.25s ease;
+    }
+
+    .modal-backdrop.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal-box {
+        background: rgba(22, 23, 30, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 28px;
+        max-width: 440px;
+        width: 90%;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 25px rgba(239, 68, 68, 0.15);
+        text-align: center;
+        transform: scale(0.92) translateY(15px);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-backdrop.active .modal-box {
+        transform: scale(1) translateY(0);
+    }
+
+    .modal-icon-danger {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ef4444;
+        font-size: 1.6rem;
+        margin: 0 auto 18px;
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+    }
+
+    .modal-title {
+        color: #ffffff;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .modal-text {
+        color: #9ca3af;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        margin-bottom: 24px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .btn-modal-cancel {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #d1d5db;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-modal-cancel:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+    }
+
+    .btn-modal-delete {
+        flex: 1;
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        border: 1px solid rgba(239, 68, 68, 0.5);
+        color: #ffffff;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-modal-delete:hover {
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+        transform: translateY(-2px);
+    }
+
+    /* Toast Notification System */
+    .toast-box {
+        background: rgba(20, 21, 28, 0.95);
+        backdrop-filter: blur(16px);
+        border-radius: 14px;
+        padding: 16px 20px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        color: #fff;
+        pointer-events: auto;
+        transform: translateX(110%);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+        opacity: 0;
+        border-left: 4px solid var(--gold-primary);
+    }
+
+    .toast-box.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .toast-box.error {
+        border-left-color: #ef4444;
+        background: rgba(28, 17, 20, 0.95);
+    }
+
+    .toast-box.success {
+        border-left-color: #10b981;
+        background: rgba(16, 28, 22, 0.95);
+    }
+
+    /* =======================================================
+       LIGHT THEME PRECISION STYLING - WORLD CLASS MOTORSPORT
+       ======================================================= */
+    [data-theme="light"] .gestion-citas-wrapper {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    [data-theme="light"] .command-heading {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .command-subheading {
+        color: #64748b !important;
+    }
+
+    [data-theme="light"] .workshop-command-header {
+        border-bottom-color: #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .command-title-icon {
+        background: #fffbeb !important;
+        border-color: #fde68a !important;
+        color: #d97706 !important;
+    }
+
+    [data-theme="light"] .telemetry-counter-badge {
+        background: #fffbeb !important;
+        color: #b45309 !important;
+        border-color: #fde68a !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03) !important;
+    }
+
+    [data-theme="light"] .live-pulse-badge {
+        background: #f0fdf4 !important;
+        color: #15803d !important;
+        border-color: #bbf7d0 !important;
+    }
+
+    [data-theme="light"] .btn-header-shortcut {
+        background: #ffffff !important;
+        color: #475569 !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="light"] .btn-header-shortcut:hover {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    /* Telemetry KPI Cards Light */
+    [data-theme="light"] .telemetry-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    [data-theme="light"] .telemetry-card:hover {
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    [data-theme="light"] .telemetry-card-val {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .telemetry-card-label {
+        color: #64748b !important;
+    }
+
+    /* World-Class Workshop Hub Card Light */
+    [data-theme="light"] .workshop-hub-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    [data-theme="light"] .hub-title {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .hub-description {
+        color: #64748b !important;
+    }
+
+    [data-theme="light"] .hub-emblem-ring {
+        border-color: #a7f3d0 !important;
+    }
+
+    [data-theme="light"] .hub-emblem-center {
+        background: #f0fdf4 !important;
+        border-color: #86efac !important;
+        color: #16a34a !important;
+        box-shadow: 0 6px 18px rgba(22, 163, 74, 0.15) !important;
+    }
+
+    [data-theme="light"] .bay-section-heading {
+        border-bottom-color: #f1f5f9 !important;
+    }
+
+    [data-theme="light"] .bay-section-title {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .bay-card {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .bay-card:hover {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.07) !important;
+    }
+
+    [data-theme="light"] .bay-badge {
+        background: #fffbeb !important;
+        color: #b45309 !important;
+        border-color: #fde68a !important;
+    }
+
+    [data-theme="light"] .bay-mechanic-name {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .bay-role {
+        color: #64748b !important;
+    }
+
+    [data-theme="light"] .bay-avatar {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #0f172a !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="light"] .bay-telemetry-row {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .stat-num {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .stat-num.status-ready {
+        color: #16a34a !important;
+    }
+
+    [data-theme="light"] .stat-lbl {
+        color: #64748b !important;
+    }
+
+    [data-theme="light"] .btn-bay-action {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        color: #334155 !important;
+    }
+
+    [data-theme="light"] .btn-bay-action:hover {
+        background: #fffbeb !important;
+        border-color: #f59e0b !important;
+        color: #b45309 !important;
+    }
+
+    [data-theme="light"] .hub-actions-bar {
+        border-top-color: #f1f5f9 !important;
+    }
+
+    [data-theme="light"] .btn-hub-action.secondary {
+        background: #f8fafc !important;
+        color: #334155 !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+
+    [data-theme="light"] .btn-hub-action.secondary:hover {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-color: #94a3b8 !important;
+    }
+
+    [data-theme="light"] .cita-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    [data-theme="light"] .cita-card:hover {
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    [data-theme="light"] .cita-card-header {
+        border-bottom-color: #f1f5f9 !important;
+    }
+
+    [data-theme="light"] .cita-date {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .cita-time {
+        color: #64748b !important;
+    }
+
+    [data-theme="light"] .detail-item {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .detail-icon {
+        background: #e2e8f0 !important;
+        color: #475569 !important;
+    }
+
+    [data-theme="light"] .detail-content strong {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .detail-label {
+        color: #64748b !important;
+    }
+
+    [data-theme="light"] .assignment-box {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .assignment-header span {
+        color: #475569 !important;
+    }
+
+    [data-theme="light"] .form-control-dark {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+
+    [data-theme="light"] .form-control-dark:hover {
+        border-color: #f59e0b !important;
+    }
+
+    [data-theme="light"] .form-control-dark option {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .modal-box {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    [data-theme="light"] .modal-title {
+        color: #0f172a !important;
+    }
+
+    [data-theme="light"] .modal-text {
+        color: #475569 !important;
+    }
+
+    [data-theme="light"] .btn-modal-cancel {
+        background: #f1f5f9 !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+    }
+
+    [data-theme="light"] .btn-circle-delete {
+        background: #fee2e2 !important;
+        border-color: #fca5a5 !important;
+        color: #dc2626 !important;
+    }
+
+    [data-theme="light"] .queue-title,
+    body.light-theme .queue-title {
+        color: #0f172a !important;
+    }
+</style>
+
+<div class="gestion-citas-wrapper">
+    <!-- Floating Toast Container -->
+    <div id="toast-container" style="position: fixed; top: 25px; right: 25px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; max-width: 440px; pointer-events: none;"></div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-backdrop" id="deleteConfirmModal">
+        <div class="modal-box">
+            <div class="modal-icon-danger">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <div class="modal-title">¿Descartar esta cita?</div>
+            <div class="modal-text" id="deleteModalText">
+                Esta acción eliminará la cita del panel de asignación y liberará el horario de forma permanente.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" onclick="cerrarModalEliminar()">
+                    Conservar
+                </button>
+                <button type="button" class="btn-modal-delete" id="btnConfirmDelete" onclick="ejecutarEliminarCita()">
+                    <i class="fa-solid fa-trash-can"></i> Sí, Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. World-Class Command Center Header -->
+    <div class="workshop-command-header">
+        <div class="command-title-box">
+            <div class="command-title-icon">
+                <i class="fa-solid fa-gauge-high"></i>
+            </div>
+            <div>
+                <h2 class="command-heading">Centro de Mando: Asignación y Bahías de Taller</h2>
+                <div class="command-subheading">
+                    <span><i class="fa-solid fa-location-dot" style="color: var(--gold-primary);"></i> Sede Central San Judas, Managua</span>
+                    <span>•</span>
+                    <span><i class="fa-solid fa-clock"></i> Horario: 08:00 AM - 05:00 PM</span>
+                </div>
+            </div>
+        </div>
+        <div class="command-header-actions">
+            <span class="live-pulse-badge">
+                <span class="pulse-dot"></span> Bahías Operativas
+            </span>
+            <span class="telemetry-counter-badge" id="counter-badge">
+                <i class="fa-solid fa-clock"></i> <span id="pending-count">{{ citas|length }}</span> Pendientes
+            </span>
+            <a href="{{ url_for('mechanic.citas_programadas') }}" class="btn-header-shortcut" title="Ver programación en taller">
+                <i class="fa-solid fa-calendar-day"></i> Citas Programadas
+            </a>
+            <a href="{{ url_for('atencion.citas_whatsapp') }}" class="btn-header-shortcut" title="Ir a Citas WhatsApp">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. Live Workshop Telemetry Bar (4 KPI Cards) -->
+    <div class="workshop-telemetry-grid">
+        <div class="telemetry-card">
+            <div class="telemetry-card-icon amber">
+                <i class="fa-solid fa-warehouse"></i>
+            </div>
+            <div class="telemetry-card-info">
+                <div class="telemetry-card-val">{{ telemetria.total_mecanicos }} Bahías</div>
+                <div class="telemetry-card-label">Mecánicos Certificados Listos</div>
+            </div>
+        </div>
+
+        <div class="telemetry-card">
+            <div class="telemetry-card-icon cyan">
+                <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <div class="telemetry-card-info">
+                <div class="telemetry-card-val">{{ telemetria.citas_hoy }} Citas Hoy</div>
+                <div class="telemetry-card-label">Programadas para el día</div>
+            </div>
+        </div>
+
+        <div class="telemetry-card">
+            <div class="telemetry-card-icon emerald">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div class="telemetry-card-info">
+                <div class="telemetry-card-val">{% if telemetria.total_pendientes == 0 %}100% al Día{% else %}{{ telemetria.total_pendientes }} En Cola{% endif %}</div>
+                <div class="telemetry-card-label">Eficiencia Operativa</div>
+            </div>
+        </div>
+
+        <div class="telemetry-card">
+            <div class="telemetry-card-icon violet">
+                <i class="fa-solid fa-motorcycle"></i>
+            </div>
+            <div class="telemetry-card-info">
+                <div class="telemetry-card-val">{{ telemetria.ordenes_activas }} en Taller</div>
+                <div class="telemetry-card-label">Órdenes de Trabajo Activas</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Dynamic Operational Content Area -->
+    <div id="citas-container-area">
+        {% if citas %}
+        <div class="queue-section-header">
+            <div class="queue-title">
+                <i class="fa-solid fa-bolt" style="color: var(--gold-primary);"></i>
+                Solicitudes Pendientes de Asignación de Mecánico ({{ citas|length }})
+            </div>
+        </div>
+
+        <div class="citas-grid" id="citas-grid">
+            {% for cita in citas %}
+            {% set fecha_key = cita[6].strftime('%Y-%m-%d %H:%M') %}
+            <div class="cita-card" id="card-{{ cita[0] }}" data-cita-id="{{ cita[0] }}" data-fecha-hora="{{ fecha_key }}">
+                <div class="cita-card-header">
+                    <div>
+                        <div class="cita-date">
+                            <i class="fa-regular fa-calendar" style="color: var(--gold-primary); font-size: 1rem;"></i>
+                            {{ cita[6].strftime('%d/%m/%Y') }}
+                        </div>
+                        <div class="cita-time">
+                            <i class="fa-regular fa-clock"></i> {{ cita[6].strftime('%I:%M %p') }}
+                        </div>
+                    </div>
+                    <div class="card-header-actions">
+                        {% if cita[10] == 'WhatsApp' %}
+                            <span class="badge-origen badge-whatsapp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</span>
+                        {% else %}
+                            <span class="badge-origen badge-web"><i class="fa-solid fa-globe"></i> Presencial</span>
+                        {% endif %}
+
+                        <span class="badge-status-pendiente">
+                            <i class="fa-solid fa-clock"></i> Pendiente
+                        </span>
+
+                        <button type="button" 
+                                class="btn-circle-delete" 
+                                onclick="confirmarEliminarCita('{{ cita[0] }}', '{{ cita[2] }}', '{{ cita[6].strftime('%I:%M %p') }}')" 
+                                title="Descartar / Eliminar cita">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="cita-details">
+                    <div class="detail-item">
+                        <div class="detail-icon"><i class="fa-solid fa-user"></i></div>
+                        <div class="detail-content">
+                            <span class="detail-label">Cliente</span>
+                            <strong>{{ cita[2] }}</strong>
+                            <span class="detail-label"><i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> {{ cita[3] }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon"><i class="fa-solid fa-motorcycle"></i></div>
+                        <div class="detail-content">
+                            <span class="detail-label">Vehículo</span>
+                            <strong>{{ cita[4] }} {{ cita[5] }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                        <div class="detail-content">
+                            <span class="detail-label">Servicio Requerido</span>
+                            <div style="margin-top: 4px;">
+                                {% set stype = cita[7] %}
+                                <span class="badge-service {% if stype == 'Preventivo' %}service-preventivo{% elif stype == 'General' %}service-general{% elif stype == 'Correctivo' %}service-correctivo{% else %}service-express{% endif %}">
+                                    <i class="fa-solid fa-check-circle" style="font-size: 0.75rem;"></i> {{ stype }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assignment-box">
+                    <div class="assignment-header">
+                        <span><i class="fa-solid fa-wrench"></i> Mecánico Asignado</span>
+                        <span class="assignment-tag">1 por horario</span>
+                    </div>
+                    
+                    <select class="form-control-dark mechanic-select" 
+                            id="select-{{ cita[0] }}" 
+                            data-cita-id="{{ cita[0] }}" 
+                            data-fecha-hora="{{ fecha_key }}"
+                            onchange="onMechanicSelectionChange(this)">
+                        <option value="">-- Seleccionar Mecánico --</option>
+                        {% for mec in mecanicos %}
+                            {% set is_occupied_db = (mec[0] in mecanicos_ocupados.get(fecha_key, [])) %}
+                            <option value="{{ mec[0] }}" 
+                                    data-original-name="{{ mec[1] }}"
+                                    {% if is_occupied_db %}
+                                        disabled 
+                                        class="opt-occupied-db"
+                                    {% endif %}>
+                                {{ mec[1] }}{% if is_occupied_db %} (Ocupado en este horario 🔒){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <button type="button" class="btn-assign" onclick="asignarMecanico('{{ cita[0] }}')">
+                        <i class="fa-solid fa-paper-plane"></i> Enviar Asignación
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- 4. WORLD-CLASS WORKSHOP OPERATIONS HUB CONSOLE (WHEN 0 CITAS) -->
+        <div class="workshop-hub-card" id="workshop-hub-console">
+            <div class="hub-header-banner">
+                <div class="hub-emblem-wrapper">
+                    <div class="hub-emblem-ring"></div>
+                    <div class="hub-emblem-center">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+                <h3 class="hub-title">Centro de Operaciones al 100% • Bahías Despejadas</h3>
+                <p class="hub-description">
+                    No hay solicitudes pendientes de asignación en este momento. Todas las citas han sido programadas y distribuidas exitosamente entre los mecánicos certificados.
+                </p>
+            </div>
+
+            <!-- Live Mechanics Bay Grid -->
+            <div class="bay-section-heading">
+                <div class="bay-section-title">
+                    <i class="fa-solid fa-wrench" style="color: var(--gold-primary);"></i>
+                    Bahías de Trabajo y Mecánicos en Turno
+                </div>
+                <span class="live-pulse-badge">
+                    <span class="pulse-dot"></span> {{ mecanicos|length }} Puestos Activos
+                </span>
+            </div>
+
+            <div class="bay-grid">
+                {% for mec in mecanicos %}
+                {% set st = mecanicos_stats.get(mec[0], {}) %}
+                <div class="bay-card">
+                    <div class="bay-header">
+                        <div class="bay-badge">
+                            <i class="fa-solid fa-warehouse"></i> BAHÍA 0{{ loop.index }}
+                        </div>
+                        <div class="bay-status-chip online">
+                            <span class="status-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> EN SERVICIO
+                        </div>
+                    </div>
+                    <div class="bay-body">
+                        <div class="bay-avatar">
+                            <i class="fa-solid fa-user-gear"></i>
+                        </div>
+                        <div class="bay-info">
+                            <h4 class="bay-mechanic-name">{{ mec[1] }}</h4>
+                            <span class="bay-role">Mecánico Especialista Certificado Génesis</span>
+                        </div>
+                    </div>
+                    <div class="bay-telemetry-row">
+                        <div class="bay-stat">
+                            <span class="stat-num">{{ st.get('citas_programadas', 0) }}</span>
+                            <span class="stat-lbl">Citas Hoy</span>
+                        </div>
+                        <div class="bay-stat">
+                            <span class="stat-num">{{ st.get('ordenes_activas', 0) }}</span>
+                            <span class="stat-lbl">Órdenes Activas</span>
+                        </div>
+                        <div class="bay-stat">
+                            <span class="stat-num status-ready">DISPONIBLE</span>
+                            <span class="stat-lbl">Próximo Turno</span>
+                        </div>
+                    </div>
+                    <div class="bay-footer">
+                        <a href="{{ url_for('mechanic.citas_programadas') }}" class="btn-bay-action">
+                            <i class="fa-solid fa-calendar-check"></i> Ver Citas en Bahía
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Fast Action Dispatch Toolbar -->
+            <div class="hub-actions-bar">
+                <a href="{{ url_for('mechanic.citas_programadas') }}" class="btn-hub-action primary">
+                    <i class="fa-solid fa-calendar-day"></i> Ver Citas Programadas
+                </a>
+                <a href="{{ url_for('atencion.citas_whatsapp') }}" class="btn-hub-action whatsapp">
+                    <i class="fa-brands fa-whatsapp"></i> Gestionar Bandeja WhatsApp
+                </a>
+                <a href="{{ url_for('atencion.clientes_list') }}" class="btn-hub-action secondary">
+                    <i class="fa-solid fa-address-book"></i> Directorio de Clientes
+                </a>
+                <a href="{{ url_for('mechanic.ordenes_list') }}" class="btn-hub-action secondary">
+                    <i class="fa-solid fa-clipboard-list"></i> Órdenes de Trabajo
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Diccionario de asignaciones permanentes en BD por horario { 'YYYY-MM-DD HH:MM': [mecanico_id, ...] }
+const initialDbOccupied = {{ mecanicos_ocupados | tojson }};
+const permanentlyOccupied = {};
+
+// Inicializar Sets para cada horario
+for (const [fHora, mecList] of Object.entries(initialDbOccupied)) {
+    permanentlyOccupied[fHora] = new Set(mecList.map(String));
+}
+
+let citaIdParaEliminar = null;
+
+// Modal de confirmación para eliminar
+function confirmarEliminarCita(citaId, cliente, hora) {
+    citaIdParaEliminar = citaId;
+    const modal = document.getElementById('deleteConfirmModal');
+    const modalText = document.getElementById('deleteModalText');
+    modalText.innerHTML = `¿Deseas descartar y eliminar la cita de <strong style="color: #ffffff;">${cliente}</strong> programada a las <strong style="color: var(--gold-primary);">${hora}</strong>?<br><span style="font-size: 0.82rem; color: #f87171; display: inline-block; margin-top: 6px;">Esta acción liberará el horario inmediatamente.</span>`;
+    modal.classList.add('active');
+}
+
+function cerrarModalEliminar() {
+    citaIdParaEliminar = null;
+    const modal = document.getElementById('deleteConfirmModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// Ejecutar eliminación
+async function ejecutarEliminarCita() {
+    if (!citaIdParaEliminar) return;
+    const citaId = citaIdParaEliminar;
+    cerrarModalEliminar();
+
+    const cardElement = document.getElementById(`card-${citaId}`);
+    if (cardElement) {
+        cardElement.style.opacity = '0.5';
+        cardElement.style.pointerEvents = 'none';
+    }
+
+    try {
+        const response = await fetch("{{ url_for('atencion.eliminar_cita') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ cita_id: citaId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            showToast('success', 'Cita Descartada', data.message || 'La cita ha sido eliminada con éxito.');
+            if (cardElement) {
+                cardElement.style.transition = 'all 0.4s ease';
+                cardElement.style.opacity = '0';
+                cardElement.style.transform = 'scale(0.85) translateY(-10px)';
+                setTimeout(() => {
+                    cardElement.remove();
+                    checkEmptyQueue();
+                }, 400);
+            }
+        } else {
+            showToast('error', 'Error al Eliminar', data.message || 'No fue posible eliminar la cita.');
+            if (cardElement) {
+                cardElement.style.opacity = '1';
+                cardElement.style.pointerEvents = 'auto';
+            }
+        }
+    } catch (e) {
+        showToast('error', 'Error de Red', 'Ocurrió un error al conectar con el servidor.');
+        if (cardElement) {
+            cardElement.style.opacity = '1';
+            cardElement.style.pointerEvents = 'auto';
+        }
+    }
+}
+
+// Toast de alta gama
+function showToast(type, title, message) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast-box ${type}`;
+    
+    let iconHtml = '<i class="fa-solid fa-circle-info" style="color: var(--gold-primary); font-size: 1.25rem; margin-top: 2px;"></i>';
+    if (type === 'error') {
+        iconHtml = '<i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 1.25rem; margin-top: 2px;"></i>';
+    } else if (type === 'success') {
+        iconHtml = '<i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 1.25rem; margin-top: 2px;"></i>';
+    }
+
+    toast.innerHTML = `
+        ${iconHtml}
+        <div style="flex: 1;">
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 2px;">${title}</div>
+            <div style="font-size: 0.84rem; color: #d1d5db; line-height: 1.4;">${message}</div>
+        </div>
+        <button style="background: none; border: none; color: #6b7280; cursor: pointer; padding: 0 4px;" onclick="this.parentElement.remove()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    `;
+
+    container.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 4500);
+}
+
+// Sincronizar disponibilidad de mecánicos para evitar duplicación en la misma hora
+function syncMechanicAvailability() {
+    const cards = document.querySelectorAll('.cita-card');
+    const cardsByHour = {};
+
+    cards.forEach(card => {
+        const fHora = card.getAttribute('data-fecha-hora');
+        if (!cardsByHour[fHora]) cardsByHour[fHora] = [];
+        cardsByHour[fHora].push(card);
+    });
+
+    for (const [fHora, hourCards] of Object.entries(cardsByHour)) {
+        const selectedInSlot = new Map();
+
+        hourCards.forEach(card => {
+            const citaId = card.getAttribute('data-cita-id');
+            const select = card.querySelector('.mechanic-select');
+            if (select && select.value) {
+                selectedInSlot.set(String(select.value), citaId);
+            }
+        });
+
+        const permOccupiedSet = permanentlyOccupied[fHora] || new Set();
+
+        hourCards.forEach(card => {
+            const thisCitaId = card.getAttribute('data-cita-id');
+            const select = card.querySelector('.mechanic-select');
+            if (!select) return;
+
+            Array.from(select.options).forEach(opt => {
+                if (!opt.value) return;
+                
+                const origName = opt.getAttribute('data-original-name') || opt.textContent.replace(/\s*\(.*\)$/, '').trim();
+                opt.setAttribute('data-original-name', origName);
+
+                const mecIdStr = String(opt.value);
+                const isPermOccupied = permOccupiedSet.has(mecIdStr);
+                const selectedByOther = selectedInSlot.has(mecIdStr) && selectedInSlot.get(mecIdStr) !== thisCitaId;
+
+                if (isPermOccupied) {
+                    opt.disabled = true;
+                    opt.textContent = `${origName} (Ocupado en este horario 🔒)`;
+                } else if (selectedByOther) {
+                    opt.disabled = true;
+                    opt.textContent = `${origName} (Seleccionado en otra cita simultánea ⚠️)`;
+                } else {
+                    opt.disabled = false;
+                    opt.textContent = origName;
+                }
+            });
+        });
+    }
+}
+
+function onMechanicSelectionChange(selectElem) {
+    syncMechanicAvailability();
+}
+
+// Asignar mecánico
+async function asignarMecanico(citaId) {
+    const selectElement = document.getElementById(`select-${citaId}`);
+    const mecanicoId = selectElement.value;
+    const cardElement = document.getElementById(`card-${citaId}`);
+    const btn = cardElement.querySelector('.btn-assign');
+    const originalBtnHtml = btn.innerHTML;
+    
+    if (!mecanicoId) {
+        showToast('error', 'Selección Requerida', 'Por favor, selecciona un mecánico certificado antes de enviar la asignación.');
+        selectElement.focus();
+        return;
+    }
+
+    const fHora = cardElement.getAttribute('data-fecha-hora');
+
+    btn.disabled = true;
+    selectElement.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Confirmando...';
+
+    try {
+        const response = await fetch("{{ url_for('atencion.asignar_cita') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                cita_id: citaId,
+                mecanico_id: mecanicoId
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            if (!permanentlyOccupied[fHora]) {
+                permanentlyOccupied[fHora] = new Set();
+            }
+            permanentlyOccupied[fHora].add(String(mecanicoId));
+
+            syncMechanicAvailability();
+
+            cardElement.style.borderColor = '#10b981';
+            cardElement.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.35)';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Asignación Confirmada';
+            btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%) !important';
+            btn.style.color = '#ffffff !important';
+
+            showToast('success', 'Asignación Confirmada', data.message || 'Mecánico asignado y cita confirmada exitosamente.');
+            
+            setTimeout(() => {
+                cardElement.style.transition = 'all 0.4s ease';
+                cardElement.style.opacity = '0';
+                cardElement.style.transform = 'scale(0.85) translateY(-10px)';
+                
+                setTimeout(() => {
+                    cardElement.remove();
+                    checkEmptyQueue();
+                    syncMechanicAvailability();
+                }, 400);
+            }, 800);
+        } else {
+            showToast('error', 'Conflicto de Horario', data.message || 'No fue posible asignar al mecánico.');
+            btn.innerHTML = originalBtnHtml;
+            btn.disabled = false;
+            selectElement.disabled = false;
+            syncMechanicAvailability();
+        }
+    } catch (e) {
+        showToast('error', 'Error de Red', 'Ocurrió un error al conectar con el servidor.');
+        btn.innerHTML = originalBtnHtml;
+        btn.disabled = false;
+        selectElement.disabled = false;
+    }
+}
+
+// Verificar si no quedan más tarjetas y renderizar la consola de bahías
+function checkEmptyQueue() {
+    const remainingCards = document.querySelectorAll('.cita-card').length;
+    const counterElem = document.getElementById('pending-count');
+    if (counterElem) counterElem.textContent = remainingCards;
+    
+    if (remainingCards === 0) {
+        const containerArea = document.getElementById('citas-container-area');
+        if (containerArea) {
+            // Recargar para renderizar dinámicamente la consola de bahías completa con telemetría sincronizada
+            window.location.reload();
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    syncMechanicAvailability();
+});
+</script>
+{% endblock %}

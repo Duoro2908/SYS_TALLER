@@ -1,0 +1,1462 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Gestión de Citas WhatsApp (Canal Virtual Taller CR){% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos Premium WhatsApp & Glassmorphism Full-Width */
+    .wa-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 22px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .wa-header-left h1 {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0 0 6px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .wa-header-left p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 0.94rem;
+    }
+
+    .btn-wa-action {
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-wa-web {
+        background: #25D366;
+        color: #0b141a;
+        box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+    }
+
+    .btn-wa-web:hover {
+        background: #20bd5a;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(37, 211, 102, 0.45);
+        color: #000;
+    }
+
+    .btn-wa-add {
+        background: var(--apple-blue);
+        color: #ffffff;
+        box-shadow: 0 4px 14px rgba(10, 132, 255, 0.3);
+    }
+
+    .btn-wa-add:hover {
+        background: #0071e3;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(10, 132, 255, 0.45);
+        color: #fff;
+    }
+
+    .wa-phone-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(37, 211, 102, 0.12);
+        border: 1px solid rgba(37, 211, 102, 0.35);
+        color: #25D366;
+        padding: 9px 18px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .wa-phone-badge:hover {
+        background: rgba(37, 211, 102, 0.22);
+        border-color: #25D366;
+        transform: translateY(-1px);
+        color: #25D366;
+    }
+
+    .pulse-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #25D366;
+        border-radius: 50%;
+        box-shadow: 0 0 0 rgba(37, 211, 102, 0.4);
+        animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+
+    /* Banner Informativo */
+    .wa-info-banner {
+        background: rgba(37, 211, 102, 0.08);
+        border: 1px solid rgba(37, 211, 102, 0.25);
+        color: #dcfce7;
+        border-radius: 16px;
+        padding: 14px 22px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+        font-size: 0.92rem;
+    }
+
+    .wa-info-banner a {
+        background: rgba(37, 211, 102, 0.2);
+        color: #25D366;
+        border: 1px solid rgba(37, 211, 102, 0.4);
+        padding: 7px 16px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.84rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .wa-info-banner a:hover {
+        background: #25D366;
+        color: #000;
+    }
+
+    /* Grid de Estadísticas */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 25px;
+    }
+
+    .kpi-card {
+        background: rgba(30, 30, 35, 0.6);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+
+    .kpi-title {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .kpi-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--text-main);
+    }
+
+    /* Panel Principal Full-Width */
+    .main-panel-box {
+        background: rgba(25, 25, 30, 0.65);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 20px;
+        padding: 26px;
+        margin-bottom: 25px;
+    }
+
+    .panel-header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .panel-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Barra de Búsqueda y Filtros */
+    .controls-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 22px;
+        flex-wrap: wrap;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .tab-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-muted);
+        padding: 8px 18px;
+        border-radius: 12px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .tab-btn.active, .tab-btn:hover {
+        background: var(--apple-blue);
+        color: white;
+        border-color: transparent;
+    }
+
+    .search-box {
+        position: relative;
+        min-width: 280px;
+    }
+
+    .search-input {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 9px 14px 9px 38px;
+        color: #ffffff;
+        font-size: 0.88rem;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+        border-color: #25D366;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.88rem;
+    }
+
+    /* Grid de Tarjetas de Citas */
+    .citas-list-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .cita-card {
+        background: rgba(35, 35, 42, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 16px;
+        padding: 22px;
+        transition: all 0.25s ease;
+        position: relative;
+    }
+
+    .cita-card:hover {
+        border-color: rgba(37, 211, 102, 0.45);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        transform: translateY(-2px);
+    }
+
+    .cita-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .cita-id-tag {
+        font-weight: 800;
+        font-size: 1.15rem;
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .badge-status {
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .status-Pendiente { background: rgba(255, 159, 10, 0.15); color: #FF9F0A; border: 1px solid rgba(255, 159, 10, 0.35); }
+    .status-Confirmada { background: rgba(48, 209, 88, 0.15); color: #30D158; border: 1px solid rgba(48, 209, 88, 0.35); }
+    .status-Cancelada { background: rgba(255, 69, 58, 0.15); color: #FF453A; border: 1px solid rgba(255, 69, 58, 0.35); }
+    .status-No-Asistio { background: rgba(142, 142, 147, 0.15); color: #8E8E93; border: 1px solid rgba(142, 142, 147, 0.35); }
+
+    .badge-tipo {
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        display: inline-block;
+        letter-spacing: 0.5px;
+    }
+    .tipo-Preventivo { background: rgba(10, 132, 255, 0.18); color: #0A84FF; border: 1px solid rgba(10, 132, 255, 0.3); }
+    .tipo-General { background: rgba(191, 90, 242, 0.18); color: #BF5AF2; border: 1px solid rgba(191, 90, 242, 0.3); }
+    .tipo-Correctivo { background: rgba(255, 159, 10, 0.18); color: #FF9F0A; border: 1px solid rgba(255, 159, 10, 0.3); }
+    .tipo-Express { background: rgba(48, 209, 88, 0.18); color: #30D158; border: 1px solid rgba(48, 209, 88, 0.3); }
+
+    .cita-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 14px;
+        font-size: 0.92rem;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 14px 18px;
+        border-radius: 12px;
+    }
+
+    .cita-info-grid div {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .info-val {
+        color: var(--text-main);
+        font-weight: 600;
+    }
+
+    .cita-notas-box {
+        font-size: 0.88rem;
+        color: #d1d5db;
+        background: rgba(255, 255, 255, 0.03);
+        border-left: 3px solid #25D366;
+        padding: 10px 14px;
+        border-radius: 0 10px 10px 0;
+        margin-bottom: 16px;
+        font-style: italic;
+    }
+
+    .cita-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        padding-top: 14px;
+    }
+
+    .btn-sm-action {
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-action-chat {
+        background: rgba(37, 211, 102, 0.18);
+        color: #25D366;
+        border: 1px solid rgba(37, 211, 102, 0.4);
+    }
+    .btn-action-chat:hover {
+        background: #25D366;
+        color: #0b141a;
+        transform: translateY(-1px);
+    }
+
+    .btn-action-edit {
+        background: rgba(10, 132, 255, 0.18);
+        color: #0A84FF;
+        border: 1px solid rgba(10, 132, 255, 0.4);
+    }
+    .btn-action-edit:hover {
+        background: #0A84FF;
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+    .btn-action-orden {
+        background: #25D366;
+        color: #0b141a;
+        font-weight: 700;
+    }
+    .btn-action-orden:hover {
+        background: #1eb956;
+        transform: translateY(-1px);
+        color: #000;
+    }
+
+    .btn-action-del {
+        background: rgba(255, 69, 58, 0.14);
+        color: #FF453A;
+        border: 1px solid rgba(255, 69, 58, 0.35);
+    }
+    .btn-action-del:hover {
+        background: #FF453A;
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+    /* Modal Styles */
+    .wa-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.78);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .wa-modal-dialog {
+        background: #191922;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        padding: 26px;
+        max-width: 580px;
+        width: 92%;
+        color: #ffffff;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .wa-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding-bottom: 12px;
+    }
+
+    .wa-modal-title {
+        margin: 0;
+        font-weight: 800;
+        font-size: 1.3rem;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .wa-modal-close-btn {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0 6px;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    .wa-modal-close-btn:hover {
+        color: #ffffff;
+    }
+
+    .wa-form-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #ffffff;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    .wa-form-sublabel {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.75);
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .wa-modal-input,
+    .wa-modal-textarea {
+        width: 100%;
+        padding: 11px 14px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: inherit;
+        font-size: 0.92rem;
+        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: inherit;
+    }
+    .wa-modal-input:focus,
+    .wa-modal-textarea:focus {
+        border-color: #10b981;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+
+    /* Soporte Completo Modo Claro para Modales */
+    [data-theme="light"] .wa-modal-dialog {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18) !important;
+    }
+    [data-theme="light"] .wa-modal-title {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .wa-modal-close-btn {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .wa-modal-close-btn:hover {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .wa-form-label {
+        color: #1e293b !important;
+    }
+    [data-theme="light"] .wa-form-sublabel {
+        color: #475569 !important;
+    }
+    [data-theme="light"] .wa-modal-input,
+    [data-theme="light"] .wa-modal-textarea {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .btn-wa-cancel {
+        background: #f1f5f9 !important;
+        color: #475569 !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    [data-theme="light"] .btn-wa-cancel:hover {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+
+    /* Soporte Completo Modo Oscuro para Modales */
+    [data-theme="dark"] .wa-modal-dialog {
+        background: #0d0d10 !important;
+        color: #f8fafc !important;
+        border: 1px solid #1f1f26 !important;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85) !important;
+    }
+    [data-theme="dark"] .wa-modal-title {
+        color: #f8fafc !important;
+    }
+    [data-theme="dark"] .wa-form-label {
+        color: #f8fafc !important;
+    }
+    [data-theme="dark"] .wa-modal-input,
+    [data-theme="dark"] .wa-modal-textarea {
+        background: #141418 !important;
+        border: 1px solid #282832 !important;
+        color: #f8fafc !important;
+    }
+
+    .wa-modal-textarea {
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    .btn-wa-cancel {
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: all 0.2s ease;
+    }
+    .btn-wa-cancel:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+    }
+
+    /* Soporte Modo Claro ([data-theme="light"]) */
+    [data-theme="light"] .kpi-card,
+    body.light-theme .kpi-card {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.04) !important;
+    }
+    [data-theme="light"] .kpi-title,
+    body.light-theme .kpi-title {
+        color: #64748b !important;
+    }
+    [data-theme="light"] .kpi-value,
+    body.light-theme .kpi-value {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .main-panel-box,
+    body.light-theme .main-panel-box {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+    }
+    [data-theme="light"] .panel-header-bar,
+    body.light-theme .panel-header-bar {
+        border-bottom-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .panel-title,
+    body.light-theme .panel-title {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .search-input,
+    body.light-theme .search-input {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .tab-btn,
+    body.light-theme .tab-btn {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #475569 !important;
+    }
+    [data-theme="light"] .tab-btn.active,
+    body.light-theme .tab-btn.active {
+        background: #0284c7 !important;
+        border-color: #0284c7 !important;
+        color: #ffffff !important;
+    }
+    [data-theme="light"] .cita-card,
+    body.light-theme .cita-card {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .cita-id-tag,
+    body.light-theme .cita-id-tag {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .cita-info-grid,
+    body.light-theme .cita-info-grid {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    [data-theme="light"] .info-val,
+    body.light-theme .info-val {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .cita-notas-box,
+    body.light-theme .cita-notas-box {
+        background: #f1f5f9 !important;
+        color: #334155 !important;
+    }
+    [data-theme="light"] .wa-modal-dialog,
+    body.light-theme .wa-modal-dialog {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .wa-modal-header,
+    body.light-theme .wa-modal-header {
+        border-bottom-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] .wa-modal-title,
+    body.light-theme .wa-modal-title {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .wa-form-label,
+    body.light-theme .wa-form-label {
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .wa-form-sublabel,
+    body.light-theme .wa-form-sublabel {
+        color: #475569 !important;
+    }
+    [data-theme="light"] .wa-modal-input,
+    [data-theme="light"] .wa-modal-textarea,
+    body.light-theme .wa-modal-input,
+    body.light-theme .wa-modal-textarea {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    [data-theme="light"] .btn-wa-cancel,
+    body.light-theme .btn-wa-cancel {
+        background: #f1f5f9 !important;
+        color: #334155 !important;
+        border-color: #cbd5e1 !important;
+    }
+</style>
+
+<!-- Header Principal -->
+<div class="wa-header">
+    <div class="wa-header-left">
+        <h1>
+            <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> Módulo de Citas WhatsApp
+        </h1>
+        <p>
+            Bandeja inteligente de WhatsApp integrada al sistema &bull; Línea oficial: <strong>Canal Virtual Taller CR</strong>
+        </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <button type="button" onclick="abrirCentroChatWA()" class="btn-wa-action btn-wa-web" title="Abrir Bandeja de Conversaciones WhatsApp en vivo">
+            <i class="fa-solid fa-comments"></i> Centro de Chat WhatsApp ({{ conversaciones|length }})
+        </button>
+
+        <button type="button" onclick="abrirModalNuevaCita()" class="btn-wa-action btn-wa-add" title="Registrar cita recibida por WhatsApp">
+            <i class="fa-solid fa-calendar-plus"></i> Nueva Cita
+        </button>
+
+        <div class="wa-phone-badge" style="cursor:default;" title="Canal Virtual Activo del Taller">
+            <span class="pulse-dot"></span>
+            <span id="badgeLineaOficialWA">Canal Virtual Activo</span>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Grid de KPIs -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-title"><i class="fa-solid fa-calendar-check" style="color: var(--apple-blue);"></i> Total Citas</div>
+        <div class="kpi-value" id="kpiTotalCitas">{{ stats.total }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title" style="color: #FF9F0A;"><i class="fa-solid fa-clock"></i> Pendientes</div>
+        <div class="kpi-value" id="kpiPendientes" style="color: #FF9F0A;">{{ stats.pendientes }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title" style="color: #30D158;"><i class="fa-solid fa-circle-check"></i> Confirmadas</div>
+        <div class="kpi-value" id="kpiConfirmadas" style="color: #30D158;">{{ stats.confirmadas }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title" style="color: #0A84FF;"><i class="fa-solid fa-calendar-day"></i> Citas de Hoy</div>
+        <div class="kpi-value" id="kpiHoy" style="color: #0A84FF;">{{ stats.hoy }}</div>
+    </div>
+</div>
+
+<!-- Panel Principal de Citas (FULL WIDTH) -->
+<div class="main-panel-box">
+    <div class="panel-header-bar">
+        <div class="panel-title">
+            <i class="fa-solid fa-list-check" style="color: var(--apple-blue);"></i> Registro de Citas por WhatsApp
+        </div>
+        <div style="font-size: 0.88rem; color: var(--text-muted);">
+            Línea conectada: <strong style="color: #25D366;">Canal Virtual Activo</strong>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros y Búsqueda -->
+    <div class="controls-row">
+        <div class="filter-tabs">
+            <button class="tab-btn active" id="tabBtnTodos" onclick="filtrarCitas('todos', this)">
+                Todas ({{ stats.total }})
+            </button>
+            <button class="tab-btn" id="tabBtnPendiente" onclick="filtrarCitas('Pendiente', this)">
+                Pendientes ({{ stats.pendientes }})
+            </button>
+            <button class="tab-btn" id="tabBtnConfirmada" onclick="filtrarCitas('Confirmada', this)">
+                Confirmadas ({{ stats.confirmadas }})
+            </button>
+            <button class="tab-btn" id="tabBtnCancelada" onclick="filtrarCitas('Cancelada', this)">
+                Canceladas
+            </button>
+        </div>
+
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="busquedaInput" class="search-input" placeholder="Buscar cliente, placa o moto..." onkeyup="filtrarPorTexto()">
+        </div>
+    </div>
+
+    <!-- Empty State cuando no hay citas -->
+    <div id="citas-empty-placeholder" style="text-align: center; padding: 50px 20px; color: var(--text-muted); {% if citas %}display: none;{% endif %}">
+        <i class="fa-brands fa-whatsapp" style="font-size: 3.5rem; margin-bottom: 16px; opacity: 0.45; color: #25D366;"></i>
+        <p style="font-size: 1.15rem; margin-bottom: 8px; color: var(--text-primary); font-weight: 700;">No hay citas registradas en este momento</p>
+        <p style="font-size: 0.92rem; max-width: 480px; margin: 0 auto 20px auto;">
+            Agenda citas con tus clientes de WhatsApp para llevar el control del taller y convertirlas en órdenes de servicio.
+        </p>
+        <button onclick="abrirModalNuevaCita()" class="btn-wa-action btn-wa-add">
+            <i class="fa-solid fa-calendar-plus"></i> Registrar Cita Ahora
+        </button>
+    </div>
+
+    <!-- Listado de Citas -->
+    <div class="citas-list-grid" id="citas-container" {% if not citas %}style="display: none;"{% endif %}>
+        {% for c in citas %}
+            <div class="cita-card" data-estado="{{ c.estado }}" id="cita-card-{{ c.cita_id }}" data-search="{{ (c.cliente_nombre ~ ' ' ~ c.telefono ~ ' ' ~ c.moto_info ~ ' ' ~ c.notas) | lower }}">
+                <div class="cita-card-top">
+                    <div>
+                        <span class="cita-id-tag">
+                            <i class="fa-solid fa-ticket" style="color: var(--apple-blue); font-size: 0.95rem;"></i> Cita #{{ c.cita_id }}
+                        </span>
+                        <span class="badge-tipo tipo-{{ c.tipo }}" style="margin-left: 10px;">{{ c.tipo }}</span>
+                    </div>
+                    <span class="badge-status status-{{ c.estado.replace(' ', '-') }}">{{ c.estado }}</span>
+                </div>
+
+                <div class="cita-info-grid">
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-user" style="color: #0A84FF;"></i> Cliente</span>
+                        <span class="info-val">{{ c.cliente_nombre }}</span>
+                    </div>
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-phone" style="color: #30D158;"></i> Teléfono</span>
+                        <span class="info-val">{{ c.telefono }}</span>
+                    </div>
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-calendar-day" style="color: #FF9F0A;"></i> Fecha y Hora</span>
+                        <span class="info-val">{{ c.fecha_formateada }}</span>
+                    </div>
+                    <div>
+                        <span class="info-label"><i class="fa-solid fa-motorcycle" style="color: #BF5AF2;"></i> Motocicleta</span>
+                        <span class="info-val">{{ c.moto_info }}</span>
+                    </div>
+                </div>
+
+                {% if c.notas %}
+                    <div class="cita-notas-box">
+                        <i class="fa-solid fa-quote-left" style="opacity: 0.4; margin-right: 4px;"></i> {{ c.notas }}
+                    </div>
+                {% endif %}
+
+                <div class="cita-actions">
+                    <!-- Chat Interno WhatsApp CR -->
+                    <button type="button"
+                       onclick="abrirChatCitaWA('{{ c.telefono_clean }}', '{{ c.cliente_nombre | escape }}', '{{ c.cita_id }}', '{{ c.fecha_formateada | escape }}', '{{ c.tipo | escape }}')"
+                       class="btn-sm-action btn-action-chat" 
+                       title="Responder y confirmar al cliente dentro del sistema">
+                        <i class="fa-brands fa-whatsapp" style="font-size: 1.05rem;"></i> Chat en Vivo
+                    </button>
+                    
+
+                    <!-- Editar Cita -->
+                    <button type="button" 
+                            onclick="abrirModalEditarCita('{{ c.cita_id }}', '{{ c.cliente_nombre | escape }}', '{{ c.fecha_prog_iso }}', '{{ c.tipo }}', '{{ c.estado }}', '{{ c.notas | escape }}')" 
+                            class="btn-sm-action btn-action-edit" 
+                            title="Editar fecha, tipo, estado o notas">
+                        <i class="fa-solid fa-pen-to-square"></i> Editar Cita
+                    </button>
+
+                    <!-- Agendar Cita en Taller (Solo para citas pendientes por agendar) -->
+                    {% if c.estado == 'Pendiente' and not c.mecanico_asignado_id %}
+                    <button type="button" class="btn-sm-action btn-action-orden" title="Agendar cita en el taller"
+                            onclick="abrirModalAgendarTaller('{{ c.cita_id }}', '{{ c.cliente_nombre | escape }}', '{{ c.moto_info | escape }}', '{{ c.fecha_prog_iso }}', '{{ c.tipo }}')">
+                        <i class="fa-solid fa-calendar-check"></i> Agendar Cita en el Taller
+                    </button>
+                    {% endif %}
+
+                    <!-- Eliminar Cita -->
+                    <button type="button" class="btn-sm-action btn-action-del" title="Eliminar cita"
+                            onclick="abrirModalConfirmWA('{{ url_for('atencion.citas_whatsapp_eliminar', cita_id=c.cita_id) }}', 'Eliminar Cita WhatsApp', '¿Estás seguro de eliminar permanentemente la cita WhatsApp #{{ c.cita_id }}?', 'Sí, Eliminar', '#ef4444')">
+                        <i class="fa-solid fa-trash-can"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Registrar Nueva Cita Manual -->
+<div id="modalNuevaCita" class="wa-modal-backdrop" style="display: none;">
+    <div class="wa-modal-dialog">
+        <div class="wa-modal-header">
+            <h3 class="wa-modal-title">
+                <i class="fa-solid fa-calendar-plus" style="color: #0A84FF;"></i> Registrar Cita WhatsApp
+            </h3>
+            <button onclick="cerrarModalNuevaCita()" class="wa-modal-close-btn" type="button">&times;</button>
+        </div>
+
+        <form action="{{ url_for('atencion.citas_whatsapp_crear') }}" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <!-- Tabs Cliente: Registrado vs Nuevo -->
+            <div>
+                <label class="wa-form-label">Selección del Cliente</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button type="button" id="tabClienteReg" onclick="seleccionarTabCliente('reg')" class="tab-btn active" style="flex: 1; padding: 9px; text-align: center;">
+                        <i class="fa-solid fa-user-check"></i> Cliente Registrado
+                    </button>
+                    <button type="button" id="tabClienteNuevo" onclick="seleccionarTabCliente('nuevo')" class="tab-btn" style="flex: 1; padding: 9px; text-align: center;">
+                        <i class="fa-solid fa-user-plus"></i> Nuevo Cliente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sección Cliente Registrado -->
+            <div id="seccionClienteRegistrado">
+                <label class="wa-form-label">Cliente del Taller</label>
+                <select name="cliente_id" id="selectClienteReg" class="wa-modal-input" onchange="onSelectClienteReg(this)">
+                    <option value="">-- Elige un cliente existente --</option>
+                    {% for cl in clientes_dropdown %}
+                        <option value="{{ cl[0] }}" data-moto="{{ cl[3] or '' }}" data-tel="{{ cl[2] or '' }}">
+                            {{ cl[1] }} &bull; {{ cl[2] }} {% if cl[4] %}({{ cl[4] }} {{ cl[5] }} - Placa: {{ cl[6] }}){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="moto_id" id="hiddenMotoIdReg" value="">
+            </div>
+
+            <!-- Sección Nuevo Cliente -->
+            <div id="seccionClienteNuevo" style="display: none; background: rgba(255,255,255,0.03); padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.09);">
+                <div style="margin-bottom: 12px;">
+                    <label class="wa-form-sublabel">Nombre Completo del Cliente *</label>
+                    <input type="text" name="nombre_nuevo" id="inputNombreNuevo" placeholder="Ej: Carlos Alberto Pérez" class="wa-modal-input">
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label class="wa-form-sublabel">Teléfono de WhatsApp *</label>
+                    <input type="text" name="telefono_nuevo" id="inputTelNuevo" placeholder="Ej: +505 8888 1234" class="wa-modal-input">
+                </div>
+                <div>
+                    <label class="wa-form-sublabel">Modelo de Motocicleta Genesis</label>
+                    <input type="text" name="moto_nueva" id="inputMotoNueva" placeholder="Ej: Genesis KA 150 / CR4 162" class="wa-modal-input">
+                </div>
+            </div>
+
+            <!-- Fecha y Hora Programada -->
+            <div>
+                <label class="wa-form-label">Fecha y Hora Programada *</label>
+                <input type="datetime-local" name="fecha_programada" required class="wa-modal-input" style="color-scheme: dark;">
+            </div>
+
+            <!-- Tipo de Mantenimiento y Estado -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <label class="wa-form-label">Tipo de Servicio</label>
+                    <select name="tipo_mantenimiento" class="wa-modal-input">
+                        <option value="Preventivo">Mantenimiento Preventivo (C$ 900.00)</option>
+                        <option value="General">Mantenimiento General (C$ 1,800.00)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="wa-form-label">Estado Inicial</label>
+                    <select name="estado" class="wa-modal-input">
+                        <option value="Pendiente">🟡 Pendiente</option>
+                        <option value="Confirmada" selected>🟢 Confirmada</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Notas / Motivo -->
+            <div>
+                <label class="wa-form-label">Notas / Solicitud del Cliente</label>
+                <textarea name="notas" rows="2" class="wa-modal-textarea" placeholder="Ej: Cambio de aceite Motul, revisión de frenos y filtro de aire..."></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                <button type="button" onclick="cerrarModalNuevaCita()" class="btn-sm-action btn-wa-cancel" style="padding: 10px 18px;">Cancelar</button>
+                <button type="submit" class="btn-sm-action" style="background: #0A84FF; color: white; padding: 10px 24px; font-weight: 700;">
+                    <i class="fa-solid fa-check"></i> Agendar Cita
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Cita -->
+<div id="modalEditarCita" class="wa-modal-backdrop" style="display: none;">
+    <div class="wa-modal-dialog">
+        <div class="wa-modal-header">
+            <h3 class="wa-modal-title">
+                <i class="fa-solid fa-pen-to-square" style="color: #0A84FF;"></i> Editar Cita <span id="editCitaIdDisplay" style="color: #25D366;"></span>
+            </h3>
+            <button onclick="cerrarModalEditarCita()" class="wa-modal-close-btn" type="button">&times;</button>
+        </div>
+
+        <form id="formEditarCita" action="" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="background: rgba(255,255,255,0.04); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+                <span style="font-size: 0.78rem; color: var(--text-muted); display: block; text-transform: uppercase;">Cliente</span>
+                <strong id="editClienteDisplay" style="font-size: 1.1rem; color: #ffffff;"></strong>
+            </div>
+
+            <div>
+                <label class="wa-form-label">Fecha y Hora Programada *</label>
+                <input type="datetime-local" id="editFechaProg" name="fecha_programada" required class="wa-modal-input" style="color-scheme: dark;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <label class="wa-form-label">Tipo de Servicio</label>
+                    <select id="editTipo" name="tipo_mantenimiento" class="wa-modal-input">
+                        <option value="Preventivo">Mantenimiento Preventivo</option>
+                        <option value="General">Mantenimiento General</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="wa-form-label">Estado de la Cita</label>
+                    <select id="editEstado" name="estado" class="wa-modal-input">
+                        <option value="Pendiente">🟡 Pendiente</option>
+                        <option value="Confirmada">🟢 Confirmada</option>
+                        <option value="Cancelada">🔴 Cancelada</option>
+                        <option value="No Asistio">⚪ No Asistió</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="wa-form-label">Notas / Observaciones</label>
+                <textarea id="editNotas" name="notas" rows="3" class="wa-modal-textarea" placeholder="Notas de la cita..."></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                <button type="button" onclick="cerrarModalEditarCita()" class="btn-sm-action btn-wa-cancel" style="padding: 10px 18px;">Cancelar</button>
+                <button type="submit" class="btn-sm-action" style="background: #0A84FF; color: white; padding: 10px 24px; font-weight: 700;">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Manejo de Modales de Citas
+    function abrirModalNuevaCita() {
+        document.getElementById('modalNuevaCita').style.display = 'flex';
+    }
+
+    function cerrarModalNuevaCita() {
+        document.getElementById('modalNuevaCita').style.display = 'none';
+    }
+
+    function abrirModalEditarCita(id, cliente, fechaIso, tipo, estado, notas) {
+        document.getElementById('editCitaIdDisplay').innerText = '#' + id;
+        document.getElementById('editClienteDisplay').innerText = cliente;
+        document.getElementById('editFechaProg').value = fechaIso || '';
+        document.getElementById('editTipo').value = tipo || 'Preventivo';
+        document.getElementById('editEstado').value = estado || 'Pendiente';
+        document.getElementById('editNotas').value = notas || '';
+        document.getElementById('formEditarCita').action = '/atencion/citas_whatsapp/editar/' + id;
+        document.getElementById('modalEditarCita').style.display = 'flex';
+    }
+
+    function abrirModalAgendarTaller(citaId, clienteNombre, moto, fechaIso, tipo) {
+        document.getElementById('agendarCitaId').value = citaId;
+        document.getElementById('agendarCitaNum').innerText = '#' + citaId;
+        document.getElementById('agendarCliente').innerText = clienteNombre || 'Cliente';
+        document.getElementById('agendarMoto').innerText = moto || 'Genesis Motocicleta';
+        
+        if (fechaIso && fechaIso.length >= 10) {
+            document.getElementById('agendarFecha').value = fechaIso.substring(0, 10);
+            const hourPart = fechaIso.substring(11, 16);
+            if (hourPart) {
+                const hourNum = parseInt(hourPart.split(':')[0], 10);
+                if (hourNum === 8) document.getElementById('agendarHora').value = '08:00 AM';
+                else if (hourNum === 9) document.getElementById('agendarHora').value = '09:00 AM';
+                else if (hourNum === 10) document.getElementById('agendarHora').value = '10:00 AM';
+                else if (hourNum === 11) document.getElementById('agendarHora').value = '11:00 AM';
+                else if (hourNum === 13) document.getElementById('agendarHora').value = '01:00 PM';
+                else if (hourNum === 14) document.getElementById('agendarHora').value = '02:00 PM';
+                else if (hourNum === 15) document.getElementById('agendarHora').value = '03:00 PM';
+                else if (hourNum === 16) document.getElementById('agendarHora').value = '04:00 PM';
+                else if (hourNum === 17) document.getElementById('agendarHora').value = '05:00 PM';
+            }
+        } else {
+            const today = new Date().toISOString().substring(0, 10);
+            document.getElementById('agendarFecha').value = today;
+        }
+        
+        if (tipo) {
+            document.getElementById('agendarTipoMantenimiento').value = tipo;
+        }
+        document.getElementById('modalAgendarTaller').style.display = 'flex';
+    }
+
+    function cerrarModalAgendarTaller() {
+        document.getElementById('modalAgendarTaller').style.display = 'none';
+    }
+
+    function cerrarModalEditarCita() {
+        document.getElementById('modalEditarCita').style.display = 'none';
+    }
+
+    function seleccionarTabCliente(tipo) {
+        const tabReg = document.getElementById('tabClienteReg');
+        const tabNuevo = document.getElementById('tabClienteNuevo');
+        const secReg = document.getElementById('seccionClienteRegistrado');
+        const secNuevo = document.getElementById('seccionClienteNuevo');
+        const selReg = document.getElementById('selectClienteReg');
+
+        if (tipo === 'reg') {
+            tabReg.classList.add('active');
+            tabNuevo.classList.remove('active');
+            secReg.style.display = 'block';
+            secNuevo.style.display = 'none';
+        } else {
+            tabNuevo.classList.add('active');
+            tabReg.classList.remove('active');
+            secNuevo.style.display = 'block';
+            secReg.style.display = 'none';
+            if (selReg) selReg.value = '';
+        }
+    }
+
+    function onSelectClienteReg(selectEl) {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        const motoId = opt ? opt.getAttribute('data-moto') : '';
+        const hiddenMoto = document.getElementById('hiddenMotoIdReg');
+        if (hiddenMoto) hiddenMoto.value = motoId || '';
+    }
+
+    // Filtrar Citas por Estado
+    let filtroEstadoActivo = 'todos';
+    function filtrarCitas(estado, btn) {
+        filtroEstadoActivo = estado;
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            if (b.id && b.id.startsWith('tabBtn')) b.classList.remove('active');
+        });
+        if (btn) btn.classList.add('active');
+        aplicarFiltros();
+    }
+
+    // Filtrar Citas por Buscador de Texto
+    function filtrarPorTexto() {
+        aplicarFiltros();
+    }
+
+    function aplicarFiltros() {
+        const query = (document.getElementById('busquedaInput')?.value || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('.cita-card');
+        let visibles = 0;
+
+        cards.forEach(card => {
+            const estado = card.getAttribute('data-estado');
+            const searchData = card.getAttribute('data-search') || '';
+
+            const coincideEstado = (filtroEstadoActivo === 'todos' || estado === filtroEstadoActivo);
+            const coincideTexto = (!query || searchData.includes(query));
+
+            if (coincideEstado && coincideTexto) {
+                card.style.display = 'block';
+                visibles++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        const empty = document.getElementById('citas-empty-placeholder');
+        if (empty) {
+            empty.style.display = (visibles === 0) ? 'block' : 'none';
+        }
+    }
+
+    function abrirModalConfirmWA(actionUrl, title, message, btnText, colorHex) {
+        const form = document.getElementById('formConfirmAccionWA');
+        const btn = document.getElementById('btnSubmitConfirmWA');
+        form.action = actionUrl;
+        document.getElementById('titleConfirmWA').innerText = title;
+        document.getElementById('msgConfirmWA').innerText = message;
+        btn.innerText = btnText || 'Confirmar';
+        btn.style.background = colorHex || '#10b981';
+        document.getElementById('modalConfirmAccionWA').style.display = 'flex';
+    }
+
+    function cerrarModalConfirmWA() {
+        document.getElementById('modalConfirmAccionWA').style.display = 'none';
+    }
+</script>
+
+<!-- Modal Interno de Confirmación del Sistema (Sin confirm() del navegador) -->
+<div id="modalConfirmAccionWA" class="wa-modal-backdrop" style="display: none;" onclick="if(event.target === this) cerrarModalConfirmWA();">
+    <div class="wa-modal-dialog" style="max-width: 440px; text-align: center;">
+        <h3 id="titleConfirmWA" class="wa-modal-title" style="justify-content: center; margin-bottom: 10px;">Confirmar Acción</h3>
+        <p id="msgConfirmWA" style="color: var(--text-secondary); font-size: 0.94rem; margin: 0 0 22px 0; line-height: 1.5;"></p>
+        <form id="formConfirmAccionWA" method="POST" style="display: flex; justify-content: center; gap: 10px;">
+            <button type="button" onclick="cerrarModalConfirmWA()" class="btn-sm-action btn-wa-cancel" style="padding: 10px 18px;">Cancelar</button>
+            <button type="submit" id="btnSubmitConfirmWA" class="btn-sm-action" style="background: #10b981; color: #fff; padding: 10px 22px; font-weight: 700;">Confirmar</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Agendar Cita en el Taller con Formato y Estilo Profesional -->
+<div id="modalAgendarTaller" class="wa-modal-backdrop" style="display: none;" onclick="if(event.target === this) cerrarModalAgendarTaller();">
+    <div class="wa-modal-dialog" style="max-width: 520px;">
+        <div class="wa-modal-header">
+            <h3 class="wa-modal-title">
+                <i class="fa-solid fa-calendar-check" style="color: #10b981;"></i> Agendar Cita en Taller
+            </h3>
+            <button onclick="cerrarModalAgendarTaller()" class="wa-modal-close-btn" type="button">&times;</button>
+        </div>
+
+        <form id="formAgendarTaller" method="POST" action="{{ url_for('atencion.agendar_en_taller') }}" style="display: flex; flex-direction: column; gap: 16px;">
+            <input type="hidden" name="cita_id" id="agendarCitaId">
+
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 14px 18px;">
+                <div style="font-size: 0.95rem; font-weight: 700; margin-bottom: 4px;">
+                    Cita <span id="agendarCitaNum" style="color: #10b981;">#</span> • <span id="agendarCliente"></span>
+                </div>
+                <div style="font-size: 0.85rem; opacity: 0.85;">
+                    <i class="fa-solid fa-motorcycle" style="color: #10b981;"></i> Motocicleta: <strong id="agendarMoto"></strong>
+                </div>
+            </div>
+
+            <div>
+                <label class="wa-form-label"><i class="fa-solid fa-user-gear" style="color: #10b981;"></i> Mecánico Asignado *</label>
+                <select name="mecanico_id" id="agendarMecanico" class="wa-modal-input" required>
+                    <option value="">-- Seleccionar Mecánico Disponible --</option>
+                    {% for m in mecanicos %}
+                        <option value="{{ m[0] }}">{{ m[1] }}</option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 0.76rem; opacity: 0.7; margin-top: 5px;">
+                    <i class="fa-solid fa-shield-check"></i> El sistema verifica automáticamente la disponibilidad del mecánico.
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div>
+                    <label class="wa-form-label"><i class="fa-regular fa-calendar" style="color: #10b981;"></i> Fecha Programada *</label>
+                    <input type="date" name="fecha" id="agendarFecha" class="wa-modal-input" required>
+                </div>
+                <div>
+                    <label class="wa-form-label"><i class="fa-regular fa-clock" style="color: #10b981;"></i> Horario / Turno *</label>
+                    <select name="hora" id="agendarHora" class="wa-modal-input" required>
+                        <option value="08:00 AM">08:00 AM</option>
+                        <option value="09:00 AM">09:00 AM</option>
+                        <option value="10:00 AM">10:00 AM</option>
+                        <option value="11:00 AM">11:00 AM</option>
+                        <option value="01:00 PM">01:00 PM</option>
+                        <option value="02:00 PM">02:00 PM</option>
+                        <option value="03:00 PM">03:00 PM</option>
+                        <option value="04:00 PM">04:00 PM</option>
+                        <option value="05:00 PM">05:00 PM</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="wa-form-label"><i class="fa-solid fa-wrench" style="color: #10b981;"></i> Tipo de Mantenimiento *</label>
+                <select name="tipo_mantenimiento" id="agendarTipoMantenimiento" class="wa-modal-input" required>
+                    <option value="Preventivo">Mantenimiento Preventivo</option>
+                    <option value="Correctivo">Mantenimiento Correctivo</option>
+                </select>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+                <button type="button" onclick="cerrarModalAgendarTaller()" class="btn-sm-action btn-wa-cancel" style="padding: 10px 18px; border-radius: 10px; cursor: pointer;">Cancelar</button>
+                <button type="submit" class="btn-sm-action" style="background: #10b981; color: #fff; padding: 10px 24px; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-calendar-check"></i> Agendar en Taller
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Centro de Chat WhatsApp Integrado al Sistema -->
+<div id="modalCentroChatWA" class="wa-modal-backdrop" style="display: none;" onclick="if(event.target === this) cerrarCentroChatWA();">
+    <div class="wa-modal-dialog" style="max-width: 820px; width: 95%; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 88vh;">
+        <div class="wa-modal-header" style="padding: 16px 20px; margin: 0; border-bottom: 1px solid var(--border-color);">
+            <h3 class="wa-modal-title" style="margin: 0;">
+                <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> Centro de Mensajería WhatsApp en Vivo
+            </h3>
+            <button onclick="cerrarCentroChatWA()" class="wa-modal-close-btn" type="button">&times;</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 240px 1fr; flex: 1; min-height: 380px; overflow: hidden;">
+            <div id="waConvList" style="border-right: 1px solid var(--border-color); overflow-y: auto; padding: 10px; background: var(--bg-secondary);">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; padding: 0 6px;">Conversaciones Activas</div>
+                {% if conversaciones %}
+                    {% for conv in conversaciones %}
+                    <button type="button" onclick="cargarHiloWA('{{ conv.telefono }}', '{{ conv.nombre | escape }}')" class="wa-conv-item" style="width: 100%; text-align: left; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; margin-bottom: 8px; cursor: pointer; color: var(--text-primary);">
+                        <div style="font-weight: 700; font-size: 0.86rem; display: flex; justify-content: space-between;">
+                            <span>{{ conv.nombre }}</span>
+                            <span style="font-size: 0.7rem; color: #25D366;">{{ conv.total_mensajes }}</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px;">{{ conv.ultimo_mensaje }}</div>
+                    </button>
+                    {% endfor %}
+                {% else %}
+                    <div style="font-size: 0.82rem; color: var(--text-muted); padding: 12px 6px;">Aún no hay mensajes registrados en la bandeja. Los mensajes enviados desde el portal Login aparecerán aquí.</div>
+                {% endif %}
+            </div>
+
+            <div style="display: flex; flex-direction: column; overflow: hidden; background: var(--bg-surface);">
+                <div id="waChatHeaderActive" style="padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <strong id="waChatPeerName" style="color: var(--text-primary); font-size: 0.96rem;">Selecciona una conversación o cita</strong>
+                        <div id="waChatPeerTel" style="font-size: 0.78rem; color: #25D366;"></div>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" onclick="usarPlantillaWA('confirmar')" class="tab-btn" style="padding: 5px 10px; font-size: 0.74rem;">Plantilla Confirmar</button>
+                        <button type="button" onclick="usarPlantillaWA('lista')" class="tab-btn" style="padding: 5px 10px; font-size: 0.74rem;">Moto Lista</button>
+                    </div>
+                </div>
+
+                <div id="waChatHistoryFeed" style="flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="margin: auto; text-align: center; color: var(--text-muted); font-size: 0.88rem;">
+                        <i class="fa-brands fa-whatsapp" style="font-size: 2.2rem; color: #25D366; opacity: 0.5; margin-bottom: 8px; display: block;"></i>
+                        Selecciona un chat de la izquierda o haz clic en "Chat en Vivo" en cualquier cita.
+                    </div>
+                </div>
+
+                <div id="waChatFeedback" style="display:none; padding: 6px 14px; font-size: 0.8rem; font-weight: 600;"></div>
+
+                <form onsubmit="enviarRespuestaChatInternoWA(event)" style="padding: 12px 14px; border-top: 1px solid var(--border-color); display: flex; gap: 8px;">
+                    <input type="text" id="waChatReplyInput" class="wa-modal-input" placeholder="Escribe respuesta directa al cliente..." style="flex: 1; margin: 0;">
+                    <button type="submit" class="btn-sm-action" style="background: #25D366; color: #052e16; font-weight: 800; padding: 0 18px;">
+                        <i class="fa-solid fa-paper-plane"></i> Enviar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let _waActiveTel = '';
+    let _waActiveCtx = { nombre: '', citaId: '', fecha: '', tipo: '' };
+
+    function copiarLineaOficialWA(num) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(num).catch(() => {});
+        }
+        window.tallerAlert(`Línea oficial ${num} lista para atender desde la Bandeja WhatsApp del sistema.`, 'success', 'Línea Oficial Taller CR');
+    }
+
+    function abrirCentroChatWA() {
+        document.getElementById('modalCentroChatWA').style.display = 'flex';
+    }
+
+    function cerrarCentroChatWA() {
+        document.getElementById('modalCentroChatWA').style.display = 'none';
+    }
+
+    function abrirChatCitaWA(tel, nombre, citaId, fecha, tipo) {
+        _waActiveCtx = { nombre: nombre || '', citaId: citaId || '', fecha: fecha || '', tipo: tipo || '' };
+        abrirCentroChatWA();
+        cargarHiloWA(tel, nombre);
+        const inp = document.getElementById('waChatReplyInput');
+        if (inp && !inp.value) {
+            inp.value = `Hola ${nombre}, confirmamos tu Cita #${citaId} (${tipo}) programada para ${fecha} en Taller y Lubricantes CR.`;
+        }
+    }
+
+    function usarPlantillaWA(tipo) {
+        const inp = document.getElementById('waChatReplyInput');
+        if (!inp) return;
+        const nom = _waActiveCtx.nombre || 'estimado cliente';
+        if (tipo === 'confirmar') {
+            inp.value = `Hola ${nom}, te confirmamos tu cita en Taller CR. ¡Te esperamos a la hora acordada!`;
+        } else {
+            inp.value = `Hola ${nom}, tu motocicleta ya finalizó servicio y está lista para retiro en Taller y Lubricantes CR.`;
+        }
+        inp.focus();
+    }
+
+    async function cargarHiloWA(tel, nombre) {
+        _waActiveTel = tel;
+        _waActiveCtx.nombre = nombre || tel;
+        document.getElementById('waChatPeerName').textContent = nombre || tel;
+        document.getElementById('waChatPeerTel').textContent = tel;
+        const feed = document.getElementById('waChatHistoryFeed');
+        feed.innerHTML = '<div style="margin:auto;color:var(--text-muted);font-size:0.85rem;">Cargando historial...</div>';
+        try {
+            const resp = await fetch('/atencion/whatsapp/chat_history/' + encodeURIComponent(tel));
+            const data = await resp.json();
+            feed.innerHTML = '';
+            if (data.success && Array.isArray(data.mensajes) && data.mensajes.length) {
+                data.mensajes.forEach(m => {
+                    const div = document.createElement('div');
+                    const isIn = (m.direccion === 'Entrante');
+                    div.style.maxWidth = '82%';
+                    div.style.padding = '9px 13px';
+                    div.style.borderRadius = isIn ? '12px 12px 12px 4px' : '12px 12px 4px 12px';
+                    div.style.alignSelf = isIn ? 'flex-start' : 'flex-end';
+                    div.style.background = isIn ? 'var(--bg-secondary)' : '#065f46';
+                    div.style.color = isIn ? 'var(--text-primary)' : '#ffffff';
+                    div.style.fontSize = '0.86rem';
+                    div.textContent = m.contenido + (m.fecha ? ` (${m.fecha})` : '');
+                    feed.appendChild(div);
+                });
+                feed.scrollTop = feed.scrollHeight;
+            } else {
+                feed.innerHTML = '<div style="margin:auto;color:var(--text-muted);font-size:0.85rem;">Sin mensajes previos. Envía un mensaje para iniciar conversación con este cliente.</div>';
+            }
+        } catch (e) {
+            feed.innerHTML = '<div style="margin:auto;color:#ef4444;font-size:0.85rem;">No se pudo cargar el historial.</div>';
+        }
+    }
+
+    async function enviarRespuestaChatInternoWA(e) {
+        e.preventDefault();
+        const fb = document.getElementById('waChatFeedback');
+        const inp = document.getElementById('waChatReplyInput');
+        const msg = (inp ? inp.value : '').trim();
+        if (!_waActiveTel) {
+            fb.style.display = 'block';
+            fb.style.color = '#ef4444';
+            fb.textContent = 'Selecciona primero un cliente o conversación.';
+            return;
+        }
+        if (!msg) return;
+        try {
+            const resp = await fetch('/atencion/whatsapp/responder_manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telefono: _waActiveTel, mensaje: msg })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                inp.value = '';
+                fb.style.display = 'block';
+                fb.style.color = '#10b981';
+                fb.textContent = 'Mensaje registrado y enviado en el hilo del cliente.';
+                cargarHiloWA(_waActiveTel, _waActiveCtx.nombre);
+            } else {
+                fb.style.display = 'block';
+                fb.style.color = '#ef4444';
+                fb.textContent = data.error || 'No se pudo enviar el mensaje.';
+            }
+        } catch (err) {
+            fb.style.display = 'block';
+            fb.style.color = '#ef4444';
+            fb.textContent = 'Error de conexión al enviar respuesta.';
+        }
+    }
+</script>
+{% endblock %}

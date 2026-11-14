@@ -1,0 +1,859 @@
+{% extends "base.html" %}
+
+{% block title %}Compras y Abastecimiento - Bodega{% endblock %}
+{% block page_title %}Compras y Abastecimiento{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Themed Layout for Compras */
+    .purchase-container {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 25px;
+        align-items: start;
+    }
+    
+    @media (max-width: 1100px) {
+        .purchase-container { grid-template-columns: 1fr; }
+    }
+
+    .glass-panel {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        padding: 26px;
+        position: relative;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 14px;
+    }
+
+    .section-header i {
+        font-size: 1.6rem;
+        color: #2563eb;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; margin-bottom: 7px; font-weight: 600; color: var(--text-secondary); font-size: 0.88rem; }
+    
+    .form-control {
+        width: 100%;
+        padding: 11px 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 0.92rem;
+        transition: all 0.25s ease;
+        box-sizing: border-box;
+    }
+    .form-control:focus {
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Supplier Row */
+    .supplier-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 44px;
+        white-space: nowrap;
+    }
+    .btn-action:hover { background: var(--border-color); transform: translateY(-1px); }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #ffffff !important;
+        border: none;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Professional Order Table */
+    .order-table-container {
+        margin-top: 24px;
+        background: var(--bg-surface);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .order-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .order-table th {
+        background: var(--bg-secondary);
+        padding: 12px 14px;
+        text-align: left;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .order-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .order-table .td-number { text-align: right; width: 125px;}
+    .order-table .td-action { text-align: center; width: 55px; }
+
+    .td-number input {
+        text-align: right;
+    }
+
+    .btn-remove {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 8px;
+        width: 34px;
+        height: 34px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-remove:hover { background: #ef4444; color: white; transform: scale(1.05); }
+
+    /* Grand Total Section */
+    .grand-total-section {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 22px;
+        padding-top: 20px;
+        border-top: 1px dashed var(--border-color);
+    }
+
+    .grand-total-label {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        font-weight: 700;
+        margin-right: 15px;
+    }
+
+    .grand-total-value {
+        font-size: 2.0rem;
+        font-weight: 800;
+        color: #10b981;
+    }
+
+    /* History Cards */
+    .history-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 14px;
+        border-left: 4px solid #2563eb;
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
+    }
+    .history-card:hover { 
+        transform: translateX(4px); 
+        box-shadow: var(--shadow-md); 
+        border-color: #2563eb;
+    }
+    
+    .history-card .date { 
+        font-size: 0.82rem; 
+        color: var(--text-muted); 
+        margin-bottom: 6px; 
+        font-family: monospace; 
+        font-weight: 600;
+    }
+    .history-card .prov { 
+        font-weight: 700; 
+        color: var(--text-primary); 
+        font-size: 1.02rem; 
+        margin-bottom: 8px; 
+    }
+    .history-card .subinfo {
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        font-size: 0.82rem; 
+        color: var(--text-secondary); 
+        margin-bottom: 6px;
+    }
+    .history-card .total { 
+        font-weight: 800; 
+        color: #10b981; 
+        font-size: 1.15rem; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: baseline; 
+    }
+
+    /* Modals */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .modal-content { background: var(--bg-surface); padding: 28px; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); color: var(--text-primary); max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+    .modal-header h3 { margin: 0; color: var(--text-primary); font-weight: 700; font-size: 1.25rem; }
+    .close-btn { background: none; border: none; font-size: 1.6rem; color: var(--text-muted); cursor: pointer; line-height: 1; }
+    .close-btn:hover { color: var(--text-primary); }
+
+    .directorio-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 0.88rem;
+    }
+    .directorio-table th {
+        background: var(--bg-secondary);
+        padding: 10px 12px;
+        text-align: left;
+        color: var(--text-secondary);
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+    }
+    .directorio-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+    .directorio-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+</style>
+
+<div class="purchase-container">
+    
+    <!-- Main Purchase Form -->
+    <div class="glass-panel">
+        <div class="section-header">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+            <h3>Orden de Compra y Abastecimiento</h3>
+        </div>
+
+        <div id="comprasInlineAlert" style="display: none; align-items: center; justify-content: space-between; gap: 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #ef4444; padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-size: 0.88rem; font-weight: 600;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span id="comprasInlineAlertText"></span>
+            </div>
+            <button type="button" onclick="document.getElementById('comprasInlineAlert').style.display='none'" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 1.1rem; line-height: 1;">&times;</button>
+        </div>
+
+        <form action="{{ url_for('bodega.compras') }}" method="POST" id="comprasForm">
+            
+            <div class="supplier-row">
+                <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+                    <label>Proveedor</label>
+                    <select name="proveedor_id" id="selectProveedor" class="form-control" required onchange="actualizarAccionesProveedor()">
+                        <option value="" data-id="" data-nombre="" data-ruc="" data-tel="" data-credito="0">-- Seleccione Proveedor --</option>
+                        {% for prov in proveedores %}
+                        <option value="{{ prov[0] }}" data-id="{{ prov[0] }}" data-nombre="{{ prov[1] }}" data-ruc="{{ prov[2] }}" data-tel="{{ prov[3] }}" data-credito="{{ prov[4] }}">{{ prov[1] }} (RUC: {{ prov[2] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" class="btn-action" onclick="abrirModalNuevoProveedor()" title="Registrar nuevo proveedor">
+                    <i class="fa-solid fa-user-plus"></i> + Nuevo
+                </button>
+                <button type="button" class="btn-action" id="btnEditarProveedor" onclick="abrirModalEditarProveedor()" style="display: none; background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.4);" title="Actualizar datos del proveedor seleccionado">
+                    <i class="fa-solid fa-pen-to-square"></i> Editar
+                </button>
+                <button type="button" class="btn-action" id="btnEliminarProveedor" onclick="confirmarEliminarProveedor()" style="display: none; background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.4);" title="Eliminar proveedor si no tiene compras">
+                    <i class="fa-solid fa-trash"></i> Eliminar
+                </button>
+                <button type="button" class="btn-action" onclick="abrirModalDirectorioProveedores()" title="Ver y gestionar todos los proveedores">
+                    <i class="fa-solid fa-address-book"></i> Directorio
+                </button>
+            </div>
+
+            <div class="order-table-container">
+                <table class="order-table" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="td-number">Cantidad</th>
+                            <th class="td-number">Costo Unit. (C$)</th>
+                            <th class="td-number">Subtotal (C$)</th>
+                            <th class="td-action"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="productosContainer">
+                        <tr class="product-row">
+                            <td>
+                                <select name="producto_id[]" class="form-control select-product" required>
+                                    <option value="">-- Buscar Producto --</option>
+                                    {% for prod in productos %}
+                                    <option value="{{ prod[0] }}">{{ prod[1] }} - {{ prod[2] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td class="td-number">
+                                <input type="number" name="cantidad[]" class="form-control input-qty" placeholder="0" min="1" required oninput="calculateRow(this)">
+                            </td>
+                            <td class="td-number">
+                                <input type="number" step="0.01" name="precio[]" class="form-control input-price" placeholder="0.00" min="0" required oninput="calculateRow(this)">
+                            </td>
+                            <td class="td-number">
+                                <input type="text" class="form-control input-subtotal" value="0.00" readonly style="background: transparent; border-color: transparent; font-weight: 700; color: #10b981;">
+                            </td>
+                            <td class="td-action">
+                                <button type="button" class="btn-remove" onclick="removeRow(this)"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="padding: 14px; border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn-action" style="width: 100%; justify-content: center; border-style: dashed;" onclick="addRow()">
+                        <i class="fa-solid fa-plus"></i> Añadir Línea de Producto
+                    </button>
+                </div>
+            </div>
+
+            <div class="grand-total-section" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; width: 320px; font-size: 1rem; color: var(--text-secondary);">
+                    <span>Subtotal Mercadería:</span>
+                    <strong id="subtotalDisplay" style="color: var(--text-primary);">C$ 0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; width: 320px; font-size: 1rem; color: var(--text-secondary);">
+                    <span>IVA Compra (15.0%):</span>
+                    <strong id="ivaDisplay" style="color: #2563eb;">+ C$ 0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; width: 320px; border-top: 1px dashed var(--border-color); padding-top: 10px; margin-top: 4px;">
+                    <span class="grand-total-label" style="margin: 0;">Total Factura Proveedor:</span>
+                    <span class="grand-total-value" id="grandTotalDisplay">C$ 0.00</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <button type="submit" class="btn-action btn-primary" style="width: 100%; justify-content: center; height: 50px; font-size: 1.05rem;">
+                    <i class="fa-solid fa-check-circle" style="font-size: 1.2rem;"></i> Procesar e Ingresar a Bodega
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- History Panel -->
+    <div class="glass-panel">
+        <div class="section-header">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <h3>Últimos Ingresos</h3>
+        </div>
+        
+        {% for h in historial %}
+        <div class="history-card">
+            <div class="date">
+                <i class="fa-regular fa-calendar"></i> {{ h[2].strftime('%d/%m/%Y %I:%M %p') }} 
+                <span style="float: right;">OC #{{ h[0] }}</span>
+            </div>
+            <div class="prov">{{ h[1] }}</div>
+            <div class="subinfo">
+                <span>Subtotal: C$ {{ "{:,.2f}".format(h[4] if h|length > 4 and h[4] is not none else h[3] / 1.15) }}</span>
+                <span style="color: #2563eb; font-weight: 600;">+ IVA 15%: C$ {{ "{:,.2f}".format(h[5] if h|length > 5 and h[5] is not none else h[3] - (h[3] / 1.15)) }}</span>
+            </div>
+            <div class="total">
+                <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: normal;">Total con IVA:</span>
+                <span>C$ {{ "{:,.2f}".format(h[3]) }}</span>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+            <i class="fa-solid fa-inbox" style="font-size: 2.8rem; margin-bottom: 12px; opacity: 0.5;"></i>
+            <p style="margin: 0; font-size: 0.95rem;">No hay registros de compras recientes.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Modal: Nuevo Proveedor -->
+<div id="nuevoProveedorModal" class="modal" onclick="if(event.target===this) cerrarModalNuevoProveedor()">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-user-tie"></i> Registrar Proveedor</h3>
+            <button type="button" class="close-btn" onclick="cerrarModalNuevoProveedor()">&times;</button>
+        </div>
+
+        <div id="provValidationAlert" style="display: {{ 'flex' if prov_error else 'none' }}; align-items: flex-start; gap: 10px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #ef4444; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; font-size: 0.86rem; line-height: 1.45; font-weight: 600;">
+            <i class="fa-solid fa-circle-exclamation" style="margin-top: 2px; flex-shrink: 0;"></i>
+            <span id="provValidationAlertText">{{ prov_error or '' }}</span>
+        </div>
+
+        <form id="nuevoProveedorForm" action="{{ url_for('bodega.nuevo_proveedor') }}" method="POST" novalidate>
+            <div class="form-group">
+                <label>Nombre o Razón Social <span style="color: #ef4444;">*</span></label>
+                <input type="text" name="nombre" id="provNombreInput" class="form-control" required maxlength="150"
+                       value="{{ prov_form.get('nombre', '') if prov_form else '' }}"
+                       placeholder="Ej: Distribuidora de Repuestos S.A.">
+                <small id="provNombreError" class="prov-field-error" style="display: none; color: #ef4444; font-size: 0.78rem; margin-top: 5px; font-weight: 600;"></small>
+            </div>
+            <div class="form-group">
+                <label>RUC / Identificación Fiscal <span style="color: #ef4444;">*</span></label>
+                <input type="text" name="ruc" id="provRucInput" class="form-control" required maxlength="20"
+                       value="{{ prov_form.get('ruc', '') if prov_form else '' }}"
+                       placeholder="Ej: J0310000045821">
+                <small id="provRucError" class="prov-field-error" style="display: none; color: #ef4444; font-size: 0.78rem; margin-top: 5px; font-weight: 600;"></small>
+            </div>
+            <div class="form-group">
+                <label>Teléfono de Contacto <span style="color: #ef4444;">*</span></label>
+                <input type="text" name="telefono" id="provTelefonoInput" class="form-control" required maxlength="20"
+                       value="{{ prov_form.get('telefono', '') if prov_form else '' }}"
+                       placeholder="Ej: 2255-7800 o 8888-8888">
+                <small id="provTelefonoError" class="prov-field-error" style="display: none; color: #ef4444; font-size: 0.78rem; margin-top: 5px; font-weight: 600;"></small>
+            </div>
+            <button type="submit" class="btn-action btn-primary" style="width: 100%; justify-content: center; margin-top: 15px; height: 46px;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Proveedor
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Editar Proveedor -->
+<div id="modalEditarProveedor" class="modal" onclick="if(event.target===this) cerrarModalEditarProveedor()">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-pen-to-square" style="color: #3b82f6;"></i> Actualizar Proveedor</h3>
+            <button type="button" class="close-btn" onclick="cerrarModalEditarProveedor()">&times;</button>
+        </div>
+
+        <form id="formEditarProveedor" method="POST" action="">
+            <div class="form-group">
+                <label>Nombre o Razón Social <span style="color: #ef4444;">*</span></label>
+                <input type="text" name="nombre" id="editProvNombre" class="form-control" required maxlength="150">
+            </div>
+            <div class="form-group">
+                <label>RUC / Identificación Fiscal <span style="color: #ef4444;">*</span></label>
+                <input type="text" name="ruc" id="editProvRuc" class="form-control" required maxlength="20">
+            </div>
+            <div class="form-group">
+                <label>Teléfono de Contacto <span style="color: #ef4444;">*</span></label>
+                <input type="text" name="telefono" id="editProvTelefono" class="form-control" required maxlength="20">
+            </div>
+            <div class="form-group">
+                <label>Días de Crédito Otorgados</label>
+                <input type="number" name="dias_credito" id="editProvDiasCredito" class="form-control" min="0" max="180" value="0">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="cerrarModalEditarProveedor()" class="btn-action" style="flex: 1; justify-content: center;">Cancelar</button>
+                <button type="submit" class="btn-action btn-primary" style="flex: 1; justify-content: center;">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Confirmar Eliminar Proveedor (En el Sistema) -->
+<div id="modalConfirmarEliminar" class="modal" onclick="if(event.target===this) cerrarModalConfirmarEliminar()">
+    <div class="modal-content" style="max-width: 440px; text-align: center;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.8rem; color: #ef4444; margin-bottom: 14px;"></i>
+        <h3 style="margin: 0 0 10px 0; color: var(--text-primary); font-size: 1.25rem;">¿Eliminar Proveedor?</h3>
+        <p style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.5; margin: 0 0 20px 0;">
+            ¿Estás seguro de que deseas eliminar al proveedor <strong id="deleteProvNombre" style="color: var(--text-primary);"></strong> del sistema?
+        </p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 24px;">
+            <i class="fa-solid fa-shield-halved"></i> Si el proveedor tiene compras registradas en el historial contable, el sistema mantendrá su registro intacto por auditoría.
+        </p>
+        <form id="formEliminarProveedor" method="POST" action="" style="display: flex; gap: 10px; justify-content: center;">
+            <button type="button" onclick="cerrarModalConfirmarEliminar()" class="btn-action" style="padding: 10px 20px;">Cancelar</button>
+            <button type="submit" class="btn-action" style="background: #ef4444; color: white; border: none; padding: 10px 22px; font-weight: 700;">
+                <i class="fa-solid fa-trash"></i> Sí, Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Directorio de Proveedores -->
+<div id="modalDirectorioProveedores" class="modal" onclick="if(event.target===this) cerrarModalDirectorioProveedores()">
+    <div class="modal-content" style="max-width: 820px; width: 95%;">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-address-book" style="color: #2563eb;"></i> Directorio Oficial de Proveedores</h3>
+            <button type="button" class="close-btn" onclick="cerrarModalDirectorioProveedores()">&times;</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <input type="text" id="filtroDirectorioProv" class="form-control" placeholder="Buscar proveedor por nombre, RUC o teléfono..." style="width: 100%;" oninput="filtrarDirectorioProveedores()">
+        </div>
+
+        <div style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;">
+            <table class="directorio-table">
+                <thead>
+                    <tr>
+                        <th>Razón Social / Empresa</th>
+                        <th>RUC Fiscal</th>
+                        <th>Teléfono</th>
+                        <th style="text-align: center;">Crédito</th>
+                        <th style="text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="directorioProvBody">
+                    {% for prov in proveedores %}
+                    <tr class="dir-prov-row" data-search="{{ (prov[1] ~ ' ' ~ prov[2] ~ ' ' ~ prov[3]) | lower }}">
+                        <td>
+                            <strong style="color: var(--text-primary);">{{ prov[1] }}</strong>
+                        </td>
+                        <td><span style="font-family: monospace; font-weight: 600;">{{ prov[2] }}</span></td>
+                        <td>{{ prov[3] }}</td>
+                        <td style="text-align: center;">
+                            <span style="font-size: 0.8rem; background: rgba(59, 130, 246, 0.12); color: #3b82f6; padding: 3px 8px; border-radius: 6px; font-weight: 700;">
+                                {{ prov[4] }} días
+                            </span>
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <button type="button" class="btn-action" style="height: 32px; padding: 4px 10px; font-size: 0.78rem; background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.35);"
+                                    onclick="cerrarModalDirectorioProveedores(); abrirModalEditarProveedorDirecto('{{ prov[0] }}', '{{ prov[1]|replace('\'', '\\\'') }}', '{{ prov[2] }}', '{{ prov[3] }}', '{{ prov[4] }}')" title="Editar proveedor">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button type="button" class="btn-action" style="height: 32px; padding: 4px 10px; font-size: 0.78rem; background: rgba(239, 68, 68, 0.12); color: #ef4444; border-color: rgba(239, 68, 68, 0.35);"
+                                    onclick="cerrarModalDirectorioProveedores(); confirmarEliminarProveedorDirecto('{{ prov[0] }}', '{{ prov[1]|replace('\'', '\\\'') }}')" title="Eliminar proveedor">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateRow(element) {
+        const row = element.closest('.product-row');
+        const qty = parseFloat(row.querySelector('.input-qty').value) || 0;
+        const price = parseFloat(row.querySelector('.input-price').value) || 0;
+        const subtotal = qty * price;
+        
+        row.querySelector('.input-subtotal').value = subtotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        calculateGrandTotal();
+    }
+
+    function calculateGrandTotal() {
+        let subtotal = 0;
+        const rows = document.querySelectorAll('.product-row');
+        rows.forEach(row => {
+            const qty = parseFloat(row.querySelector('.input-qty').value) || 0;
+            const price = parseFloat(row.querySelector('.input-price').value) || 0;
+            subtotal += (qty * price);
+        });
+        
+        const iva = Math.round(subtotal * 0.15 * 100) / 100;
+        const grandTotal = Math.round((subtotal + iva) * 100) / 100;
+        
+        document.getElementById('subtotalDisplay').innerText = 'C$ ' + subtotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('ivaDisplay').innerText = '+ C$ ' + iva.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('grandTotalDisplay').innerText = 'C$ ' + grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function addRow() {
+        const container = document.getElementById('productosContainer');
+        const firstRow = container.querySelector('.product-row');
+        const newRow = firstRow.cloneNode(true);
+        
+        // Reset values
+        newRow.querySelector('.select-product').value = "";
+        newRow.querySelector('.input-qty').value = "";
+        newRow.querySelector('.input-price').value = "";
+        newRow.querySelector('.input-subtotal').value = "0.00";
+        
+        container.appendChild(newRow);
+        calculateGrandTotal();
+    }
+
+    function removeRow(btn) {
+        const rows = document.querySelectorAll('.product-row');
+        if(rows.length > 1) {
+            btn.closest('.product-row').remove();
+            calculateGrandTotal();
+        } else {
+            mostrarAlertaCompras("Debe incluir al menos un producto en la orden de compra.");
+        }
+    }
+
+    function mostrarAlertaCompras(mensaje) {
+        const box = document.getElementById('comprasInlineAlert');
+        const txt = document.getElementById('comprasInlineAlertText');
+        if (box && txt) {
+            txt.textContent = mensaje;
+            box.style.display = 'flex';
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    /* Proveedor Acciones: Nuevo, Editar, Eliminar, Directorio */
+    function actualizarAccionesProveedor() {
+        const sel = document.getElementById('selectProveedor');
+        const btnEdit = document.getElementById('btnEditarProveedor');
+        const btnDel = document.getElementById('btnEliminarProveedor');
+        const val = sel ? sel.value : '';
+        if (val) {
+            if (btnEdit) btnEdit.style.display = 'inline-flex';
+            if (btnDel) btnDel.style.display = 'inline-flex';
+        } else {
+            if (btnEdit) btnEdit.style.display = 'none';
+            if (btnDel) btnDel.style.display = 'none';
+        }
+    }
+
+    function abrirModalNuevoProveedor() {
+        const modal = document.getElementById('nuevoProveedorModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function cerrarModalNuevoProveedor() {
+        const modal = document.getElementById('nuevoProveedorModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function abrirModalEditarProveedor() {
+        const sel = document.getElementById('selectProveedor');
+        if (!sel || !sel.value) return;
+        const opt = sel.options[sel.selectedIndex];
+        const id = opt.getAttribute('data-id') || sel.value;
+        const nombre = opt.getAttribute('data-nombre') || '';
+        const ruc = opt.getAttribute('data-ruc') || '';
+        const tel = opt.getAttribute('data-tel') || '';
+        const credito = opt.getAttribute('data-credito') || '0';
+        abrirModalEditarProveedorDirecto(id, nombre, ruc, tel, credito);
+    }
+
+    function abrirModalEditarProveedorDirecto(id, nombre, ruc, tel, credito) {
+        document.getElementById('formEditarProveedor').action = '/bodega/proveedor/editar/' + id;
+        document.getElementById('editProvNombre').value = nombre || '';
+        document.getElementById('editProvRuc').value = (ruc && ruc !== 'N/D') ? ruc : '';
+        document.getElementById('editProvTelefono').value = (tel && tel !== 'N/D') ? tel : '';
+        document.getElementById('editProvDiasCredito').value = credito || 0;
+        document.getElementById('modalEditarProveedor').style.display = 'flex';
+    }
+
+    function cerrarModalEditarProveedor() {
+        document.getElementById('modalEditarProveedor').style.display = 'none';
+    }
+
+    function confirmarEliminarProveedor() {
+        const sel = document.getElementById('selectProveedor');
+        if (!sel || !sel.value) return;
+        const opt = sel.options[sel.selectedIndex];
+        const id = opt.getAttribute('data-id') || sel.value;
+        const nombre = opt.getAttribute('data-nombre') || 'Proveedor';
+        confirmarEliminarProveedorDirecto(id, nombre);
+    }
+
+    function confirmarEliminarProveedorDirecto(id, nombre) {
+        document.getElementById('deleteProvNombre').textContent = nombre;
+        document.getElementById('formEliminarProveedor').action = '/bodega/proveedor/eliminar/' + id;
+        document.getElementById('modalConfirmarEliminar').style.display = 'flex';
+    }
+
+    function cerrarModalConfirmarEliminar() {
+        document.getElementById('modalConfirmarEliminar').style.display = 'none';
+    }
+
+    function abrirModalDirectorioProveedores() {
+        document.getElementById('modalDirectorioProveedores').style.display = 'flex';
+    }
+
+    function cerrarModalDirectorioProveedores() {
+        document.getElementById('modalDirectorioProveedores').style.display = 'none';
+    }
+
+    function filtrarDirectorioProveedores() {
+        const q = (document.getElementById('filtroDirectorioProv')?.value || '').toLowerCase().trim();
+        const rows = document.querySelectorAll('.dir-prov-row');
+        rows.forEach(r => {
+            const s = r.getAttribute('data-search') || '';
+            r.style.display = (!q || s.includes(q)) ? '' : 'none';
+        });
+    }
+
+    function mostrarErrorProveedor(mensaje, inputEl, fieldErrEl) {
+        const alertBox = document.getElementById('provValidationAlert');
+        const alertText = document.getElementById('provValidationAlertText');
+        document.querySelectorAll('.prov-field-error').forEach(el => {
+            el.style.display = 'none';
+            el.textContent = '';
+        });
+        document.querySelectorAll('#nuevoProveedorForm .form-control').forEach(el => {
+            el.style.borderColor = '';
+        });
+
+        if (alertBox && alertText) {
+            alertText.textContent = mensaje;
+            alertBox.style.display = 'flex';
+        }
+        if (fieldErrEl) {
+            fieldErrEl.textContent = mensaje;
+            fieldErrEl.style.display = 'block';
+        }
+        if (inputEl) {
+            inputEl.style.borderColor = '#ef4444';
+            inputEl.focus();
+        }
+    }
+
+    (function initValidacionProveedor() {
+        const form = document.getElementById('nuevoProveedorForm');
+        const nombreInp = document.getElementById('provNombreInput');
+        const rucInp = document.getElementById('provRucInput');
+        const telInp = document.getElementById('provTelefonoInput');
+        const nombreErr = document.getElementById('provNombreError');
+        const rucErr = document.getElementById('provRucError');
+        const telErr = document.getElementById('provTelefonoError');
+        const alertBox = document.getElementById('provValidationAlert');
+
+        if (!form) return;
+
+        function clearErr(inp, errEl) {
+            if (inp) inp.style.borderColor = '';
+            if (errEl) {
+                errEl.style.display = 'none';
+                errEl.textContent = '';
+            }
+            if (alertBox) alertBox.style.display = 'none';
+        }
+
+        if (nombreInp) {
+            nombreInp.addEventListener('input', () => clearErr(nombreInp, nombreErr));
+        }
+        if (rucInp) {
+            rucInp.addEventListener('input', () => {
+                rucInp.value = rucInp.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '').slice(0, 20);
+                clearErr(rucInp, rucErr);
+            });
+        }
+        if (telInp) {
+            telInp.addEventListener('input', () => {
+                telInp.value = telInp.value.replace(/[^0-9+\-()\s]/g, '').slice(0, 20);
+                clearErr(telInp, telErr);
+            });
+        }
+
+        form.addEventListener('submit', function(e) {
+            const nombre = (nombreInp?.value || '').trim().replace(/\s+/g, ' ');
+            const ruc = (rucInp?.value || '').trim().replace(/\s+/g, '').toUpperCase();
+            const tel = (telInp?.value || '').trim().replace(/\s+/g, ' ');
+
+            if (nombreInp) nombreInp.value = nombre;
+            if (rucInp) rucInp.value = ruc;
+            if (telInp) telInp.value = tel;
+
+            // 1. Nombre / Razón Social
+            const letrasNombre = nombre.match(/[A-Za-zÁÉÍÓÚáéíóúÑñ]/g) || [];
+            if (nombre.length < 3 || nombre.length > 150) {
+                e.preventDefault();
+                mostrarErrorProveedor("El nombre o razón social es obligatorio (entre 3 y 150 caracteres).", nombreInp, nombreErr);
+                return;
+            }
+            if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,&\-/()'"°]+$/.test(nombre) || letrasNombre.length < 2) {
+                e.preventDefault();
+                mostrarErrorProveedor("Ingresa un nombre o razón social válido con letras reales (no solo números o símbolos).", nombreInp, nombreErr);
+                return;
+            }
+            if (/(.)\1{3,}/i.test(nombre.replace(/\s+/g, ''))) {
+                e.preventDefault();
+                mostrarErrorProveedor("Ingresa un nombre o razón social válido sin caracteres repetidos.", nombreInp, nombreErr);
+                return;
+            }
+
+            // 2. RUC
+            const genericosRuc = ['S/N', 'SN', 'NA', 'N/A', 'NONE', 'NINGUNO', 'SINRUC', 'GENERIC', 'GENERIC-001', '0', '00000000'];
+            const rucAlnum = ruc.replace(/-/g, '');
+            const digitosRuc = rucAlnum.match(/[0-9]/g) || [];
+            const distinctRucDigits = new Set(digitosRuc);
+            const distinctRucChars = new Set(rucAlnum.split(''));
+
+            if (!ruc || genericosRuc.includes(ruc)) {
+                e.preventDefault();
+                mostrarErrorProveedor("El RUC del proveedor es obligatorio y debe ser válido (ej. J0310000045821).", rucInp, rucErr);
+                return;
+            }
+            if (ruc.length < 8 || ruc.length > 20 || !/^[A-Z0-9\-]+$/.test(ruc) || digitosRuc.length < 6 || distinctRucDigits.size < 2 || distinctRucChars.size <= 2) {
+                e.preventDefault();
+                mostrarErrorProveedor("Ingresa un RUC válido de 8 a 20 caracteres alfanuméricos sin espacios (con al menos 6 dígitos reales).", rucInp, rucErr);
+                return;
+            }
+            if (/^[A-Z]/.test(rucAlnum) && !/^[JECN][0-9]{9,19}$/.test(rucAlnum)) {
+                e.preventDefault();
+                mostrarErrorProveedor("Para RUC jurídico de Nicaragua inicia con J, E, C o N seguido de dígitos reales (ej. J0310000045821).", rucInp, rucErr);
+                return;
+            }
+
+            // 3. Teléfono
+            if (!tel) {
+                e.preventDefault();
+                mostrarErrorProveedor("El teléfono de contacto del proveedor es obligatorio.", telInp, telErr);
+                return;
+            }
+            if (/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(tel)) {
+                e.preventDefault();
+                mostrarErrorProveedor("El teléfono no permite letras; ingresa solo números (ej. 2255-7800 o 8888-8888).", telInp, telErr);
+                return;
+            }
+            const rawDigits = tel.replace(/\D/g, '');
+            const localDigits = (rawDigits.startsWith('505') && rawDigits.length === 11) ? rawDigits.slice(3) : rawDigits;
+            if (localDigits.length === 8) {
+                if (!/^[2578]/.test(localDigits)) {
+                    e.preventDefault();
+                    mostrarErrorProveedor("En Nicaragua el teléfono fijo debe iniciar con 2 o el celular con 5, 7 u 8 (8 dígitos).", telInp, telErr);
+                    return;
+                }
+            } else if (rawDigits.length < 10 || rawDigits.length > 15) {
+                e.preventDefault();
+                mostrarErrorProveedor("Ingresa un teléfono válido de Nicaragua (8 dígitos) o internacional (10 a 15 dígitos).", telInp, telErr);
+                return;
+            }
+            if (new Set(localDigits.split('')).size === 1 || ['12345678', '87654321', '01234567', '76543210'].includes(localDigits)) {
+                e.preventDefault();
+                mostrarErrorProveedor("Ingresa un teléfono empresarial real (no números repetidos ni secuencias ficticias).", telInp, telErr);
+                return;
+            }
+        });
+
+        {% if prov_error %}
+        abrirModalNuevoProveedor();
+        {% endif %}
+    })();
+</script>
+
+{% endblock %}

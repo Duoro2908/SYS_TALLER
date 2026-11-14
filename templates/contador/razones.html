@@ -1,0 +1,1454 @@
+{% extends "base.html" %}
+
+{% block title %}Razones Financieras - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Módulo de Razones Financieras{% endblock %}
+
+{% block content %}
+<style>
+    /* ==========================================================================
+       ESTILOS CORPORATIVOS: MOTOR DE RAZONES FINANCIERAS
+       ========================================================================== */
+    .razones-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 26px;
+        padding-bottom: 50px;
+    }
+
+    /* BARRA SUPERIOR DE CONTROL Y PERÍODO */
+    .control-toolbar {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 18px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-title h2 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .toolbar-title p {
+        margin: 3px 0 0 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .period-form-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg-primary);
+        padding: 5px 8px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .period-select {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .btn-period-arrow {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-period-arrow:hover {
+        background: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+    }
+
+    .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-nav-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+    }
+
+    .btn-nav-action:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+    }
+
+    .btn-nav-action.primary {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+
+    .btn-nav-action.primary:hover {
+        background: #1d4ed8;
+        color: white;
+    }
+
+    /* HERO: SEMÁFORO GLOBAL Y SCORE FINANCIERO */
+    .health-hero-card {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%), var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 24px 28px;
+        display: grid;
+        grid-template-columns: 1.4fr 1.6fr;
+        gap: 24px;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    @media (max-width: 900px) {
+        .health-hero-card {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .hero-score-box {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .score-dial {
+        width: 100px;
+        height: 100px;
+        min-width: 100px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border: 8px solid;
+        background: var(--bg-surface);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .score-dial.dial-success {
+        border-color: #10b981;
+        color: #10b981;
+    }
+    .score-dial.dial-warning {
+        border-color: #f59e0b;
+        color: #f59e0b;
+    }
+    .score-dial.dial-danger {
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+
+    .score-dial .score-number {
+        font-size: 1.65rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .score-dial .score-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 3px;
+    }
+
+    .hero-diagnosis h3 {
+        margin: 0 0 6px 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .hero-diagnosis p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .hero-counters-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .counter-pill {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 4px;
+        transition: transform 0.2s ease;
+    }
+
+    .counter-pill:hover {
+        transform: translateY(-2px);
+    }
+
+    .counter-pill.pill-saludable { border-top: 4px solid #10b981; }
+    .counter-pill.pill-precaucion { border-top: 4px solid #f59e0b; }
+    .counter-pill.pill-critico { border-top: 4px solid #ef4444; }
+
+    .counter-pill .num {
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .counter-pill.pill-saludable .num { color: #10b981; }
+    .counter-pill.pill-precaucion .num { color: #f59e0b; }
+    .counter-pill.pill-critico .num { color: #ef4444; }
+
+    .counter-pill .lbl {
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+    }
+
+    /* BARRA DE TABS DE FILTRO Y SELECTOR DE VISTA */
+    .filter-tabs-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 12px;
+    }
+
+    .category-tabs-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .cat-tab-btn {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .cat-tab-btn:hover {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        border-color: var(--accent-primary);
+    }
+
+    .cat-tab-btn.active {
+        background: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
+    }
+
+    .cat-tab-btn .badge-count {
+        background: rgba(0, 0, 0, 0.08);
+        padding: 2px 7px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+    .cat-tab-btn.active .badge-count {
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+    }
+
+    .view-mode-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-surface);
+        padding: 4px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+    }
+
+    .view-mode-btn {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .view-mode-btn.active {
+        background: var(--bg-primary);
+        color: var(--accent-primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* SECCIONES POR CATEGORÍA */
+    .category-section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        transition: opacity 0.2s ease;
+    }
+
+    .category-header-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        background: var(--bg-surface);
+        border-left: 5px solid;
+        border-radius: 12px;
+        padding: 14px 20px;
+        border-top: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .category-header-banner.cat-liquidez { border-left-color: #06b6d4; }
+    .category-header-banner.cat-actividad { border-left-color: #3b82f6; }
+    .category-header-banner.cat-endeudamiento { border-left-color: #8b5cf6; }
+    .category-header-banner.cat-rentabilidad { border-left-color: #10b981; }
+    .category-header-banner.cat-cobertura { border-left-color: #f59e0b; }
+
+    .category-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .category-header-left .cat-icon-circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+    }
+    .cat-liquidez .cat-icon-circle { background: rgba(6, 182, 212, 0.12); color: #06b6d4; }
+    .cat-actividad .cat-icon-circle { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+    .cat-endeudamiento .cat-icon-circle { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
+    .cat-rentabilidad .cat-icon-circle { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    .cat-cobertura .cat-icon-circle { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+
+    .category-header-titles h3 {
+        margin: 0;
+        font-size: 1.12rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .category-header-titles p {
+        margin: 2px 0 0 0;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+    }
+
+    /* GRID DE TARJETAS DE RAZÓN */
+    .ratios-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 18px;
+    }
+
+    .ratio-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 14px;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        position: relative;
+    }
+
+    .ratio-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-primary);
+    }
+
+    .ratio-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .ratio-badge-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ratio-icon-avatar {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+    }
+
+    .ratio-name-box h4 {
+        margin: 0;
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.3;
+    }
+
+    .ratio-name-box .category-tag {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* BADGES DE SEMÁFORO */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .status-badge.badge-success {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-badge.badge-warning {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .status-badge.badge-danger {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .status-badge.badge-pending {
+        background: rgba(148, 163, 184, 0.15);
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .ratio-card.status-pending {
+        border-left: 4px solid #94a3b8;
+    }
+    .ratio-card.status-pending .metric-val {
+        color: #94a3b8;
+    }
+
+    .counter-pill.pill-pendiente { border-top: 4px solid #94a3b8; }
+    .counter-pill.pill-pendiente .num { color: #94a3b8; }
+
+    .score-dial.dial-pending {
+        border-color: #94a3b8;
+        box-shadow: 0 0 15px rgba(148, 163, 184, 0.2);
+    }
+    .score-dial.dial-pending .score-number {
+        color: #94a3b8;
+    }
+
+    /* CARD DE PERÍODO NO CERRADO */
+    .unclosed-period-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.04) 0%, rgba(15, 23, 42, 0.08) 100%);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-left: 5px solid #f59e0b;
+        border-radius: 16px;
+        padding: 22px 26px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+    [data-theme="dark"] .unclosed-period-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%);
+        border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .unclosed-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .unclosed-title-box {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .unclosed-icon-avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        flex-shrink: 0;
+    }
+    .unclosed-title-box h3 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .unclosed-title-box p {
+        margin: 4px 0 0 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .unclosed-checklist {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+    }
+    .unclosed-item {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+    .unclosed-item-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .unclosed-item-name {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .unclosed-item-sub {
+        font-size: 0.76rem;
+        color: var(--text-secondary);
+    }
+    .btn-goto-cierre {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #2563eb;
+        text-decoration: none;
+        padding: 5px 12px;
+        border-radius: 8px;
+        background: rgba(37, 99, 235, 0.08);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        transition: all 0.2s;
+    }
+    .btn-goto-cierre:hover {
+        background: #2563eb;
+        color: white;
+    }
+    .badge-status-closed {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.12);
+        padding: 4px 10px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .badge-status-open {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #f59e0b;
+        background: rgba(245, 158, 11, 0.12);
+        padding: 4px 10px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-sim-mode {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #3b82f6;
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.08);
+        transition: all 0.2s;
+    }
+    .btn-sim-mode:hover {
+        background: #3b82f6;
+        color: white;
+    }
+    .btn-sim-mode.active {
+        background: #f59e0b;
+        color: white;
+        border-color: #f59e0b;
+    }
+
+    .cert-banner {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-left: 5px solid #10b981;
+        border-radius: 14px;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+    
+
+    /* SECCIÓN DEL VALOR Y META */
+    .ratio-hero-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        padding: 10px 14px;
+        background: var(--bg-primary);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .ratio-hero-metric .metric-val {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        font-feature-settings: "tnum";
+    }
+
+    .ratio-hero-metric .target-pill {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .ratio-hero-metric .target-pill strong {
+        color: var(--text-primary);
+    }
+
+    /* CONTENEDOR DE FÓRMULA */
+    .ratio-formula-container {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        background: rgba(0, 0, 0, 0.02);
+        border: 1px dashed var(--border-color);
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+    }
+
+    .formula-expression {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        color: var(--accent-primary);
+        font-weight: 600;
+    }
+
+    .formula-plugged {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+    }
+
+    /* CAJA DE INTERPRETACIÓN */
+    .ratio-interpretation-box {
+        background: var(--bg-surface);
+        border-left: 3px solid var(--border-color);
+        padding: 8px 12px;
+        border-radius: 0 8px 8px 0;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        color: var(--text-secondary);
+    }
+
+    .ratio-card.status-success .ratio-interpretation-box { border-left-color: #10b981; }
+    .ratio-card.status-warning .ratio-interpretation-box { border-left-color: #f59e0b; }
+    .ratio-card.status-danger .ratio-interpretation-box { border-left-color: #ef4444; }
+
+    /* TABLA COMPARATIVA EJECUTIVA */
+    .executive-table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .table-responsive-custom {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .razones-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        text-align: left;
+    }
+
+    .razones-table th {
+        background: var(--bg-primary);
+        color: var(--text-secondary);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.75rem;
+        padding: 14px 18px;
+        border-bottom: 2px solid var(--border-color);
+        white-space: nowrap;
+    }
+
+    .razones-table td {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .razones-table tbody tr:hover {
+        background: rgba(0, 0, 0, 0.015);
+    }
+
+    .razones-table .col-bold {
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .razones-table .col-formula {
+        font-family: monospace;
+        font-size: 0.78rem;
+        color: var(--accent-primary);
+    }
+
+    /* ESTILOS PARA IMPRESIÓN */
+    @media print {
+        header, .sidebar, .control-toolbar, .filter-tabs-container, .btn-nav-action {
+            display: none !important;
+        }
+        .razones-wrapper {
+            padding: 0 !important;
+            gap: 15px !important;
+        }
+        .health-hero-card {
+            border: 1px solid #ccc !important;
+            box-shadow: none !important;
+            break-inside: avoid;
+        }
+        .ratio-card {
+            break-inside: avoid;
+            border: 1px solid #ccc !important;
+            box-shadow: none !important;
+        }
+        .category-section {
+            break-inside: avoid;
+        }
+        body {
+            background: white !important;
+            color: black !important;
+        }
+    }
+</style>
+
+<div class="razones-wrapper">
+    <!-- BARRA SUPERIOR DE CONTROL Y SELECTOR MENSUAL -->
+    <div class="control-toolbar">
+        <div class="toolbar-left">
+            <div class="toolbar-title">
+                <h2>
+                    <i class="fa-solid fa-chart-pie" style="color: #2563eb;"></i> 
+                    Panel de Razones Financieras
+                </h2>
+                <p>Evaluación analítica y semáforos de salud financiera para Taller y Lubricantes CR</p>
+            </div>
+
+            <!-- Formulario de Selector de Período -->
+            <form method="GET" action="{{ url_for('contador.razones') }}" id="periodFilterForm" class="period-form-container">
+                {% set meses_nombres = {
+                    1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+                    5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+                    9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+                } %}
+                
+                {% set prev_anio = 2026 if (anio_seleccionado <= 2026 and mes_seleccionado == 1) else (anio_seleccionado - 1 if mes_seleccionado == 1 else anio_seleccionado) %}
+                {% set prev_mes = 1 if (anio_seleccionado <= 2026 and mes_seleccionado == 1) else (12 if mes_seleccionado == 1 else mes_seleccionado - 1) %}
+                {% set next_mes = 1 if mes_seleccionado == 12 else mes_seleccionado + 1 %}
+                {% set next_anio = anio_seleccionado + 1 if mes_seleccionado == 12 else anio_seleccionado %}
+                
+                <a href="{{ url_for('contador.razones', mes=prev_mes, anio=prev_anio) }}" class="btn-period-arrow" title="Mes Anterior">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+
+                <select name="mes" class="period-select" onchange="document.getElementById('periodFilterForm').submit();">
+                    {% for m_num in range(1, 13) %}
+                    <option value="{{ m_num }}" {% if m_num == mes_seleccionado %}selected{% endif %}>
+                        {{ meses_nombres[m_num] }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <select name="anio" class="period-select" onchange="document.getElementById('periodFilterForm').submit();">
+                    {% for y in range(2026, 2032) %}
+                    <option value="{{ y }}" {% if y == anio_seleccionado %}selected{% endif %}>
+                        {{ y }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <a href="{{ url_for('contador.razones', mes=next_mes, anio=next_anio) }}" class="btn-period-arrow" title="Mes Siguiente">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </form>
+        </div>
+
+        <!-- Botones de Enlace a Módulos Contables y Acciones -->
+        <div class="toolbar-actions">
+            <a href="{{ url_for('contador.historial_finanzas', anio=anio_seleccionado) }}" class="btn-nav-action">
+                <i class="fa-solid fa-clock-rotate-left" style="color: #f59e0b;"></i> Historial Finanzas
+            </a>
+            <a href="{{ url_for('contador.balance', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-nav-action">
+                <i class="fa-solid fa-scale-balanced" style="color: #3b82f6;"></i> Balance General
+            </a>
+            <a href="{{ url_for('contador.estado_resultados', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-nav-action">
+                <i class="fa-solid fa-receipt" style="color: #10b981;"></i> Estado de Resultados
+            </a>
+            <button type="button" onclick="window.print();" class="btn-nav-action primary">
+                <i class="fa-solid fa-print"></i> Imprimir Informe
+            </button>
+        </div>
+    </div>
+
+    <!-- BANNER DE ESTADO DEL PERÍODO -->
+    {% if ambos_cerrados %}
+    <div class="cert-banner">
+        <div>
+            <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 1.15rem; margin-right: 8px;"></i>
+            <strong>Cierre Mensual Oficial Certificado:</strong> Las razones financieras mostradas corresponden a las cifras auditadas y selladas por <strong>{{ info_cierre.autor_cierre }}</strong> el {{ info_cierre.fecha_cierre_str }}.
+        </div>
+        <span class="status-badge badge-success"><i class="fa-solid fa-lock"></i> Período Cerrado</span>
+    </div>
+    {% endif %}
+
+    <!-- HERO: SEMÁFORO GLOBAL Y SCORE FINANCIERO -->
+    <div class="health-hero-card">
+        <div class="hero-score-box">
+            {% set score_class = 'dial-success' if resumen_semaforo.score >= 75 else ('dial-warning' if resumen_semaforo.score >= 50 else 'dial-danger') %}
+            <div class="score-dial {{ score_class }}">
+                <span class="score-number">{{ resumen_semaforo.score }}%</span>
+                <span class="score-label">Salud</span>
+            </div>
+            <div class="hero-diagnosis">
+                <h3>{{ resumen_semaforo.diagnostico }}</h3>
+                <p>
+                    {% if ambos_cerrados %}
+                        Evaluación certificada de fin de mes para <strong>{{ meses_nombres[mes_seleccionado] }} {{ anio_seleccionado }}</strong> sobre <strong>{{ resumen_semaforo.total }} razones estándar</strong> del taller mecánico y venta de lubricantes.
+                    {% else %}
+                        Indicadores fijados en <strong>0</strong> para <strong>{{ meses_nombres[mes_seleccionado] }} {{ anio_seleccionado }}</strong>. Sella el Balance General y el Estado de Resultados para autocalcular las {{ resumen_semaforo.total }} razones automáticamente.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="hero-counters-grid">
+            <div class="counter-pill pill-saludable">
+                <span class="num">{{ resumen_semaforo.saludable }}</span>
+                <span class="lbl">Saludables</span>
+            </div>
+            <div class="counter-pill pill-precaucion">
+                <span class="num">{{ resumen_semaforo.precaucion }}</span>
+                <span class="lbl">Precaución</span>
+            </div>
+            <div class="counter-pill pill-critico">
+                <span class="num">{{ resumen_semaforo.critico }}</span>
+                <span class="lbl">Críticos</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEYENDA DEL SEMÁFORO DE SALUD FINANCIERA -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--text-secondary);">
+        <span style="font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-traffic-light" style="color: #f59e0b; margin-right: 6px;"></i> Semáforo Contable MiPyME:</span>
+        <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+            <span><i class="fa-solid fa-circle" style="color: #10b981; font-size: 0.65rem;"></i> <strong style="color: #10b981;">Saludable</strong> (En meta ideal)</span>
+            <span><i class="fa-solid fa-circle" style="color: #f59e0b; font-size: 0.65rem;"></i> <strong style="color: #f59e0b;">Precaución</strong> (Riesgo moderado)</span>
+            <span><i class="fa-solid fa-circle" style="color: #ef4444; font-size: 0.65rem;"></i> <strong style="color: #ef4444;">Crítico</strong> (Requiere acción)</span>
+            <span><i class="fa-solid fa-circle" style="color: #94a3b8; font-size: 0.65rem;"></i> <strong style="color: #94a3b8;">Pendiente</strong> (Mes en curso / en 0)</span>
+        </div>
+    </div>
+
+    <!-- BARRA DE TABS DE FILTRO POR CATEGORÍA Y MODO DE VISTA -->
+    <div class="filter-tabs-container">
+        <div class="category-tabs-group">
+            <button type="button" class="cat-tab-btn active" onclick="filtrarCategoria('todas', this)">
+                <i class="fa-solid fa-border-all"></i> Todas las Razones
+                <span class="badge-count">{{ resumen_semaforo.total }}</span>
+            </button>
+            <button type="button" class="cat-tab-btn" onclick="filtrarCategoria('liquidez', this)">
+                <i class="fa-solid fa-droplet" style="color: #06b6d4;"></i> 1. Liquidez
+                <span class="badge-count">{{ razones.liquidez|length }}</span>
+            </button>
+            <button type="button" class="cat-tab-btn" onclick="filtrarCategoria('actividad', this)">
+                <i class="fa-solid fa-arrows-rotate" style="color: #3b82f6;"></i> 2. Actividad
+                <span class="badge-count">{{ razones.actividad|length }}</span>
+            </button>
+            <button type="button" class="cat-tab-btn" onclick="filtrarCategoria('endeudamiento', this)">
+                <i class="fa-solid fa-scale-unbalanced" style="color: #8b5cf6;"></i> 3. Endeudamiento
+                <span class="badge-count">{{ razones.endeudamiento|length }}</span>
+            </button>
+            <button type="button" class="cat-tab-btn" onclick="filtrarCategoria('rentabilidad', this)">
+                <i class="fa-solid fa-chart-line" style="color: #10b981;"></i> 4. Rentabilidad
+                <span class="badge-count">{{ razones.rentabilidad|length }}</span>
+            </button>
+            <button type="button" class="cat-tab-btn" onclick="filtrarCategoria('cobertura', this)">
+                <i class="fa-solid fa-shield-halved" style="color: #f59e0b;"></i> 5. Cobertura
+                <span class="badge-count">{{ razones.cobertura|length }}</span>
+            </button>
+        </div>
+
+        <div class="view-mode-group">
+            <button type="button" class="view-mode-btn active" id="btnViewCards" onclick="cambiarVista('cards')">
+                <i class="fa-solid fa-grip"></i> Tarjetas
+            </button>
+            <button type="button" class="view-mode-btn" id="btnViewTable" onclick="cambiarVista('table')">
+                <i class="fa-solid fa-table-list"></i> Tabla Ejecutiva
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR 1: VISTA DE TARJETAS (5 CATEGORÍAS) -->
+    <div id="vistaTarjetas" style="display: flex; flex-direction: column; gap: 30px;">
+
+        <!-- 1. CATEGORÍA: RAZONES DE LIQUIDEZ -->
+        <section class="category-section" data-cat="liquidez">
+            <div class="category-header-banner cat-liquidez">
+                <div class="category-header-left">
+                    <div class="cat-icon-circle">
+                        <i class="fa-solid fa-droplet"></i>
+                    </div>
+                    <div class="category-header-titles">
+                        <h3>1. Razones de Liquidez</h3>
+                        <p>Miden la capacidad del taller para pagar sus deudas de corto plazo (planilla, proveedores de repuestos, alquiler, impuestos).</p>
+                    </div>
+                </div>
+                <div>
+                    <span class="status-badge badge-success">3 Indicadores de Solvencia</span>
+                </div>
+            </div>
+
+            <div class="ratios-cards-grid">
+                {% for r in razones.liquidez %}
+                <div class="ratio-card status-{{ r.badge_class }}">
+                    <div class="ratio-card-top">
+                        <div class="ratio-badge-group">
+                            <div class="ratio-icon-avatar" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;">
+                                <i class="{{ r.icono }}"></i>
+                            </div>
+                            <div class="ratio-name-box">
+                                <h4>{{ r.nombre }}</h4>
+                                <span class="category-tag">{{ r.categoria }}</span>
+                            </div>
+                        </div>
+                        <span class="status-badge badge-{{ r.badge_class }}">
+                            {% if r.estado == 'Saludable' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                            {% elif r.estado == 'Precaución' %}
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% elif r.estado == 'Pendiente' %}
+                            <i class="fa-solid fa-clock"></i>
+                            {% else %}
+                            <i class="fa-solid fa-circle-xmark"></i>
+                            {% endif %}
+                            {{ r.estado }}
+                        </span>
+                    </div>
+
+                    <div class="ratio-hero-metric">
+                        <span class="metric-val">{{ r.valor }}</span>
+                        <span class="target-pill"><i class="fa-solid fa-bullseye"></i> Meta: <strong>{{ r.meta }}</strong></span>
+                    </div>
+
+                    <div class="ratio-formula-container">
+                        <div class="formula-expression">{{ r.formula }}</div>
+                        <div class="formula-plugged">{{ r.formula_valores }}</div>
+                    </div>
+
+                    <div class="ratio-interpretation-box">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 4px;"></i> {{ r.interpretacion }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- 2. CATEGORÍA: RAZONES DE ACTIVIDAD O ROTACIÓN -->
+        <section class="category-section" data-cat="actividad">
+            <div class="category-header-banner cat-actividad">
+                <div class="category-header-left">
+                    <div class="cat-icon-circle">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </div>
+                    <div class="category-header-titles">
+                        <h3>2. Razones de Actividad o Rotación</h3>
+                        <p>Miden qué tan rápido el taller convierte su cartera e inventario de repuestos/aceites en efectivo, y la eficiencia de sus equipos.</p>
+                    </div>
+                </div>
+                <div>
+                    <span class="status-badge badge-success">7 Indicadores de Eficiencia Operativa</span>
+                </div>
+            </div>
+
+            <div class="ratios-cards-grid">
+                {% for r in razones.actividad %}
+                <div class="ratio-card status-{{ r.badge_class }}">
+                    <div class="ratio-card-top">
+                        <div class="ratio-badge-group">
+                            <div class="ratio-icon-avatar" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">
+                                <i class="{{ r.icono }}"></i>
+                            </div>
+                            <div class="ratio-name-box">
+                                <h4>{{ r.nombre }}</h4>
+                                <span class="category-tag">{{ r.categoria }}</span>
+                            </div>
+                        </div>
+                        <span class="status-badge badge-{{ r.badge_class }}">
+                            {% if r.estado == 'Saludable' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                            {% elif r.estado == 'Precaución' %}
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% elif r.estado == 'Pendiente' %}
+                            <i class="fa-solid fa-clock"></i>
+                            {% else %}
+                            <i class="fa-solid fa-circle-xmark"></i>
+                            {% endif %}
+                            {{ r.estado }}
+                        </span>
+                    </div>
+
+                    <div class="ratio-hero-metric">
+                        <span class="metric-val">{{ r.valor }}</span>
+                        <span class="target-pill"><i class="fa-solid fa-bullseye"></i> Meta: <strong>{{ r.meta }}</strong></span>
+                    </div>
+
+                    <div class="ratio-formula-container">
+                        <div class="formula-expression">{{ r.formula }}</div>
+                        <div class="formula-plugged">{{ r.formula_valores }}</div>
+                    </div>
+
+                    <div class="ratio-interpretation-box">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 4px;"></i> {{ r.interpretacion }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- 3. CATEGORÍA: RAZONES DE ENDEUDAMIENTO -->
+        <section class="category-section" data-cat="endeudamiento">
+            <div class="category-header-banner cat-endeudamiento">
+                <div class="category-header-left">
+                    <div class="cat-icon-circle">
+                        <i class="fa-solid fa-scale-unbalanced"></i>
+                    </div>
+                    <div class="category-header-titles">
+                        <h3>3. Razones de Endeudamiento</h3>
+                        <p>Miden qué proporción del taller está financiada por terceros (bancos, proveedores) frente al capital propio.</p>
+                    </div>
+                </div>
+                <div>
+                    <span class="status-badge badge-warning">3 Indicadores de Estructura de Capital</span>
+                </div>
+            </div>
+
+            <div class="ratios-cards-grid">
+                {% for r in razones.endeudamiento %}
+                <div class="ratio-card status-{{ r.badge_class }}">
+                    <div class="ratio-card-top">
+                        <div class="ratio-badge-group">
+                            <div class="ratio-icon-avatar" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">
+                                <i class="{{ r.icono }}"></i>
+                            </div>
+                            <div class="ratio-name-box">
+                                <h4>{{ r.nombre }}</h4>
+                                <span class="category-tag">{{ r.categoria }}</span>
+                            </div>
+                        </div>
+                        <span class="status-badge badge-{{ r.badge_class }}">
+                            {% if r.estado == 'Saludable' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                            {% elif r.estado == 'Precaución' %}
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% elif r.estado == 'Pendiente' %}
+                            <i class="fa-solid fa-clock"></i>
+                            {% else %}
+                            <i class="fa-solid fa-circle-xmark"></i>
+                            {% endif %}
+                            {{ r.estado }}
+                        </span>
+                    </div>
+
+                    <div class="ratio-hero-metric">
+                        <span class="metric-val">{{ r.valor }}</span>
+                        <span class="target-pill"><i class="fa-solid fa-bullseye"></i> Meta: <strong>{{ r.meta }}</strong></span>
+                    </div>
+
+                    <div class="ratio-formula-container">
+                        <div class="formula-expression">{{ r.formula }}</div>
+                        <div class="formula-plugged">{{ r.formula_valores }}</div>
+                    </div>
+
+                    <div class="ratio-interpretation-box">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 4px;"></i> {{ r.interpretacion }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- 4. CATEGORÍA: RAZONES DE RENTABILIDAD -->
+        <section class="category-section" data-cat="rentabilidad">
+            <div class="category-header-banner cat-rentabilidad">
+                <div class="category-header-left">
+                    <div class="cat-icon-circle">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div class="category-header-titles">
+                        <h3>4. Razones de Rentabilidad</h3>
+                        <p>Miden cuánto gana el taller frente a sus ventas de servicios/repuestos, sus activos y su patrimonio.</p>
+                    </div>
+                </div>
+                <div>
+                    <span class="status-badge badge-success">5 Indicadores de Retorno y Margen</span>
+                </div>
+            </div>
+
+            <div class="ratios-cards-grid">
+                {% for r in razones.rentabilidad %}
+                <div class="ratio-card status-{{ r.badge_class }}">
+                    <div class="ratio-card-top">
+                        <div class="ratio-badge-group">
+                            <div class="ratio-icon-avatar" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                                <i class="{{ r.icono }}"></i>
+                            </div>
+                            <div class="ratio-name-box">
+                                <h4>{{ r.nombre }}</h4>
+                                <span class="category-tag">{{ r.categoria }}</span>
+                            </div>
+                        </div>
+                        <span class="status-badge badge-{{ r.badge_class }}">
+                            {% if r.estado == 'Saludable' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                            {% elif r.estado == 'Precaución' %}
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% elif r.estado == 'Pendiente' %}
+                            <i class="fa-solid fa-clock"></i>
+                            {% else %}
+                            <i class="fa-solid fa-circle-xmark"></i>
+                            {% endif %}
+                            {{ r.estado }}
+                        </span>
+                    </div>
+
+                    <div class="ratio-hero-metric">
+                        <span class="metric-val">{{ r.valor }}</span>
+                        <span class="target-pill"><i class="fa-solid fa-bullseye"></i> Meta: <strong>{{ r.meta }}</strong></span>
+                    </div>
+
+                    <div class="ratio-formula-container">
+                        <div class="formula-expression">{{ r.formula }}</div>
+                        <div class="formula-plugged">{{ r.formula_valores }}</div>
+                    </div>
+
+                    <div class="ratio-interpretation-box">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 4px;"></i> {{ r.interpretacion }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- 5. CATEGORÍA: RAZONES DE COBERTURA -->
+        <section class="category-section" data-cat="cobertura">
+            <div class="category-header-banner cat-cobertura">
+                <div class="category-header-left">
+                    <div class="cat-icon-circle">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="category-header-titles">
+                        <h3>5. Razones de Cobertura</h3>
+                        <p>Miden la capacidad de las utilidades y del flujo de caja del taller para cubrir los intereses y cuotas de préstamos.</p>
+                    </div>
+                </div>
+                <div>
+                    <span class="status-badge badge-warning">2 Indicadores de Servicio de Deuda</span>
+                </div>
+            </div>
+
+            <div class="ratios-cards-grid">
+                {% for r in razones.cobertura %}
+                <div class="ratio-card status-{{ r.badge_class }}">
+                    <div class="ratio-card-top">
+                        <div class="ratio-badge-group">
+                            <div class="ratio-icon-avatar" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
+                                <i class="{{ r.icono }}"></i>
+                            </div>
+                            <div class="ratio-name-box">
+                                <h4>{{ r.nombre }}</h4>
+                                <span class="category-tag">{{ r.categoria }}</span>
+                            </div>
+                        </div>
+                        <span class="status-badge badge-{{ r.badge_class }}">
+                            {% if r.estado == 'Saludable' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                            {% elif r.estado == 'Precaución' %}
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% elif r.estado == 'Pendiente' %}
+                            <i class="fa-solid fa-clock"></i>
+                            {% else %}
+                            <i class="fa-solid fa-circle-xmark"></i>
+                            {% endif %}
+                            {{ r.estado }}
+                        </span>
+                    </div>
+
+                    <div class="ratio-hero-metric">
+                        <span class="metric-val">{{ r.valor }}</span>
+                        <span class="target-pill"><i class="fa-solid fa-bullseye"></i> Meta: <strong>{{ r.meta }}</strong></span>
+                    </div>
+
+                    <div class="ratio-formula-container">
+                        <div class="formula-expression">{{ r.formula }}</div>
+                        <div class="formula-plugged">{{ r.formula_valores }}</div>
+                    </div>
+
+                    <div class="ratio-interpretation-box">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 4px;"></i> {{ r.interpretacion }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+    </div>
+
+    <!-- CONTENEDOR 2: VISTA DE TABLA EJECUTIVA (OCULTA POR DEFECTO) -->
+    <div id="vistaTabla" style="display: none;">
+        <div class="executive-table-card">
+            <div class="table-responsive-custom">
+                <table class="razones-table">
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Razón Financiera</th>
+                            <th>Fórmula Teórica</th>
+                            <th>Valores Aplicados (Período)</th>
+                            <th>Resultado</th>
+                            <th>Meta Ideal</th>
+                            <th>Semáforo</th>
+                            <th>Interpretación Operativa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set todas_razones = [
+                            ('1. Liquidez', razones.liquidez),
+                            ('2. Actividad', razones.actividad),
+                            ('3. Endeudamiento', razones.endeudamiento),
+                            ('4. Rentabilidad', razones.rentabilidad),
+                            ('5. Cobertura', razones.cobertura)
+                        ] %}
+                        {% for cat_nombre, lista in todas_razones %}
+                            {% for r in lista %}
+                            <tr data-cat-row="{{ r.categoria|lower }}">
+                                <td>
+                                    <span style="font-weight: 700; color: var(--text-secondary); font-size: 0.8rem;">
+                                        {{ cat_nombre }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i class="{{ r.icono }}" style="color: var(--accent-primary);"></i>
+                                        <span style="font-weight: 600;">{{ r.nombre }}</span>
+                                    </div>
+                                </td>
+                                <td class="col-formula">{{ r.formula }}</td>
+                                <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ r.formula_valores }}</td>
+                                <td class="col-bold">{{ r.valor }}</td>
+                                <td><span style="font-weight: 600; font-size: 0.82rem; color: var(--text-secondary);">{{ r.meta }}</span></td>
+                                <td>
+                                    <span class="status-badge badge-{{ r.badge_class }}">
+                                        {% if r.estado == 'Saludable' %}
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        {% elif r.estado == 'Precaución' %}
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                        {% elif r.estado == 'Pendiente' %}
+                                        <i class="fa-solid fa-clock"></i>
+                                        {% else %}
+                                        <i class="fa-solid fa-circle-xmark"></i>
+                                        {% endif %}
+                                        {{ r.estado }}
+                                    </span>
+                                </td>
+                                <td style="max-width: 320px; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
+                                    {{ r.interpretacion }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Filtro interactivo de categorías
+    function filtrarCategoria(cat, elemento) {
+        // Actualizar estado activo en botones
+        document.querySelectorAll('.cat-tab-btn').forEach(btn => btn.classList.remove('active'));
+        elemento.classList.add('active');
+
+        // Filtrar secciones en vista de tarjetas
+        const secciones = document.querySelectorAll('.category-section');
+        secciones.forEach(sec => {
+            if (cat === 'todas' || sec.dataset.cat === cat) {
+                sec.style.display = 'flex';
+            } else {
+                sec.style.display = 'none';
+            }
+        });
+
+        // Filtrar filas en vista de tabla
+        const filas = document.querySelectorAll('tr[data-cat-row]');
+        filas.forEach(fila => {
+            if (cat === 'todas' || fila.dataset.catRow.includes(cat.toLowerCase())) {
+                fila.style.display = '';
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+    }
+
+    // Selector de modo de vista (Tarjetas vs Tabla)
+    function cambiarVista(modo) {
+        const vistaTarjetas = document.getElementById('vistaTarjetas');
+        const vistaTabla = document.getElementById('vistaTabla');
+        const btnCards = document.getElementById('btnViewCards');
+        const btnTable = document.getElementById('btnViewTable');
+
+        if (modo === 'cards') {
+            vistaTarjetas.style.display = 'flex';
+            vistaTabla.style.display = 'none';
+            btnCards.classList.add('active');
+            btnTable.classList.remove('active');
+        } else {
+            vistaTarjetas.style.display = 'none';
+            vistaTabla.style.display = 'block';
+            btnTable.classList.add('active');
+            btnCards.classList.remove('active');
+        }
+    }
+</script>
+{% endblock %}

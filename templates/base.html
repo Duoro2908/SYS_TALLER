@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Taller y Lubricantes CR{% endblock %}</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font_sizes.css') }}">
+    
+    <!-- Select2 CSS for professional dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    
+        <!-- Anti-flicker theme loader -->
+    <script>
+        (function() {
+            try {
+                var currentTheme = localStorage.getItem('theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', currentTheme);
+            } catch(e) {}
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    
+    <nav class="sidebar">
+        <div class="brand" style="flex-direction: column; padding: 15px 10px; gap: 15px; text-align: center;">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Taller" style="width: 80px; height: 80px; object-fit: contain; border-radius: 50%; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" onerror="this.style.display='none'">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span style="font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;">Taller y Lubricantes CR</span>
+            </div>
+        </div>
+        
+        <div class="nav-section-title" style="font-size: 0.70rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin: 20px 0 10px 15px; font-weight: 600;">Menú del Sistema</div>
+        <div class="accordion-menu">
+
+            <!-- Módulo Principal -->
+
+            {% if session.get('rol_id') in [1] %}
+            <div class="module-header {% if request.endpoint == 'index' %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Principal</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint == 'index' %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            {% if session.get('rol_id') in [1, 1009] or 'Estadística' in session.get('rol_nombre', '') or 'Estadistica' in session.get('rol_nombre', '') %}
+            <!-- Módulo Estadística del Taller (Superadmin y Administradora de Estadística) -->
+            {% set es_taller_act = (request.endpoint in ['gerencia.estadisticas', 'estadisticas_taller'] and request.args.get('origen') != 'gerencia') %}
+            <div class="module-header {% if es_taller_act %}active{% endif %}" data-module="estadistica_taller">
+                <div class="module-title">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Estadística del Taller</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if es_taller_act %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('gerencia.estadisticas', origen='taller') }}" class="{% if es_taller_act %}active{% endif %}">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Panel Estadístico</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <!-- Módulo Gerencia -->
+            {% if session.get('rol_id') in [1, 5] %}
+            {% set es_ger_act = (request.endpoint in ['gerencia.estadisticas', 'estadisticas_taller'] and request.args.get('origen') == 'gerencia') or request.endpoint == 'gerencia' %}
+            <div class="module-header {% if es_ger_act %}active{% endif %}" data-module="gerencia">
+                <div class="module-title">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Gerencia</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if es_ger_act %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('gerencia.estadisticas', origen='gerencia') }}" class="{% if es_ger_act %}active{% endif %}">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Panel Estadístico</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('atencion.index', view='gerencia') }}">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>Sugerencias y Quejas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('atencion.clientes_list') }}">
+                        <i class="fa-solid fa-address-book"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('mechanic.ordenes_list') }}">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Órdenes de Trabajo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('cashier.cierres') }}">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Arqueo de Cajas</span>
+                    </a>
+                </li>
+          
+                <li>
+                    <a href="{{ url_for('planilla.index') }}">
+                        <i class="fa-solid fa-money-check-dollar"></i>
+                        <span>Planilla de Pago</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('contador.historial_finanzas') }}" class="{% if request.endpoint in ['contador.historial_finanzas', 'contador.resumen_finanzas'] %}active{% endif %}">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>Historial de Finanzas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('contador.historial') }}" class="{% if request.endpoint == 'contador.historial' %}active{% endif %}">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                        <span>Historial de Contabilidad</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+
+
+
+
+
+
+
+
+
+
+
+            <!-- Módulo Atención al Cliente -->
+            {% if session.get('rol_id') in [1, 1008] %}
+            <div class="module-header {% if request.endpoint and request.endpoint.startswith('atencion.') %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-headset"></i>
+                    <span>Atención al Cliente</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint and request.endpoint.startswith('atencion.') %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('atencion.index') }}">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>Sugerencias y Quejas</span>
+                    </a>
+                </li>
+                {% if session.get('rol_id') != 5 %}
+                <li>
+                    <a href="{{ url_for('atencion.gestion_citas') }}">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <span>Gestión de Citas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('atencion.citas_taller') }}">
+                        <i class="fa-solid fa-calendar-week" style="color: #f59e0b;"></i>
+                        <span>Citas Programadas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('atencion.citas_whatsapp') }}">
+                        <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i>
+                        <span>Citas WhatsApp</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li>
+                    <a href="{{ url_for('atencion.clientes_list') }}">
+                        <i class="fa-solid fa-address-book"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+            <!-- Módulo Taller -->
+            {% if session.get('rol_id') in [1, 3] %}
+            <div class="module-header {% if request.endpoint and (request.endpoint.startswith('mechanic.') or request.endpoint.startswith('taller.')) %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-wrench"></i>
+                    <span>Taller</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint and (request.endpoint.startswith('mechanic.') or request.endpoint.startswith('taller.')) %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('mechanic.citas_programadas') }}">
+                        <i class="fa-solid fa-calendar-day"></i>
+                        <span>Citas Programadas</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{{ url_for('mechanic.ordenes_list') }}">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Órdenes de Trabajo</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <!-- Módulo Caja y Ventas -->
+            {% if session.get('rol_id') in [1, 2] %}
+            <div class="module-header {% if request.endpoint and request.endpoint.startswith('cashier.') %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-cash-register"></i>
+                    <span>Caja</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint and request.endpoint.startswith('cashier.') %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('cashier.ventas_recibidas') }}">
+                        <i class="fa-solid fa-shopping-cart"></i>
+                        <span>Ventas Recibidas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('cashier.ordenes_taller') }}">
+                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                        <span>Órdenes del Taller</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('cashier.facturas') }}">
+                        <i class="fa-solid fa-file-invoice"></i>
+                        <span>Facturas Emitidas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('cashier.cierres') }}">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Control de Cajas</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <!-- Módulo Finanzas -->
+            {% if session.get('rol_id') in [1, 5] or session.get('username') == 'carlos.finanzas' %}
+            <div class="module-header {% if request.endpoint in ['contador.razones', 'contador.historial_finanzas', 'contador.resumen_finanzas'] %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-coins"></i>
+                    <span>Finanzas</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint in ['contador.razones', 'contador.historial_finanzas', 'contador.resumen_finanzas'] %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('contador.razones') }}" class="{% if request.endpoint == 'contador.razones' %}active{% endif %}">
+                        <i class="fa-solid fa-percent"></i>
+                        <span>Razones Financieras</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('contador.historial_finanzas') }}" class="{% if request.endpoint in ['contador.historial_finanzas', 'contador.resumen_finanzas'] %}active{% endif %}">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Historial</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <!-- Módulo Contabilidad -->
+            {% if session.get('rol_id') in [1, 4, 5, 6] or session.get('username') in ['carlos.contabilidad', 'carlos.finanzas'] or 'Contador' in session.get('rol_nombre', '') %}
+            <div class="module-header {% if request.endpoint in ['contador.balance', 'contador.estado_resultados', 'contador.historial', 'contador.index', 'planilla.index'] %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-calculator"></i>
+                    <span>Contabilidad</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint in ['contador.balance', 'contador.estado_resultados', 'contador.historial', 'contador.index', 'planilla.index'] %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('contador.balance') }}" class="{% if request.endpoint == 'contador.balance' %}active{% endif %}">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span>Balance General</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('contador.estado_resultados') }}" class="{% if request.endpoint == 'contador.estado_resultados' %}active{% endif %}">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        <span>Estado de Resultados</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('contador.historial') }}" class="{% if request.endpoint == 'contador.historial' %}active{% endif %}">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Historial Mensual</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('planilla.index') }}" class="{% if request.endpoint == 'planilla.index' %}active{% endif %}">
+                        <i class="fa-solid fa-money-check-dollar"></i>
+                        <span>Planilla de Pago</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <!-- Módulo Mercadotecnia -->
+            {% if session.get('rol_id') in [1, 5, 1010] or session.get('username') == 'carlos.merca' or 'Mercadotecnia' in session.get('rol_nombre', '') %}
+            <div class="module-header {% if request.endpoint and request.endpoint.startswith('mercadotecnia.') %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Mercadotecnia</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint and request.endpoint.startswith('mercadotecnia.') %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('mercadotecnia.participantes') }}" class="{% if request.endpoint == 'mercadotecnia.participantes' %}active{% endif %}">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>Clientes Participantes</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('mercadotecnia.premios') }}" class="{% if request.endpoint == 'mercadotecnia.premios' %}active{% endif %}">
+                        <i class="fa-solid fa-gift"></i>
+                        <span>Premios de la Rifa</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('mercadotecnia.resumen') }}" class="{% if request.endpoint in ['mercadotecnia.resumen', 'mercadotecnia.index'] %}active{% endif %}">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Resumen</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <!-- Módulo Recursos Humanos -->
+            {% if session.get('rol_id') in [1, 5, 1007] and session.get('username') not in ['carlos.finanzas', 'carlos.contabilidad'] %}
+            <div class="module-header {% if request.endpoint and (request.endpoint.startswith('planilla.') or 'empleado' in request.endpoint or 'rrhh' in request.endpoint) %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Recursos Humanos</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint and (request.endpoint.startswith('planilla.') or 'empleado' in request.endpoint or 'rrhh' in request.endpoint) %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('planilla.empleados') }}" class="{% if 'empleado' in request.endpoint %}active{% endif %}">
+                        <i class="fa-solid fa-users-gear"></i>
+                        <span>Administración de Personal</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('planilla.index') }}" class="{% if request.endpoint == 'planilla.index' %}active{% endif %}">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        <span>Planilla de Pago</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('planilla.contratos') }}" class="{% if 'contrato' in request.endpoint %}active{% endif %}">
+                        <i class="fa-solid fa-file-signature"></i>
+                        <span>Contratos Laborales</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('planilla.registro_mensual') }}" class="{% if 'registro_mensual' in request.endpoint or 'cierre' in request.endpoint %}active{% endif %}">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <span>Registro Mensual</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <!-- Módulo Bodega -->
+            {% if session.get('rol_id') in [1, 7] %}
+            <div class="module-header {% if request.endpoint and request.endpoint.startswith('bodega.') %}active{% endif %}">
+                <div class="module-title">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Producción(Bodega)</span>
+                </div>
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <ul class="nav-links submodule-list" {% if request.endpoint and request.endpoint.startswith('bodega.') %}style="display: block;"{% endif %}>
+                <li>
+                    <a href="{{ url_for('bodega.inventario') }}">
+                        <i class="fa-solid fa-box-open"></i>
+                        <span>Inventario Taller</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('bodega.compras') }}">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                        <span>Compras (Abastecer)</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('bodega.historial') }}">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Historial de Inventario</span>
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
+
+        </div>
+        
+        <script>
+            (function() {
+                try {
+                    var openMods = JSON.parse(localStorage.getItem('open_sidebar_modules')) || [];
+                    var nav = document.querySelector('.sidebar');
+                    if (!nav) return;
+                    var headers = nav.querySelectorAll('.module-header');
+                    for (var i = 0; i < headers.length; i++) {
+                        var h = headers[i];
+                        var titleSpan = h.querySelector('.module-title span');
+                        var title = titleSpan ? titleSpan.textContent.trim() : '';
+                        var sub = h.nextElementSibling;
+                        if (sub && sub.classList.contains('submodule-list')) {
+                            var hasAct = sub.querySelector('a.active') || sub.querySelector('a[href="' + window.location.pathname + '"]');
+                            if (openMods.indexOf(title) !== -1 || hasAct) {
+                                h.classList.add('active');
+                                sub.style.display = 'block';
+                            }
+                        }
+                    }
+                    var savedPos = sessionStorage.getItem('sidebar_scroll_pos');
+                    if (savedPos !== null) {
+                        nav.scrollTop = parseInt(savedPos, 10);
+                    }
+                } catch(e) {}
+            })();
+        </script>
+        <div class="logout-btn" style="margin-top: auto; padding-top: 20px;">
+            <ul class="nav-links">
+                <li>
+                    <a href="{{ url_for('auth.logout') }}" style="color: var(--accent-red);">
+                        <i class="fa-solid fa-right-from-bracket" style="color: var(--accent-red);"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h2 style="margin: 0; font-weight: 600;">{% block page_title %}Dashboard{% endblock %}</h2>
+                <p style="margin: 5px 0 0 0; color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    Bienvenido, {{ session.get('nombre_completo', 'Usuario') }}
+                    {% if session.get('username') == 'carlos.finanzas' %}
+                    <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
+                        <i class="fa-solid fa-coins" style="margin-right: 5px; color: #3b82f6;"></i> Contador - Finanzas
+                    </span>
+                    {% elif session.get('username') == 'carlos.contabilidad' %}
+                    <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <i class="fa-solid fa-calculator" style="margin-right: 5px; color: #10b981;"></i> Contador - Contabilidad
+                    </span>
+                    {% elif session.get('username') == 'carlos.merca' %}
+                    <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: rgba(255, 255, 255, 0.08); color: var(--text-primary); border: 1px solid var(--border-color);">
+                        <i class="fa-solid fa-laptop-code" style="margin-right: 5px; color: var(--accent-primary);"></i> Ingeniero de Sistemas - Mercadotecnia
+                    </span>
+                    {% elif session.get('rol_nombre') %}
+                    <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: rgba(255, 255, 255, 0.08); color: var(--text-primary); border: 1px solid var(--border-color);">
+                        <i class="fa-solid fa-id-badge" style="margin-right: 5px; color: var(--accent-primary);"></i> {{ session.get('rol_nombre') }}
+                    </span>
+                    {% endif %}
+                </p>
+            </div>
+            
+            <div class="user-profile" style="display: flex; align-items: center; gap: 14px;">
+                <button type="button" id="theme-toggle" class="theme-toggle-btn" title="Alternar Modo Oscuro / Modo Claro" aria-label="Cambiar tema">
+                    <i class="fa-solid fa-moon" id="theme-icon"></i>
+                    <span id="theme-text" class="theme-text">Modo Oscuro</span>
+                </button>
+            </div>
+        </header>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages" style="margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px;">
+                        {% for category, message in messages %}
+                            {% if category == 'warning' %}
+                            <div class="flash-banner flash-warning" style="background: linear-gradient(135deg, rgba(255, 179, 0, 0.12) 0%, rgba(30, 24, 12, 0.95) 100%); border: 1px solid rgba(255, 179, 0, 0.35); border-left: 5px solid #ffb300; border-radius: 12px; padding: 16px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+                                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                    <div style="background: rgba(255, 179, 0, 0.2); color: #ffb300; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; border: 1px solid rgba(255, 179, 0, 0.3);">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; color: #ffb300; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.8px; margin-bottom: 4px;">
+                                            Advertencia de Inventario / Taller
+                                        </div>
+                                        <div style="color: #f5f5f7; font-size: 0.95rem; line-height: 1.5; font-weight: 500;">
+                                            {{ message }}
+                                        </div>
+                                        {% if session.get('rol_id') in [1, 5, 7] %}
+                                        <div style="margin-top: 10px;">
+                                            <a href="{{ url_for('bodega.inventario') }}" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 179, 0, 0.15); color: #ffc107; border: 1px solid rgba(255, 179, 0, 0.4); padding: 5px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: all 0.2s;">
+                                                <i class="fa-solid fa-boxes-stacked"></i> Ir a Bodega / Agregar Nuevo Stock
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <button type="button" onclick="this.closest('.flash-banner').remove();" style="background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 1.2rem; cursor: pointer; padding: 0 4px;" title="Cerrar">×</button>
+                            </div>
+                            {% elif category == 'error' %}
+                            <div class="flash-banner flash-error" style="background: linear-gradient(135deg, rgba(255, 69, 58, 0.12) 0%, rgba(32, 16, 16, 0.95) 100%); border: 1px solid rgba(255, 69, 58, 0.35); border-left: 5px solid #ff453a; border-radius: 12px; padding: 16px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+                                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                    <div style="background: rgba(255, 69, 58, 0.2); color: #ff453a; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; border: 1px solid rgba(255, 69, 58, 0.3);">
+                                        <i class="fa-solid fa-circle-exclamation"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; color: #ff453a; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.8px; margin-bottom: 4px;">
+                                            Atención Requerida
+                                        </div>
+                                        <div style="color: #f5f5f7; font-size: 0.95rem; line-height: 1.5; font-weight: 500;">
+                                            {{ message }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="this.closest('.flash-banner').remove();" style="background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 1.2rem; cursor: pointer; padding: 0 4px;" title="Cerrar">×</button>
+                            </div>
+                            {% else %}
+                            <div class="flash-banner flash-success" style="background: linear-gradient(135deg, rgba(48, 209, 88, 0.12) 0%, rgba(16, 32, 20, 0.95) 100%); border: 1px solid rgba(48, 209, 88, 0.35); border-left: 5px solid #30d158; border-radius: 12px; padding: 16px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+                                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                    <div style="background: rgba(48, 209, 88, 0.2); color: #30d158; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; border: 1px solid rgba(48, 209, 88, 0.3);">
+                                        <i class="fa-solid fa-circle-check"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; color: #30d158; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.8px; margin-bottom: 4px;">
+                                            Operación Exitosa
+                                        </div>
+                                        <div style="color: #f5f5f7; font-size: 0.95rem; line-height: 1.5; font-weight: 500;">
+                                            {{ message }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="this.closest('.flash-banner').remove();" style="background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 1.2rem; cursor: pointer; padding: 0 4px;" title="Cerrar">×</button>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}
+            <!-- Contenido dinámico aquí -->
+            {% endblock %}
+        </div>
+    </main>
+    
+    <!-- jQuery and Select2 JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // 1. Inicializador de Select2 seguro
+            function initSelect2() {
+                if (window.jQuery && typeof jQuery.fn.select2 === 'function') {
+                    $('select.form-control').select2({
+                        width: '100%',
+                        language: {
+                            noResults: function() { return "No se encontraron resultados"; }
+                        }
+                    });
+                }
+            }
+            initSelect2();
+
+            // 2. Persistencia de acordeón del menú lateral
+            function getOpenModules() {
+                try {
+                    return JSON.parse(localStorage.getItem('open_sidebar_modules')) || [];
+                } catch(e) {
+                    return [];
+                }
+            }
+
+            function saveOpenModules(modules) {
+                try {
+                    localStorage.setItem('open_sidebar_modules', JSON.stringify(modules));
+                } catch(e) {}
+            }
+
+            const savedOpen = getOpenModules();
+            $('.module-header').each(function() {
+                const title = $(this).find('.module-title span').text().trim();
+                const $subList = $(this).next('.submodule-list');
+                const hasActive = $subList.find('a.active').length > 0 || 
+                                  $subList.find('a[href="' + window.location.pathname + '"]').length > 0;
+                
+                if (savedOpen.includes(title) || hasActive) {
+                    $(this).addClass('active');
+                    $subList.show();
+                    if (!savedOpen.includes(title)) {
+                        savedOpen.push(title);
+                        saveOpenModules(savedOpen);
+                    }
+                }
+            });
+
+            // Manejador de apertura/cierre con clic en cabecera
+            $('.module-header').click(function() {
+                const title = $(this).find('.module-title span').text().trim();
+                const $subList = $(this).next('.submodule-list');
+                const isOpening = !$(this).hasClass('active');
+                
+                $(this).toggleClass('active');
+                $subList.slideToggle(180);
+                
+                let currentOpen = getOpenModules();
+                if (isOpening) {
+                    if (!currentOpen.includes(title)) currentOpen.push(title);
+                } else {
+                    currentOpen = currentOpen.filter(t => t !== title);
+                }
+                saveOpenModules(currentOpen);
+            });
+
+            // Persistencia de scroll del menú lateral
+            const $sidebar = $('.sidebar');
+            function restoreSidebarScroll() {
+                try {
+                    const pos = sessionStorage.getItem('sidebar_scroll_pos');
+                    if (pos !== null && $sidebar.length) {
+                        $sidebar.scrollTop(parseInt(pos, 10));
+                    }
+                } catch(e) {}
+            }
+            restoreSidebarScroll();
+
+            if ($sidebar.length) {
+                $sidebar[0].addEventListener('scroll', function() {
+                    try {
+                        sessionStorage.setItem('sidebar_scroll_pos', $sidebar[0].scrollTop);
+                    } catch(e) {}
+                }, { passive: true });
+            }
+
+            // =========================================================================
+            // MOTOR PJAX ULTRA-RÁPIDO: EL MENÚ LATERAL PERMANECE 100% INMÓVIL Y SIN PARPADEO
+            // (Únicamente se actualiza el contenido principal en el círculo)
+            // =========================================================================
+            function showPjaxBar() {
+                let bar = document.getElementById('tallerPjaxBar');
+                if (!bar) {
+                    bar = document.createElement('div');
+                    bar.id = 'tallerPjaxBar';
+                    document.body.appendChild(bar);
+                }
+                bar.style.opacity = '1';
+                bar.style.width = '35%';
+            }
+
+            function completePjaxBar() {
+                const bar = document.getElementById('tallerPjaxBar');
+                if (bar) {
+                    bar.style.width = '100%';
+                    setTimeout(function() {
+                        bar.style.opacity = '0';
+                        setTimeout(function() { bar.style.width = '0%'; }, 250);
+                    }, 150);
+                }
+            }
+
+            function updateSidebarActive(targetUrl) {
+                try {
+                    const urlObj = new URL(targetUrl, window.location.origin);
+                    const targetPath = urlObj.pathname;
+                    $('.sidebar .nav-links a').removeClass('active');
+                    $('.sidebar .nav-links a').each(function() {
+                        const href = $(this).attr('href');
+                        if (href) {
+                            const linkPath = new URL(href, window.location.origin).pathname;
+                            if (linkPath === targetPath) {
+                                $(this).addClass('active');
+                                const $parentH = $(this).closest('.submodule-list').prev('.module-header');
+                                if ($parentH.length) {
+                                    $parentH.addClass('active');
+                                    $(this).closest('.submodule-list').show();
+                                    const title = $parentH.find('.module-title span').text().trim();
+                                    let open = getOpenModules();
+                                    if (!open.includes(title)) {
+                                        open.push(title);
+                                        saveOpenModules(open);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } catch(e) {}
+            }
+
+            function pjaxNavigate(url, pushState) {
+                if (pushState === undefined) pushState = true;
+                showPjaxBar();
+                updateSidebarActive(url, window._lastPjaxClickedLink || null); window._lastPjaxClickedLink = null;
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function(res) {
+                    if (res.redirected && (res.url.includes('/login') || res.url.includes('/auth'))) {
+                        window.location.href = res.url;
+                        return null;
+                    }
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.text();
+                })
+                .then(function(html) {
+                    if (!html) return;
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newMain = doc.querySelector('main.main-content');
+                    const currentMain = document.querySelector('main.main-content');
+
+                    if (!newMain || !currentMain) {
+                        window.location.href = url;
+                        return;
+                    }
+
+                    if (doc.title) document.title = doc.title;
+                    currentMain.innerHTML = newMain.innerHTML;
+
+                    if (pushState) {
+                        window.history.pushState({ pjax: true, url: url }, '', url);
+                    }
+
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+
+                    // Re-ejecutar scripts propios de la vista cargada
+                    const scripts = currentMain.querySelectorAll('script');
+                    scripts.forEach(function(oldScript) {
+                        const newScript = document.createElement('script');
+                        Array.from(oldScript.attributes).forEach(function(attr) {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    });
+
+                    // Re-inicializar componentes visuales de la vista
+                    initSelect2();
+                    if (window.initThemeToggle) window.initThemeToggle();
+                    if (window.initEstadisticasCharts) {
+                        setTimeout(function() { window.initEstadisticasCharts(); }, 50);
+                    }
+
+                    completePjaxBar();
+                })
+                .catch(function(err) {
+                    completePjaxBar();
+                    window.location.href = url;
+                });
+            }
+
+            // Delegación de clics en la barra lateral para navegación fluida sin recargar ni mover el menú
+            $('.sidebar').on('click', '.nav-links a', function(e) {
+                window._lastPjaxClickedLink = $(this);
+                const href = $(this).attr('href');
+                if (!href || href === '#' || href.startsWith('javascript:')) return;
+                if (href.includes('logout') || href.includes('/auth/logout') || $(this).attr('target') === '_blank' || $(this).data('no-pjax')) {
+                    return; // Cierre de sesión y enlaces externos usan navegación normal
+                }
+                
+                try {
+                    const targetUrl = new URL(href, window.location.origin);
+                    if (targetUrl.origin === window.location.origin) {
+                        e.preventDefault();
+                        pjaxNavigate(targetUrl.href, true);
+                    }
+                } catch(err) {}
+            });
+
+            window.addEventListener('popstate', function(e) {
+                if (e.state && e.state.pjax && e.state.url) {
+                    pjaxNavigate(e.state.url, false);
+                }
+            });
+        });
+    </script>
+
+    
+    <!-- Sistema Global de Confirmaciones y Avisos Dentro del Sistema (Cero alert/confirm nativos) -->
+    <style>
+        .taller-sys-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 999999;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+        .taller-sys-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            max-width: 440px;
+            width: 100%;
+            padding: 26px 24px 22px;
+            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+            text-align: center;
+            color: var(--text-primary);
+            animation: tallerSysPop 0.18s ease-out;
+        }
+        @keyframes tallerSysPop {
+            from { opacity: 0; transform: scale(0.95) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .taller-sys-icon {
+            width: 54px;
+            height: 54px;
+            margin: 0 auto 14px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.45rem;
+        }
+        .taller-sys-title {
+            margin: 0 0 8px 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .taller-sys-msg {
+            margin: 0 0 22px 0;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        .taller-sys-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .taller-sys-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+        .taller-sys-btn:hover { transform: translateY(-1px); opacity: 0.95; }
+        .taller-sys-btn-cancel {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .taller-sys-btn-ok {
+            background: #0a84ff;
+            color: #ffffff;
+        }
+    </style>
+
+    <div id="tallerSystemDialogModal" class="taller-sys-backdrop" onclick="if(event.target === this) window._closeTallerSysDialog(false);">
+        <div class="taller-sys-card" role="dialog" aria-modal="true" aria-labelledby="tallerSysTitle">
+            <div id="tallerSysIconWrap" class="taller-sys-icon" style="background: rgba(10, 132, 255, 0.15); color: #0a84ff;">
+                <i id="tallerSysIcon" class="fa-solid fa-circle-question"></i>
+            </div>
+            <h3 id="tallerSysTitle" class="taller-sys-title">Confirmar acción</h3>
+            <p id="tallerSysMsg" class="taller-sys-msg"></p>
+            <div class="taller-sys-actions">
+                <button type="button" id="tallerSysCancelBtn" class="taller-sys-btn taller-sys-btn-cancel" onclick="window._closeTallerSysDialog(false)">Cancelar</button>
+                <button type="button" id="tallerSysOkBtn" class="taller-sys-btn taller-sys-btn-ok" onclick="window._closeTallerSysDialog(true)">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            let activeCallback = null;
+
+            window._closeTallerSysDialog = function(confirmed) {
+                const modal = document.getElementById('tallerSystemDialogModal');
+                if (modal) modal.style.display = 'none';
+                const cb = activeCallback;
+                activeCallback = null;
+                if (typeof cb === 'function') cb(Boolean(confirmed));
+            };
+
+            function openSysDialog(opts) {
+                const modal = document.getElementById('tallerSystemDialogModal');
+                if (!modal) return;
+                const iconWrap = document.getElementById('tallerSysIconWrap');
+                const iconEl = document.getElementById('tallerSysIcon');
+                const titleEl = document.getElementById('tallerSysTitle');
+                const msgEl = document.getElementById('tallerSysMsg');
+                const cancelBtn = document.getElementById('tallerSysCancelBtn');
+                const okBtn = document.getElementById('tallerSysOkBtn');
+
+                const color = opts.confirmColor || '#0a84ff';
+                iconWrap.style.background = opts.iconBg || (color + '22');
+                iconWrap.style.color = color;
+                iconEl.className = opts.iconClass || 'fa-solid fa-circle-question';
+                titleEl.textContent = opts.title || 'Confirmación del Sistema';
+                msgEl.textContent = opts.message || '';
+                okBtn.textContent = opts.confirmText || 'Confirmar';
+                okBtn.style.background = color;
+                cancelBtn.textContent = opts.cancelText || 'Cancelar';
+                cancelBtn.style.display = opts.hideCancel ? 'none' : 'inline-flex';
+                activeCallback = opts.onResult || null;
+                modal.style.display = 'flex';
+            }
+
+            window.tallerConfirm = function(optsOrMsg, onConfirm) {
+                const opts = (typeof optsOrMsg === 'string') ? { message: optsOrMsg, onConfirm: onConfirm } : (optsOrMsg || {});
+                openSysDialog({
+                    title: opts.title || 'Confirmar Acción',
+                    message: opts.message || '¿Deseas continuar con esta acción?',
+                    confirmText: opts.confirmText || 'Confirmar',
+                    cancelText: opts.cancelText || 'Cancelar',
+                    confirmColor: opts.confirmColor || '#0a84ff',
+                    iconClass: opts.iconClass || 'fa-solid fa-circle-question',
+                    hideCancel: false,
+                    onResult: function(ok) {
+                        if (ok && typeof opts.onConfirm === 'function') opts.onConfirm();
+                        else if (!ok && typeof opts.onCancel === 'function') opts.onCancel();
+                    }
+                });
+            };
+
+            window.tallerConfirmSubmit = function(event, opts) {
+                if (event && typeof event.preventDefault === 'function') event.preventDefault();
+                const form = event && event.target ? (event.target.tagName === 'FORM' ? event.target : event.target.closest('form')) : null;
+                if (!form) return false;
+                window.tallerConfirm(Object.assign({}, opts || {}, {
+                    onConfirm: function() {
+                        HTMLFormElement.prototype.submit.call(form);
+                    }
+                }));
+                return false;
+            };
+
+            window.tallerAlert = function(message, tipo, title, onClose) {
+                const map = {
+                    success: { color: '#10b981', icon: 'fa-solid fa-circle-check', defTitle: 'Operación Exitosa' },
+                    error:   { color: '#ef4444', icon: 'fa-solid fa-circle-exclamation', defTitle: 'Atención' },
+                    warning: { color: '#f59e0b', icon: 'fa-solid fa-triangle-exclamation', defTitle: 'Aviso del Sistema' },
+                    info:    { color: '#0a84ff', icon: 'fa-solid fa-circle-info', defTitle: 'Información del Sistema' }
+                };
+                const cfg = map[tipo || 'info'] || map.info;
+                openSysDialog({
+                    title: title || cfg.defTitle,
+                    message: message || '',
+                    confirmText: 'Entendido',
+                    confirmColor: cfg.color,
+                    iconClass: cfg.icon,
+                    hideCancel: true,
+                    onResult: function() {
+                        if (typeof onClose === 'function') onClose();
+                    }
+                });
+            };
+
+            // Intercept native browser alert to guarantee no "127.0.0.1:5000 dice:" native popups
+            window.alert = function(msg) {
+                window.tallerAlert(String(msg || ''), 'info', 'Aviso del Sistema');
+            };
+        })();
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,2059 @@
+{% extends "base.html" %}
+
+{% block title %}Estado de Resultados - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Estado de Resultados{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos Corporativos Financieros */
+    .accounting-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding-bottom: 50px;
+    }
+
+    /* Barra Superior de Control y Período */
+    .period-control-bar {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 18px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .period-selector-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .period-title h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .period-title p {
+        margin: 3px 0 0 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .period-select-custom {
+        padding: 8px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .action-buttons-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-cont-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+    }
+
+    .btn-cont-action:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-cont-action.primary {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+    .btn-cont-action.primary:hover { background: #1d4ed8; }
+
+    .btn-cont-action.success {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    .btn-cont-action.success:hover { background: #059669; }
+
+    .btn-cont-action.warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+    .btn-cont-action.warning:hover {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-cont-action.danger-sealed {
+        background: #dc2626;
+        color: #ffffff;
+        border-color: #dc2626;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+    }
+    .btn-cont-action.danger-sealed:hover {
+        background: #b91c1c;
+        border-color: #b91c1c;
+        color: #ffffff;
+    }
+
+    /* Tarjetas de Indicadores Clave */
+    .kpi-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 16px;
+    }
+
+    .kpi-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--kpi-color, var(--accent-primary));
+    }
+
+    .kpi-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-card-header i {
+        font-size: 1.1rem;
+        color: var(--kpi-color, var(--accent-primary));
+    }
+
+    .kpi-card-value {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
+    }
+
+    .kpi-card-sub {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Estado de Cierre / Conciliación */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    .status-badge.live {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .status-badge.sealed {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    /* Contenedor Principal del Estado de Resultados */
+    .report-sheet {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 40px 48px;
+        box-shadow: var(--shadow-md);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .report-sheet-header {
+        text-align: center;
+        padding-bottom: 25px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid var(--border-color);
+        position: relative;
+    }
+
+    .report-sheet-header .logo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+    }
+
+    .report-sheet-header h2 {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.5px;
+    }
+
+    .report-sheet-header h3 {
+        margin: 6px 0 0 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+    }
+
+    .report-sheet-header .subtitle {
+        margin: 6px 0 0 0;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+    }
+
+    /* Barra de Rendimiento y Márgenes */
+    .performance-bar-box {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .perf-item {
+        text-align: center;
+    }
+
+    .perf-label {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .perf-val {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+
+    /* Secciones del Estado de Resultados */
+    .statement-section {
+        margin-bottom: 32px;
+    }
+
+    .section-header {
+        background: rgba(37, 99, 235, 0.08);
+        border-left: 4px solid #2563eb;
+        padding: 10px 16px;
+        border-radius: 0 8px 8px 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .account-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 14px 9px 24px;
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        border-radius: 6px;
+        transition: background 0.15s;
+    }
+
+    .account-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    [data-theme="light"] .account-row:hover {
+        background: rgba(0, 0, 0, 0.02);
+    }
+
+    .account-code {
+        color: var(--text-secondary);
+        font-family: monospace;
+        font-size: 0.85rem;
+        margin-right: 12px;
+        font-weight: 600;
+    }
+
+    .account-name {
+        flex: 1;
+    }
+
+    .account-detail-tag {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-left: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .account-amount {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: var(--text-primary);
+    }
+
+    .subtotal-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px 10px 24px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        border-top: 1px solid var(--border-color);
+        margin-top: 6px;
+        margin-bottom: 12px;
+    }
+
+    .subtotal-row .amount {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .margin-highlight-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 18px;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin-top: 12px;
+        margin-bottom: 24px;
+    }
+
+    .margin-highlight-box.bruta {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .margin-highlight-box.operativa {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .margin-highlight-box.neta-positiva {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border: 2px solid rgba(16, 185, 129, 0.35);
+        font-size: 1.25rem;
+    }
+
+    .margin-highlight-box.neta-negativa {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border: 2px solid rgba(239, 68, 68, 0.35);
+        font-size: 1.25rem;
+    }
+
+    /* Firmas Oficiales Contables */
+    .signatures-block {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        margin-top: 55px;
+        padding-top: 35px;
+        border-top: 1px dashed var(--border-color);
+        text-align: center;
+    }
+
+    .signature-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .signature-line {
+        width: 80%;
+        border-top: 1px solid var(--text-primary);
+        margin-bottom: 10px;
+    }
+
+    .signature-name {
+        font-weight: 700;
+        font-size: 0.92rem;
+        color: var(--text-primary);
+    }
+
+    .signature-role {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    /* Modal de Detalle Transaccional */
+    .drilldown-modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(4px);
+    }
+
+    .drilldown-content {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 850px;
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 28px;
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* ESTILOS DE IMPRESIÓN PROFESIONAL (PDF) */
+    @media print {
+        @page {
+            size: letter portrait;
+            margin: 12mm 14mm;
+        }
+        html, body, .app-container, .main-content, .content, .accounting-wrapper {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            position: static !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        header, .topbar, .sidebar, .period-control-bar, .kpi-cards-grid, .action-buttons-group, .btn-cont-action, .performance-bar-box, .nav-links, .row-actions, .btn-table-icon, .flash-messages, .modal-backdrop-custom {
+            display: none !important;
+        }
+        .report-sheet {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+        }
+        .report-sheet-header h2,
+        .report-sheet-header h3,
+        .statement-row,
+        .statement-label,
+        .statement-val {
+            color: #0f172a !important;
+        }
+        .statement-row {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .section-header {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            border-left: 4px solid #0f172a !important;
+            break-after: avoid;
+            page-break-after: avoid;
+        }
+        .margin-highlight-box {
+            background: #f8fafc !important;
+            color: #000000 !important;
+            border: 1px solid #000000 !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .signatures-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="accounting-wrapper">
+
+    <!-- BARRA SUPERIOR DE CONTROL Y SELECTOR MENSUAL -->
+    <div class="period-control-bar">
+        <div class="period-selector-group">
+            <div class="period-title">
+                <h3>
+                    <i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i>
+                    Estado de Resultados
+                    {% if es_oficial_cerrado %}
+                    <span class="status-badge sealed"><i class="fa-solid fa-lock"></i> Cierre Sellado Oficial</span>
+                    {% else %}
+                    <span class="status-badge live"><i class="fa-solid fa-bolt"></i> Conciliado en Vivo</span>
+                    {% endif %}
+                </h3>
+                <p>Taller y Lubricantes CR • Período: <strong>{{ fin.periodo_texto }}</strong></p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px;">
+                <label for="periodoSelect" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Mes:</label>
+                <select id="periodoSelect" class="period-select-custom" onchange="cambiarPeriodo(this.value)">
+                    {% for p in fin.periodos_disponibles %}
+                    <option value="{{ p.mes }}-{{ p.anio }}" {% if p.mes == mes_seleccionado and p.anio == anio_seleccionado %}selected{% endif %}>
+                        {{ p.texto }}{% if p.es_actual %} (Actual){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="action-buttons-group">
+            <!-- Botón Ver Balance General del mismo período -->
+            <a href="{{ url_for('contador.balance', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-cont-action" title="Ver Balance General correspondiente">
+                <i class="fa-solid fa-scale-balanced" style="color: #2563eb;"></i>
+                Balance General
+            </a>
+
+            <!-- Botón Ver Historial Mensual -->
+            <a href="{{ url_for('contador.historial', anio=anio_seleccionado) }}" class="btn-cont-action" title="Ver Historial Comparativo por Meses">
+                <i class="fa-solid fa-clock-rotate-left" style="color: #6366f1;"></i>
+                Historial Mensual
+            </a>
+
+            <!-- Botón Desglose Gastos -->
+            <button type="button" class="btn-cont-action" onclick="abrirModalDetalle('gastos')" title="Ver gastos operativos registrados">
+                <i class="fa-solid fa-list-check"></i>
+                Ver Gastos
+            </button>
+
+            <!-- Botón Desglose Facturas -->
+            <button type="button" class="btn-cont-action" onclick="abrirModalDetalle('facturas')" title="Ver facturas del mes">
+                <i class="fa-solid fa-receipt"></i>
+                Ver Facturas
+            </button>
+
+            <!-- Botón Imprimir / PDF -->
+            <button type="button" class="btn-cont-action primary" onclick="window.print()" title="Imprimir reporte formal en formato ejecutivo">
+                <i class="fa-solid fa-print"></i>
+                Imprimir / PDF
+            </button>
+
+            <!-- Recalcular en vivo -->
+            <form method="POST" action="{{ url_for('contador.estado_resultados', mes=mes_seleccionado, anio=anio_seleccionado) }}" style="display: inline;">
+                <input type="hidden" name="action" value="recalcular_vivo">
+                <button type="submit" class="btn-cont-action" title="Recalcular inmediatamente con las transacciones de BD">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    Recalcular en Vivo
+                </button>
+            </form>
+
+            <!-- Botón Agregar Cuenta Contable -->
+            <button type="button" class="btn-cont-action primary" onclick="abrirModalAgregarCuenta('EstadoResultados')" title="Añadir nueva cuenta contable o ajuste dinámico">
+                <i class="fa-solid fa-plus-circle"></i> Agregar Cuenta
+            </button>
+
+            <!-- Sellar / Desellar Cierre Oficial -->
+            {% if not es_oficial_cerrado %}
+            <button type="button" class="btn-cont-action success" onclick="abrirModalCierreOficial('sellar')" title="Sella y archiva el Estado de Resultados oficial del mes para auditoría y cálculo de razones">
+                <i class="fa-solid fa-shield-halved"></i>
+                Sellar Cierre Oficial
+            </button>
+            {% else %}
+            <button type="button" class="btn-cont-action danger-sealed" onclick="abrirModalCierreOficial('desellar')" title="Estado de Resultados sellado. Haz clic para desellar y abrir el período.">
+                <i class="fa-solid fa-lock"></i>
+                Sellado
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TARJETAS DE INDICADORES CLAVE (KPIS DEL ESTADO DE RESULTADOS) -->
+    <div class="kpi-cards-grid">
+        <div class="kpi-card" style="--kpi-color: #2563eb;">
+            <div class="kpi-card-header">
+                <span>Ventas Netas Totales</span>
+                <i class="fa-solid fa-cash-register"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.ventas_netas) }}</div>
+            <div class="kpi-card-sub">
+                <span>{{ fin.facturas_cantidad }} Facturas emitidas</span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: #10b981;">
+            <div class="kpi-card-header">
+                <span>Utilidad Bruta</span>
+                <i class="fa-solid fa-arrow-trend-up"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.utilidad_bruta) }}</div>
+            <div class="kpi-card-sub">
+                <span>Margen Bruto: <strong>{{ fin.margen_bruto_pct }}%</strong></span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: #f59e0b;">
+            <div class="kpi-card-header">
+                <span>Gastos Operativos</span>
+                <i class="fa-solid fa-money-bill-transfer"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.gastos_operativos) }}</div>
+            <div class="kpi-card-sub">
+                <span>Nómina + Cargas + Servicios</span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: {% if fin.utilidad_neta >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+            <div class="kpi-card-header">
+                <span>Utilidad Neta del Mes</span>
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div class="kpi-card-value" style="color: {% if fin.utilidad_neta >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+                C$ {{ "{:,.2f}".format(fin.utilidad_neta) }}
+            </div>
+            <div class="kpi-card-sub">
+                <span>Margen Neto: <strong>{{ fin.margen_neto_pct }}%</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ESTADO DE RESULTADOS FORMAL -->
+    <div class="report-sheet">
+        
+        <!-- ENCABEZADO FORMAL DE LA EMPRESA -->
+        <div class="report-sheet-header">
+            <div class="logo-badge">
+                <i class="fa-solid fa-wrench"></i> TALLER Y LUBRICANTES CR
+            </div>
+            <h2>TALLER Y LUBRICANTES CR</h2>
+            <h3>ESTADO DE RESULTADOS INTEGRAL (PÉRDIDAS Y GANANCIAS)</h3>
+            <p class="subtitle">
+                Del 01 al último día de <strong>{{ fin.periodo_texto }}</strong> • RUC: J0310000000000 • Expresado en Córdobas (C$)<br>
+                <small style="color: var(--text-secondary);">Elaborado conforme a Normas Internacionales de Información Financiera (NIIF para las MIPYMES)</small>
+            </p>
+            {% if es_oficial_cerrado %}
+            <p style="margin-top: 8px; font-size: 0.8rem; color: #3b82f6; font-weight: 600;">
+                <i class="fa-solid fa-circle-check"></i> Cierre Mensual Certificado por: <strong>{{ autor_cierre }}</strong> el {{ fecha_cierre_str }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- BARRA RESUMEN DE MÁRGENES FINANCIEROS -->
+        <div class="performance-bar-box">
+            <div class="perf-item">
+                <div class="perf-label">Margen Bruto</div>
+                <div class="perf-val" style="color: #2563eb;">{{ fin.margen_bruto_pct }}%</div>
+            </div>
+            <div class="perf-item" style="border-left: 1px solid var(--border-color); padding-left: 20px;">
+                <div class="perf-label">Margen Operativo (EBITDA)</div>
+                <div class="perf-val" style="color: #f59e0b;">{{ fin.margen_operativo_pct }}%</div>
+            </div>
+            <div class="perf-item" style="border-left: 1px solid var(--border-color); padding-left: 20px;">
+                <div class="perf-label">Margen Neto</div>
+                <div class="perf-val" style="color: {% if fin.utilidad_neta >= 0 %}#10b981{% else %}#ef4444{% endif %};">{{ fin.margen_neto_pct }}%</div>
+            </div>
+            <div class="perf-item" style="border-left: 1px solid var(--border-color); padding-left: 20px;">
+                <div class="perf-label">Efectividad Operativa</div>
+                <div class="perf-val" style="color: var(--accent-primary);">100% Conciliado</div>
+            </div>
+        </div>
+
+        <!-- 4. INGRESOS OPERACIONALES -->
+        <div class="statement-section">
+            <div class="section-header">
+                <span>4. INGRESOS OPERACIONALES</span>
+                <span>C$ {{ "{:,.2f}".format(fin.ventas_netas) }}</span>
+            </div>
+
+            {% if not fin.get('ocultar_mano_obra_mes') %}
+            <div class="account-row" onclick="abrirModalDetalle('mano_obra')" style="cursor: pointer;" title="Clic para ver servicios mecánicos y mano de obra de taller">
+                <div class="account-name">
+                    <span class="account-code">4.1.01</span>
+                    <span>{{ fin.get('nombre_mano_obra_mes') or 'Ingresos por Servicios Mecánicos y Mano de Obra de Taller' }}</span>
+                    <span class="account-detail-tag">Mantenimientos preventivos y correctivos</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.mano_obra_mes) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_mano_obra_mes or 0 }}" data-clave="mano_obra_mes" 
+                            data-nombre="{{ fin.get('nombre_mano_obra_mes') or 'Ingresos por Servicios Mecánicos y Mano de Obra de Taller' }}" 
+                            data-monto="{{ fin.mano_obra_mes }}" 
+                            data-categoria="{{ fin.get('categoria_mano_obra_mes') or 'Ingresos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_mano_obra_mes %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_mano_obra_mes }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_repuestos_taller_mes') %}
+            <div class="account-row" onclick="abrirModalDetalle('repuestos_taller')" style="cursor: pointer;" title="Clic para ver repuestos y lubricantes instalados en órdenes de trabajo">
+                <div class="account-name">
+                    <span class="account-code">4.1.02</span>
+                    <span>{{ fin.get('nombre_repuestos_taller_mes') or 'Ingresos por Venta de Repuestos y Lubricantes en Taller' }}</span>
+                    <span class="account-detail-tag">Repuestos aplicados en órdenes de trabajo</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.repuestos_taller_mes) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_repuestos_taller_mes or 0 }}" data-clave="repuestos_taller_mes" 
+                            data-nombre="{{ fin.get('nombre_repuestos_taller_mes') or 'Ingresos por Venta de Repuestos y Lubricantes en Taller' }}" 
+                            data-monto="{{ fin.repuestos_taller_mes }}" 
+                            data-categoria="{{ fin.get('categoria_repuestos_taller_mes') or 'Ingresos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_repuestos_taller_mes %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_repuestos_taller_mes }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_mostrador_mes') %}
+            <div class="account-row" onclick="abrirModalDetalle('mostrador')" style="cursor: pointer;" title="Clic para ver ventas directas en mostrador / tienda">
+                <div class="account-name">
+                    <span class="account-code">4.1.03</span>
+                    <span>{{ fin.get('nombre_mostrador_mes') or 'Ingresos por Venta de Repuestos y Accesorios en Mostrador / Tienda' }}</span>
+                    <span class="account-detail-tag">Ventas directas al público</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.mostrador_mes) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_mostrador_mes or 0 }}" data-clave="mostrador_mes" 
+                            data-nombre="{{ fin.get('nombre_mostrador_mes') or 'Ingresos por Venta de Repuestos y Accesorios en Mostrador / Tienda' }}" 
+                            data-monto="{{ fin.mostrador_mes }}" 
+                            data-categoria="{{ fin.get('categoria_mostrador_mes') or 'Ingresos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_mostrador_mes %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_mostrador_mes }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% for c in fin.cuentas_pers_ingresos %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">4.1.{{ loop.index + 4 }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}
+                    <span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>
+                    {% else %}
+                    <span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">Personalizada</span>
+                    {% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(c.monto) }}</div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.get('monto_raw', c.monto) }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="EstadoResultados" onclick="abrirModalEditarDesdeBoton(this)" title="Editar o Reubicar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'EstadoResultados')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if fin.descuentos > 0 %}
+            <div class="account-row" style="color: #ef4444;">
+                <div class="account-name">
+                    <span class="account-code">4.1.04</span>
+                    <span>(-) Descuentos Concedidos sobre Ventas</span>
+                    <span class="account-detail-tag">Promociones y descuentos</span>
+                </div>
+                <div class="account-amount">(C$ {{ "{:,.2f}".format(fin.descuentos) }})</div>
+            </div>
+            {% endif %}
+
+            <div class="subtotal-row">
+                <span>TOTAL INGRESOS OPERACIONALES NETOS</span>
+                <span class="amount" style="color: #2563eb;">C$ {{ "{:,.2f}".format(fin.ventas_netas) }}</span>
+            </div>
+        </div>
+
+        <!-- 5. COSTO DE VENTAS -->
+        <div class="statement-section">
+            <div class="section-header" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.08);">
+                <span>5. COSTO DE VENTAS Y SERVICIOS (COGS)</span>
+                <span>C$ {{ "{:,.2f}".format(fin.costo_ventas) }}</span>
+            </div>
+
+            {% if not fin.get('ocultar_costo_repuestos_taller') %}
+            <div class="account-row" onclick="abrirModalDetalle('cogs')" style="cursor: pointer;" title="Clic para ver costo de adquisición de repuestos aplicados">
+                <div class="account-name">
+                    <span class="account-code">5.1.01</span>
+                    <span>{{ fin.get('nombre_costo_repuestos_taller') or 'Costo de Repuestos y Materiales Aplicados en Órdenes de Trabajo' }}</span>
+                    <span class="account-detail-tag">Costo de adquisición de repuestos de taller</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.costo_repuestos_taller) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_costo_repuestos_taller or 0 }}" data-clave="costo_repuestos_taller" 
+                            data-nombre="{{ fin.get('nombre_costo_repuestos_taller') or 'Costo de Repuestos y Materiales Aplicados en Órdenes de Trabajo' }}" 
+                            data-monto="{{ fin.costo_repuestos_taller }}" 
+                            data-categoria="{{ fin.get('categoria_costo_repuestos_taller') or 'Costos de Ventas' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_costo_repuestos_taller %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_costo_repuestos_taller }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_costo_mostrador') %}
+            <div class="account-row" onclick="abrirModalDetalle('cogs')" style="cursor: pointer;" title="Clic para ver costo de adquisición de mercaderías vendidas">
+                <div class="account-name">
+                    <span class="account-code">5.1.02</span>
+                    <span>{{ fin.get('nombre_costo_mostrador') or 'Costo de Mercaderías Vendidas en Mostrador / Tienda' }}</span>
+                    <span class="account-detail-tag">Costo de artículos despachados en mostrador</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.costo_mostrador) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_costo_mostrador or 0 }}" data-clave="costo_mostrador" 
+                            data-nombre="{{ fin.get('nombre_costo_mostrador') or 'Costo de Mercaderías Vendidas en Mostrador / Tienda' }}" 
+                            data-monto="{{ fin.costo_mostrador }}" 
+                            data-categoria="{{ fin.get('categoria_costo_mostrador') or 'Costos de Ventas' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_costo_mostrador %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_costo_mostrador }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_compras_mes') %}
+            <div class="account-row" onclick="abrirModalDetalle('compras')" style="cursor: pointer;" title="Clic para ver compras de bodega">
+                <div class="account-name">
+                    <span class="account-code">5.1.03</span>
+                    <span>{{ fin.get('nombre_compras_mes') or 'Compras Directas y Reabastecimiento de Bodega' }}</span>
+                    <span class="account-detail-tag">Facturas de compras a proveedores</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.compras_mes) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_compras_mes or 0 }}" data-clave="compras_mes" 
+                            data-nombre="{{ fin.get('nombre_compras_mes') or 'Compras Directas y Reabastecimiento de Bodega' }}" 
+                            data-monto="{{ fin.compras_mes }}" 
+                            data-categoria="{{ fin.get('categoria_compras_mes') or 'Costos de Ventas' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_compras_mes %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_compras_mes }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% for c in fin.cuentas_pers_costos %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">5.1.{{ loop.index + 3 }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}
+                    <span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>
+                    {% else %}
+                    <span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">Personalizada</span>
+                    {% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(c.monto) }}</div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.get('monto_raw', c.monto) }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="EstadoResultados" onclick="abrirModalEditarDesdeBoton(this)" title="Editar o Reubicar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'EstadoResultados')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="subtotal-row">
+                <span>TOTAL COSTO DE VENTAS</span>
+                <span class="amount" style="color: #f59e0b;">C$ {{ "{:,.2f}".format(fin.costo_ventas) }}</span>
+            </div>
+
+            <!-- UTILIDAD BRUTA -->
+            <div class="margin-highlight-box bruta">
+                <span>UTILIDAD BRUTA EN VENTAS</span>
+                <div style="text-align: right;">
+                    <span>C$ {{ "{:,.2f}".format(fin.utilidad_bruta) }}</span>
+                    <small style="display: block; font-size: 0.78rem; font-weight: 600; opacity: 0.85;">Margen Bruto: {{ fin.margen_bruto_pct }}%</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. GASTOS DE OPERACIÓN Y ADMINISTRACIÓN -->
+        <div class="statement-section">
+            <div class="section-header" style="border-left-color: #ef4444; background: rgba(239, 68, 68, 0.08);">
+                <span>6. GASTOS OPERATIVOS Y ADMINISTRATIVOS</span>
+                <span>C$ {{ "{:,.2f}".format(fin.gastos_operativos) }}</span>
+            </div>
+
+            {% if not fin.get('ocultar_gastos_nomina_base') %}
+            <div class="account-row" onclick="window.location.href='{{ url_for('planilla.index', mes=mes_seleccionado, anio=anio_seleccionado) }}'" style="cursor: pointer;" title="Clic para ir al Módulo de Planilla de Pago">
+                <div class="account-name">
+                    <span class="account-code">6.1.01</span>
+                    <span>{{ fin.get('nombre_gastos_nomina_base') or 'Gastos de Personal (Nómina y Salarios de Taller y Administración)' }}</span>
+                    <span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.12); color: #2563eb; cursor: pointer; border: 1px solid rgba(37, 99, 235, 0.25);" title="Clic para ir a Planilla de Pago"><i class="fa-solid fa-users"></i> Vinculado a Planilla de Pago <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.72rem; margin-left: 4px;"></i></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.gastos_nomina_base) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_gastos_nomina_base or 0 }}" data-clave="gastos_nomina_base" 
+                            data-nombre="{{ fin.get('nombre_gastos_nomina_base') or 'Gastos de Personal (Nómina y Salarios de Taller y Administración)' }}" 
+                            data-monto="{{ fin.gastos_nomina_base }}" 
+                            data-categoria="{{ fin.get('categoria_gastos_nomina_base') or 'Gastos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_gastos_nomina_base %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_gastos_nomina_base }}, 'EstadoResultados')" title="Restablecer valor automatizado de planilla"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_gastos_cargas_patronales') %}
+            <div class="account-row" onclick="window.location.href='{{ url_for('planilla.index', mes=mes_seleccionado, anio=anio_seleccionado) }}'" style="cursor: pointer;" title="Clic para ir al Módulo de Planilla de Pago">
+                <div class="account-name">
+                    <span class="account-code">6.1.02</span>
+                    <span>{{ fin.get('nombre_gastos_cargas_patronales') or 'Cargas Sociales Patronales (INSS Patronal 22.5% + INATEC 2%)' }}</span>
+                    <span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.12); color: #2563eb; cursor: pointer; border: 1px solid rgba(37, 99, 235, 0.25);" title="Clic para ir a Planilla de Pago"><i class="fa-solid fa-building-columns"></i> Cargas de Ley (24.5%) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.72rem; margin-left: 4px;"></i></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.gastos_cargas_patronales) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_gastos_cargas_patronales or 0 }}" data-clave="gastos_cargas_patronales" 
+                            data-nombre="{{ fin.get('nombre_gastos_cargas_patronales') or 'Cargas Sociales Patronales (INSS Patronal 22.5% + INATEC 2%)' }}" 
+                            data-monto="{{ fin.gastos_cargas_patronales }}" 
+                            data-categoria="{{ fin.get('categoria_gastos_cargas_patronales') or 'Gastos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_gastos_cargas_patronales %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_gastos_cargas_patronales }}, 'EstadoResultados')" title="Restablecer valor automatizado de planilla"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_gastos_provisiones_laborales') %}
+            <div class="account-row" onclick="window.location.href='{{ url_for('planilla.index', mes=mes_seleccionado, anio=anio_seleccionado) }}'" style="cursor: pointer;" title="Clic para ir al Módulo de Planilla de Pago">
+                <div class="account-name">
+                    <span class="account-code">6.1.03</span>
+                    <span>{{ fin.get('nombre_gastos_provisiones_laborales') or 'Provisión de Prestaciones Laborales (Aguinaldo y Vacaciones)' }}</span>
+                    <span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.12); color: #2563eb; cursor: pointer; border: 1px solid rgba(37, 99, 235, 0.25);" title="Clic para ir a Planilla de Pago"><i class="fa-solid fa-scale-balanced"></i> Provisiones Mensuales Ley 185 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.72rem; margin-left: 4px;"></i></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.gastos_provisiones_laborales) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_gastos_provisiones_laborales or 0 }}" data-clave="gastos_provisiones_laborales" 
+                            data-nombre="{{ fin.get('nombre_gastos_provisiones_laborales') or 'Provisión de Prestaciones Laborales (Aguinaldo y Vacaciones)' }}" 
+                            data-monto="{{ fin.gastos_provisiones_laborales }}" 
+                            data-categoria="{{ fin.get('categoria_gastos_provisiones_laborales') or 'Gastos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_gastos_provisiones_laborales %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_gastos_provisiones_laborales }}, 'EstadoResultados')" title="Restablecer valor automatizado de planilla"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_gastos_servicios_basicos') %}
+            <div class="account-row" onclick="abrirModalDetalle('gastos')" style="cursor: pointer;" title="Clic para ver gastos de servicios">
+                <div class="account-name">
+                    <span class="account-code">6.1.04</span>
+                    <span>{{ fin.get('nombre_gastos_servicios_basicos') or 'Servicios Básicos (Energía Eléctrica DISNORTE, Agua Potable, Internet)' }}</span>
+                    <span class="account-detail-tag">Servicios de planta y oficina</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.gastos_servicios_basicos) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_gastos_servicios_basicos or 0 }}" data-clave="gastos_servicios_basicos" 
+                            data-nombre="{{ fin.get('nombre_gastos_servicios_basicos') or 'Servicios Básicos (Energía Eléctrica DISNORTE, Agua Potable, Internet)' }}" 
+                            data-monto="{{ fin.gastos_servicios_basicos }}" 
+                            data-categoria="{{ fin.get('categoria_gastos_servicios_basicos') or 'Gastos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_gastos_servicios_basicos %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_gastos_servicios_basicos }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_gastos_alquiler') %}
+            <div class="account-row" onclick="abrirModalDetalle('gastos')" style="cursor: pointer;">
+                <div class="account-name">
+                    <span class="account-code">6.1.05</span>
+                    <span>{{ fin.get('nombre_gastos_alquiler') or 'Alquiler y Arrendamiento del Inmueble del Taller' }}</span>
+                    <span class="account-detail-tag">Arriendo mensual de instalaciones</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.gastos_alquiler) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_gastos_alquiler or 0 }}" data-clave="gastos_alquiler" 
+                            data-nombre="{{ fin.get('nombre_gastos_alquiler') or 'Alquiler y Arrendamiento del Inmueble del Taller' }}" 
+                            data-monto="{{ fin.gastos_alquiler }}" 
+                            data-categoria="{{ fin.get('categoria_gastos_alquiler') or 'Gastos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_gastos_alquiler %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_gastos_alquiler }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_gastos_mantenimiento') %}
+            <div class="account-row" onclick="abrirModalDetalle('gastos')" style="cursor: pointer;">
+                <div class="account-name">
+                    <span class="account-code">6.1.06</span>
+                    <span>{{ fin.get('nombre_gastos_mantenimiento') or 'Mantenimiento de Herramientas, Equipos y Local' }}</span>
+                    <span class="account-detail-tag">Limpieza, insumos y reparaciones menores</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.gastos_mantenimiento) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_gastos_mantenimiento or 0 }}" data-clave="gastos_mantenimiento" 
+                            data-nombre="{{ fin.get('nombre_gastos_mantenimiento') or 'Mantenimiento de Herramientas, Equipos y Local' }}" 
+                            data-monto="{{ fin.gastos_mantenimiento }}" 
+                            data-categoria="{{ fin.get('categoria_gastos_mantenimiento') or 'Gastos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_gastos_mantenimiento %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_gastos_mantenimiento }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_gastos_otros') %}
+            <div class="account-row" onclick="abrirModalDetalle('gastos')" style="cursor: pointer;">
+                <div class="account-name">
+                    <span class="account-code">6.1.07</span>
+                    <span>{{ fin.get('nombre_gastos_otros') or 'Otros Gastos Operacionales y Administrativos' }}</span>
+                    <span class="account-detail-tag">Papelería, consumibles y diversos</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.gastos_otros) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_gastos_otros or 0 }}" data-clave="gastos_otros" 
+                            data-nombre="{{ fin.get('nombre_gastos_otros') or 'Otros Gastos Operacionales y Administrativos' }}" 
+                            data-monto="{{ fin.gastos_otros }}" 
+                            data-categoria="{{ fin.get('categoria_gastos_otros') or 'Gastos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_gastos_otros %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_gastos_otros }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_gastos_mercadotecnia') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">6.1.08</span>
+                    <span>{{ fin.get('nombre_gastos_mercadotecnia') or 'Mercadotecnia, Publicidad y Costo de Premios de Rifas' }}</span>
+                    <span class="account-detail-tag"><i class="fa-solid fa-bullhorn"></i> Módulo Mercadotecnia</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.gastos_mercadotecnia) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_gastos_mercadotecnia or 0 }}" 
+                            data-clave="gastos_mercadotecnia"
+                            data-nombre="{{ fin.get('nombre_gastos_mercadotecnia') or 'Mercadotecnia, Publicidad y Costo de Premios de Rifas' }}" 
+                            data-monto="{{ fin.gastos_mercadotecnia }}" 
+                            data-categoria="{{ fin.get('categoria_gastos_mercadotecnia') or 'Gastos Operativos' }}" 
+                            data-tipo="EstadoResultados" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_gastos_mercadotecnia %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_gastos_mercadotecnia }}, 'EstadoResultados')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if fin.gastos_faltante_caja and fin.gastos_faltante_caja > 0 %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">6.1.09</span>
+                    <span>Pérdida por Faltante en Arqueo de Caja</span>
+                    <span class="account-detail-tag" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;"><i class="fa-solid fa-cash-register"></i> Arqueo de Caja</span>
+                </div>
+                <div class="account-amount" style="color: #ef4444;">C$ {{ "{:,.2f}".format(fin.gastos_faltante_caja) }}</div>
+            </div>
+            {% endif %}
+
+            {% for c in fin.cuentas_pers_gastos %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">6.1.{{ loop.index + 8 }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}
+                    <span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>
+                    {% else %}
+                    <span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">Personalizada</span>
+                    {% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(c.monto) }}</div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.get('monto_raw', c.monto) }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="EstadoResultados" onclick="abrirModalEditarDesdeBoton(this)" title="Editar o Reubicar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'EstadoResultados')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="subtotal-row">
+                <span>TOTAL GASTOS OPERATIVOS Y ADMINISTRATIVOS</span>
+                <span class="amount" style="color: #ef4444;">C$ {{ "{:,.2f}".format(fin.gastos_operativos) }}</span>
+            </div>
+
+            <!-- UTILIDAD OPERATIVA (EBITDA) -->
+            <div class="margin-highlight-box operativa">
+                <span>UTILIDAD OPERATIVA (EBITDA / EBIT)</span>
+                <div style="text-align: right;">
+                    <span>C$ {{ "{:,.2f}".format(fin.utilidad_operativa) }}</span>
+                    <small style="display: block; font-size: 0.78rem; font-weight: 600; opacity: 0.85;">Margen Operativo: {{ fin.margen_operativo_pct }}%</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. IMPUESTOS SOBRE LA RENTA -->
+        <div class="statement-section">
+            <div class="section-header" style="border-left-color: #6366f1; background: rgba(99, 102, 241, 0.08);">
+                <span>7. IMPUESTOS SOBRE LA RENTA Y FISCALES</span>
+                <span>C$ {{ "{:,.2f}".format(fin.impuesto_renta_ir) }}</span>
+            </div>
+
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">7.1.01</span>
+                    <span>Provisión Impuesto sobre la Renta (IR / Anticipo DGI 1%)</span>
+                    <span class="account-detail-tag">Legislación tributaria de Nicaragua</span>
+                </div>
+                <div class="account-amount">C$ {{ "{:,.2f}".format(fin.impuesto_renta_ir) }}</div>
+            </div>
+
+            <div class="subtotal-row">
+                <span>TOTAL IMPUESTOS DEL EJERCICIO</span>
+                <span class="amount">C$ {{ "{:,.2f}".format(fin.impuesto_renta_ir) }}</span>
+            </div>
+
+        </div>
+
+        <!-- 8. OTROS INGRESOS Y GASTOS NO OPERATIVOS -->
+        <div class="statement-section">
+            <div class="section-header" style="border-left-color: #8b5cf6; background: rgba(139, 92, 246, 0.08);">
+                <span>8. OTROS INGRESOS Y GASTOS NO OPERATIVOS</span>
+                <span style="color: {{ '#10b981' if fin.otros_ingresos_gastos >= 0 else '#ef4444' }};">C$ {{ "{:,.2f}".format(fin.otros_ingresos_gastos) }}</span>
+            </div>
+
+            {% if fin.sobrante_caja > 0 %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">8.1.01</span>
+                    <span>Sobrante en Arqueo y Conciliación de Caja</span>
+                    <span class="account-detail-tag" style="background: rgba(16, 185, 129, 0.14); color: #059669;">Conciliado ControlCaja</span>
+                </div>
+                <div class="account-amount" style="color: #10b981;">+ C$ {{ "{:,.2f}".format(fin.sobrante_caja) }}</div>
+            </div>
+            {% endif %}
+
+            {% for c in fin.cuentas_pers_otros %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">8.1.{{ loop.index + (1 if fin.sobrante_caja > 0 else 0) }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}
+                    <span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>
+                    {% elif c.get('es_gasto_otro') or c.monto < 0 %}
+                    <span class="account-detail-tag" style="background: rgba(239, 68, 68, 0.14); color: #dc2626;">Otro Gasto</span>
+                    {% else %}
+                    <span class="account-detail-tag" style="background: rgba(16, 185, 129, 0.14); color: #059669;">Otro Ingreso</span>
+                    {% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount" style="color: {{ '#ef4444' if c.monto < 0 else '#10b981' }};">
+                        {{ '-' if c.monto < 0 else '+' }} C$ {{ "{:,.2f}".format(c.monto|abs) }}
+                    </div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.get('monto_raw', c.monto) }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="EstadoResultados" onclick="abrirModalEditarDesdeBoton(this)" title="Editar o Reubicar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'EstadoResultados')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if fin.sobrante_caja == 0 and not fin.cuentas_pers_otros %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">8.1.00</span>
+                    <span style="color: var(--text-secondary);">Sin otros ingresos o gastos no operativos registrados en el período</span>
+                </div>
+                <div class="account-amount" style="color: var(--text-secondary);">C$ 0.00</div>
+            </div>
+            {% endif %}
+
+            <div class="subtotal-row">
+                <span>TOTAL OTROS INGRESOS Y GASTOS NETOS</span>
+                <span class="amount" style="color: {{ '#10b981' if fin.otros_ingresos_gastos >= 0 else '#ef4444' }};">C$ {{ "{:,.2f}".format(fin.otros_ingresos_gastos) }}</span>
+            </div>
+
+            <!-- RESULTADO NETO FINAL DEL EJERCICIO -->
+            {% if fin.utilidad_neta >= 0 %}
+            <div class="margin-highlight-box neta-positiva">
+                <div>
+                    <span style="display: block;"><i class="fa-solid fa-circle-check"></i> UTILIDAD NETA DEL EJERCICIO</span>
+                    <small style="font-size: 0.82rem; font-weight: 600; opacity: 0.85;">Ganancia neta transferible al Patrimonio del Balance General</small>
+                </div>
+                <div style="text-align: right;">
+                    <span>C$ {{ "{:,.2f}".format(fin.utilidad_neta) }}</span>
+                    <small style="display: block; font-size: 0.82rem; font-weight: 700;">Margen Neto: {{ fin.margen_neto_pct }}%</small>
+                </div>
+            </div>
+            {% else %}
+            <div class="margin-highlight-box neta-negativa">
+                <div>
+                    <span style="display: block;"><i class="fa-solid fa-circle-exclamation"></i> PÉRDIDA NETA DEL EJERCICIO</span>
+                    <small style="font-size: 0.82rem; font-weight: 600; opacity: 0.85;">Déficit operativo transferible al Patrimonio del Balance General</small>
+                </div>
+                <div style="text-align: right;">
+                    <span>C$ {{ "{:,.2f}".format(fin.utilidad_neta) }}</span>
+                    <small style="display: block; font-size: 0.82rem; font-weight: 700;">Margen Neto: {{ fin.margen_neto_pct }}%</small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- BLOQUE DE FIRMAS OFICIALES DE AUDITORÍA Y DIRECCIÓN -->
+        <div class="signatures-block">
+            <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-name">Lic. Carlos Rene Gavarrete Calero</div>
+                <div class="signature-role">Responsable de Finanzas y Contabilidad • Reg. CPA-NI-4821</div>
+            </div>
+
+            <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-name">Jhosep David Cooper Sandino</div>
+                <div class="signature-role">Gerente General</div>
+            </div>
+
+            <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-name">Elvin Alexander Méndez Cruz</div>
+                <div class="signature-role">Director General de Operaciones</div>
+            </div>
+        </div>
+
+        <!-- NOTA AL PIE DE PÁGINA -->
+        <div style="text-align: center; margin-top: 35px; color: var(--text-secondary); font-size: 0.78rem;">
+            Documento contable generado automáticamente por el Sistema Integral de Gestión de Taller y Lubricantes CR.<br>
+            Emisión: {{ fin.periodo_texto }} • Conciliado con el módulo de facturación, caja, compras y gastos operativos.
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DRILL-DOWN ANALÍTICO -->
+<div id="drillModal" class="drilldown-modal" onclick="if(event.target===this) cerrarModalDetalle()">
+    <div class="drilldown-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+            <h3 id="drillTitle" style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Detalle de Transacciones</h3>
+            <button type="button" onclick="cerrarModalDetalle()" style="background: transparent; border: none; font-size: 1.3rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        </div>
+        <div id="drillBody" style="font-size: 0.9rem;">
+            <div style="text-align: center; padding: 30px; color: var(--text-secondary);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                <p style="margin-top: 10px;">Cargando registros conciliados...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function cambiarPeriodo(val) {
+        if (!val) return;
+        const [mes, anio] = val.split('-');
+        window.location.href = `{{ url_for('contador.estado_resultados') }}?mes=${mes}&anio=${anio}`;
+    }
+
+    function abrirModalDetalle(tipo) {
+        const modal = document.getElementById('drillModal');
+        const title = document.getElementById('drillTitle');
+        const body = document.getElementById('drillBody');
+        
+        modal.style.display = 'flex';
+        body.innerHTML = `
+            <div style="text-align: center; padding: 35px; color: var(--text-secondary);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--accent-primary);"></i>
+                <p style="margin-top: 12px; font-weight: 600;">Consultando base de datos en tiempo real...</p>
+            </div>
+        `;
+
+        if (tipo === 'mano_obra') {
+            title.innerHTML = '<i class="fa-solid fa-wrench" style="color: #3b82f6;"></i> Mano de Obra y Servicios Mecánicos en Taller';
+        } else if (tipo === 'repuestos_taller') {
+            title.innerHTML = '<i class="fa-solid fa-gears" style="color: #10b981;"></i> Repuestos y Lubricantes Aplicados en Órdenes de Trabajo';
+        } else if (tipo === 'mostrador') {
+            title.innerHTML = '<i class="fa-solid fa-store" style="color: #8b5cf6;"></i> Ventas de Mostrador y Tienda Directa';
+        } else if (tipo === 'cogs') {
+            title.innerHTML = '<i class="fa-solid fa-boxes-packing" style="color: #f59e0b;"></i> Costo de Ventas y Mercaderías Despachadas (COGS)';
+        } else if (tipo === 'nomina') {
+            title.innerHTML = '<i class="fa-solid fa-users" style="color: #3b82f6;"></i> Nómina de Salarios y Cargas Sociales de Ley';
+        } else if (tipo === 'gastos') {
+            title.innerHTML = '<i class="fa-solid fa-list-check" style="color: #ef4444;"></i> Gastos Operativos y Administrativos';
+        } else if (tipo === 'compras') {
+            title.innerHTML = '<i class="fa-solid fa-truck" style="color: #f59e0b;"></i> Compras de Bodega a Proveedores';
+        } else if (tipo === 'facturas') {
+            title.innerHTML = '<i class="fa-solid fa-receipt" style="color: var(--accent-primary);"></i> Facturación y Ventas del Período';
+        }
+
+        fetch(`{{ url_for('contador.api_detalle_transacciones') }}?tipo=${tipo}&mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.items || data.items.length === 0) {
+                    const t = data.empty_title || 'Sin movimientos registrados';
+                    const m = data.empty_msg || 'No se registraron movimientos en este período.';
+                    body.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px;">
+                            <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(59, 130, 246, 0.12); margin-bottom: 16px;">
+                                <i class="fa-solid fa-info fa-2x" style="color: #3b82f6;"></i>
+                            </div>
+                            <h4 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); font-weight: 700;">${t}</h4>
+                            <p style="margin: 8px auto 0; max-width: 480px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">${m}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+
+                if (tipo === 'mostrador') {
+                    const res = data.resumen || {};
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px;">
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Total Facturado en Mostrador:</span>
+                                <strong style="font-size: 1.25rem; color: #8b5cf6; margin-left: 8px;">C$ ${(res.total_venta || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Costo de Adquisición Total:</span>
+                                <strong style="font-size: 1.1rem; color: #ef4444; margin-left: 8px;">C$ ${(res.total_costo || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 10px 8px;">FACTURA</th>
+                                    <th style="padding: 10px 8px;">FECHA</th>
+                                    <th style="padding: 10px 8px;">PRODUCTO / ARTÍCULO</th>
+                                    <th style="padding: 10px 8px; text-align: center;">CANT.</th>
+                                    <th style="padding: 10px 8px; text-align: right;">PRECIO VENTA</th>
+                                    <th style="padding: 10px 8px; text-align: right;">TOTAL VENTA</th>
+                                    <th style="padding: 10px 8px; text-align: right;">COSTO (COGS)</th>
+                                    <th style="padding: 10px 8px; text-align: right;">MARGEN BRUTO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(it => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px 8px; font-weight: 700; color: var(--accent-primary);">${it.factura}</td>
+                                <td style="padding: 10px 8px; color: var(--text-secondary); font-size: 0.85rem;">${it.fecha}</td>
+                                <td style="padding: 10px 8px; font-weight: 600;">${it.producto}</td>
+                                <td style="padding: 10px 8px; text-align: center; font-weight: 700;">${it.cantidad}</td>
+                                <td style="padding: 10px 8px; text-align: right;">C$ ${it.precio_venta.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: #8b5cf6;">C$ ${it.total_venta.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: right; color: #ef4444;">C$ ${it.costo_total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${it.margen.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'cogs') {
+                    const res = data.resumen || {};
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px;">
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Artículos Despachados:</span>
+                                <strong style="font-size: 1.05rem; color: var(--text-primary); margin-left: 8px;">${res.items_despachados || 0} líneas de factura</strong>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Total Costo de Ventas (COGS):</span>
+                                <strong style="font-size: 1.25rem; color: #ef4444; margin-left: 8px;">C$ ${(res.total_costo_ventas || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 10px 8px;">ORIGEN</th>
+                                    <th style="padding: 10px 8px;">FACTURA</th>
+                                    <th style="padding: 10px 8px;">FECHA</th>
+                                    <th style="padding: 10px 8px;">PRODUCTO DESPACHADO</th>
+                                    <th style="padding: 10px 8px; text-align: center;">CANTIDAD</th>
+                                    <th style="padding: 10px 8px; text-align: right;">COSTO UNIT.</th>
+                                    <th style="padding: 10px 8px; text-align: right;">COSTO TOTAL (COGS)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(it => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px 8px;"><span style="background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${it.origen}</span></td>
+                                <td style="padding: 10px 8px; font-weight: 700; color: var(--accent-primary);">${it.factura}</td>
+                                <td style="padding: 10px 8px; color: var(--text-secondary); font-size: 0.85rem;">${it.fecha}</td>
+                                <td style="padding: 10px 8px; font-weight: 600;">${it.producto}</td>
+                                <td style="padding: 10px 8px; text-align: center; font-weight: 700;">${it.cantidad}</td>
+                                <td style="padding: 10px 8px; text-align: right; color: var(--text-secondary);">C$ ${it.costo_unit.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: #ef4444;">C$ ${it.costo_total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'nomina') {
+                    const res = data.resumen || {};
+                    html += `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">SALARIOS BRUTOS</div>
+                                <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">C$ ${(res.salario_bruto || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">CARGAS PATRONALES (24.5%)</div>
+                                <div style="font-size: 1.15rem; font-weight: 700; color: #3b82f6;">C$ ${(res.cargas_patronales || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">PROVISIONES LEY 185</div>
+                                <div style="font-size: 1.15rem; font-weight: 700; color: #f59e0b;">C$ ${(res.provisiones || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">COLABORADOR</th>
+                                    <th style="padding: 8px;">CARGO</th>
+                                    <th style="padding: 8px; text-align: right;">SALARIO BRUTO</th>
+                                    <th style="padding: 8px; text-align: right;">INSS (7%)</th>
+                                    <th style="padding: 8px; text-align: right;">IR DGI</th>
+                                    <th style="padding: 8px; text-align: right;">SALARIO NETO</th>
+                                    <th style="padding: 8px; text-align: right;">CARGAS PATR.</th>
+                                    <th style="padding: 8px; text-align: center;">ESTADO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(emp => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color); opacity: ${emp.pagado ? '1' : '0.6'};">
+                                <td style="padding: 8px; font-weight: 700;">${emp.nombre}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${emp.cargo}</td>
+                                <td style="padding: 8px; text-align: right;">C$ ${emp.salario_bruto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; color: #ef4444;">C$ ${emp.inss_laboral.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; color: #ef4444;">C$ ${emp.ir.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${emp.salario_neto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; color: #3b82f6;">C$ ${(emp.inss_patronal + emp.inatec).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: center;"><span style="background: ${emp.pagado ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${emp.pagado ? '#10b981' : '#ef4444'}; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${emp.pagado ? 'Pagado' : 'Pendiente'}</span></td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'mano_obra') {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 10px 8px;">ORDEN</th>
+                                    <th style="padding: 10px 8px;">CLIENTE</th>
+                                    <th style="padding: 10px 8px;">MOTO</th>
+                                    <th style="padding: 10px 8px;">SERVICIO MECÁNICO</th>
+                                    <th style="padding: 10px 8px;">FACTURA</th>
+                                    <th style="padding: 10px 8px; text-align: right;">VALOR MANO OBRA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(it => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px 8px; font-weight: 700; color: var(--accent-primary);">OT #${it.orden_id}</td>
+                                <td style="padding: 10px 8px;">${it.cliente}</td>
+                                <td style="padding: 10px 8px; color: var(--text-secondary); font-size: 0.85rem;">${it.moto}</td>
+                                <td style="padding: 10px 8px; font-weight: 600;">${it.servicio}</td>
+                                <td style="padding: 10px 8px; font-family: monospace;">${it.factura}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${it.monto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'repuestos_taller') {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 10px 8px;">ORDEN</th>
+                                    <th style="padding: 10px 8px;">REPUESTO / LUBRICANTE</th>
+                                    <th style="padding: 10px 8px; text-align: center;">CANT.</th>
+                                    <th style="padding: 10px 8px; text-align: right;">PRECIO VENTA</th>
+                                    <th style="padding: 10px 8px; text-align: right;">TOTAL VENTA</th>
+                                    <th style="padding: 10px 8px; text-align: right;">COSTO ADQ.</th>
+                                    <th style="padding: 10px 8px; text-align: right;">MARGEN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(it => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px 8px; font-weight: 700; color: var(--accent-primary);">OT #${it.orden_id}</td>
+                                <td style="padding: 10px 8px; font-weight: 600;">${it.producto}</td>
+                                <td style="padding: 10px 8px; text-align: center; font-weight: 700;">${it.cantidad}</td>
+                                <td style="padding: 10px 8px; text-align: right;">C$ ${it.precio_venta.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: #3b82f6;">C$ ${it.total_venta.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: right; color: #ef4444;">C$ ${it.total_costo.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${it.margen.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'gastos') {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">CATEGORÍA</th>
+                                    <th style="padding: 8px;">DESCRIPCIÓN</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px; text-align: right;">MONTO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700; color: #f59e0b;">${item.categoria}</td>
+                                <td style="padding: 8px;">${item.descripcion}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${item.fecha}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #ef4444;">C$ ${item.monto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'compras') {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">ORDEN COMPRA</th>
+                                    <th style="padding: 8px;">PROVEEDOR</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px; text-align: right;">TOTAL COMPRA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700;">#COM-${item.id}</td>
+                                <td style="padding: 8px;">${item.proveedor}</td>
+                                <td style="padding: 8px; color: var(--text-secondary);">${item.fecha}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #ef4444;">C$ ${item.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'facturas') {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">N° FACTURA</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px;">TIPO</th>
+                                    <th style="padding: 8px;">SUBTOTAL</th>
+                                    <th style="padding: 8px;">IVA (15%)</th>
+                                    <th style="padding: 8px; text-align: right;">TOTAL NETO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700; color: var(--accent-primary);">${item.numero}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${item.fecha}</td>
+                                <td style="padding: 8px;"><span style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">${item.tipo}</span></td>
+                                <td style="padding: 8px;">C$ ${item.subtotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; color: var(--text-secondary);">C$ ${item.iva.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${item.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                }
+            })
+            .catch(err => {
+                body.innerHTML = `<p style="color: #ef4444; padding: 20px; text-align: center;">Error al cargar registros: ${err}</p>`;
+            });
+    }
+
+    function cerrarModalDetalle() {
+        document.getElementById('drillModal').style.display = 'none';
+    }
+</script>
+
+<style>
+    .btn-table-icon {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text-primary);
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .btn-table-icon.edit {
+        color: #2563eb;
+    }
+    .btn-table-icon.edit:hover {
+        background: rgba(37, 99, 235, 0.15);
+        color: #1d4ed8;
+        border-color: #2563eb;
+        transform: translateY(-1px);
+    }
+    .btn-table-icon.delete {
+        color: #ef4444;
+    }
+    .btn-table-icon.delete:hover {
+        background: rgba(239, 68, 68, 0.15);
+        color: #dc2626;
+        border-color: #ef4444;
+        transform: translateY(-1px);
+    }
+    .btn-table-icon.reset {
+        color: #d97706;
+    }
+    .btn-table-icon.reset:hover {
+        background: rgba(217, 119, 6, 0.15);
+        color: #b45309;
+        border-color: #d97706;
+        transform: translateY(-1px);
+    }
+    .custom-account-row {
+        background: rgba(37, 99, 235, 0.03);
+        border-left: 3px solid #2563eb !important;
+    }
+    .modal-backdrop-custom {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-card-custom {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 500px;
+        padding: 26px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .modal-card-custom h4 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    #modalConfirmarEliminarCuenta .modal-card-custom,
+    #modalConfirmarCierre .modal-card-custom {
+        align-items: center !important;
+        text-align: center !important;
+    }
+    #modalConfirmarEliminarCuenta .modal-card-custom h4,
+    #modalConfirmarCierre .modal-card-custom h4 {
+        display: block !important;
+        text-align: center !important;
+        width: 100% !important;
+        margin: 0 auto 10px auto !important;
+    }
+    #modalConfirmarEliminarCuenta .modal-card-custom p,
+    #modalConfirmarCierre .modal-card-custom p {
+        display: block !important;
+        text-align: center !important;
+        width: 100% !important;
+        margin: 0 auto 22px auto !important;
+    }
+    .form-group-custom {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group-custom label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .form-input-custom, .form-select-custom {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 0.92rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .form-input-custom:focus, .form-select-custom:focus {
+        border-color: #2563eb;
+    }
+    .modal-actions-custom {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 10px;
+    }
+</style>
+
+<!-- MODAL AGREGAR CUENTA -->
+<div id="modalAgregarCuenta" class="modal-backdrop-custom">
+    <div class="modal-card-custom">
+        <h4><i class="fa-solid fa-plus-circle" style="color: #2563eb;"></i> Agregar Cuenta Contable</h4>
+        <form method="POST" action="{{ url_for('contador.agregar_cuenta') }}">
+            <input type="hidden" name="tipo_reporte" id="inputTipoReporte" value="Balance">
+            <input type="hidden" name="mes" value="{{ mes_seleccionado }}">
+            <input type="hidden" name="anio" value="{{ anio_seleccionado }}">
+            <div class="form-group-custom">
+                <label for="selectCategoriaCuenta">Categoría Contable:</label>
+                <select name="categoria" id="selectCategoriaCuenta" class="form-select-custom" required>
+                    <!-- Dinámico según tipo_reporte -->
+                </select>
+            </div>
+            <div class="form-group-custom" style="margin-top: 12px;">
+                <label for="inputNombreCuenta">Nombre de la Cuenta:</label>
+                <input type="text" name="nombre_cuenta" id="inputNombreCuenta" class="form-input-custom" placeholder="Ej: Herramientas Neumáticas Especializadas" required>
+            </div>
+            <div class="form-group-custom" style="margin-top: 12px;">
+                <label for="inputMontoCuenta">Monto en Córdobas (C$):</label>
+                <input type="number" step="0.01" min="0" name="monto" id="inputMontoCuenta" class="form-input-custom" placeholder="0.00" required>
+            </div>
+            <div class="modal-actions-custom">
+                <button type="button" class="btn-cont-action" onclick="cerrarModalAgregarCuenta()">Cancelar</button>
+                <button type="submit" class="btn-cont-action primary"><i class="fa-solid fa-check"></i> Guardar Cuenta</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL EDITAR CUENTA -->
+<div id="modalEditarCuenta" class="modal-backdrop-custom">
+    <div class="modal-card-custom">
+        <h4><i class="fa-solid fa-pen-to-square" style="color: #2563eb;"></i> Editar Cuenta Contable</h4>
+        <form method="POST" action="{{ url_for('contador.editar_cuenta') }}">
+            <input type="hidden" name="ajuste_id" id="editAjusteId">
+            <input type="hidden" name="tipo_reporte" id="editTipoReporte">
+            <input type="hidden" name="clave_cuenta" id="editClaveCuenta">
+            <input type="hidden" name="mes" value="{{ mes_seleccionado }}">
+            <input type="hidden" name="anio" value="{{ anio_seleccionado }}">
+            <div class="form-group-custom">
+                <label for="editSelectCategoria">Categoría Contable:</label>
+                <select name="categoria" id="editSelectCategoria" class="form-select-custom" required>
+                </select>
+            </div>
+            <div class="form-group-custom" style="margin-top: 12px;">
+                <label for="editNombreCuenta">Nombre de la Cuenta:</label>
+                <input type="text" name="nombre_cuenta" id="editNombreCuenta" class="form-input-custom" required>
+            </div>
+            <div class="form-group-custom" style="margin-top: 12px;">
+                <label for="editMontoCuenta">Monto en Córdobas (C$):</label>
+                <input type="number" step="0.01" name="monto" id="editMontoCuenta" class="form-input-custom" required>
+            </div>
+            <div class="modal-actions-custom">
+                <button type="button" class="btn-cont-action" onclick="cerrarModalEditarCuenta()">Cancelar</button>
+                <button type="submit" class="btn-cont-action primary"><i class="fa-solid fa-save"></i> Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN INTERNA PARA ELIMINAR / RESTABLECER CUENTA -->
+<div id="modalConfirmarEliminarCuenta" class="modal-backdrop-custom" style="display: none; align-items: center; justify-content: center;" onclick="if(event.target === this) cerrarModalEliminarCuenta();">
+    <div class="modal-card-custom" style="max-width: 440px; text-align: center; border-top: 4px solid #ef4444; border-radius: 20px; padding: 28px;">
+        <div style="width: 60px; height: 60px; margin: 0 auto 16px auto; border-radius: 50%; background: rgba(239, 68, 68, 0.12); border: 2px solid rgba(239, 68, 68, 0.3); display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.8rem; color: #ef4444;"></i>
+        </div>
+        <h4 style="margin: 0 0 8px 0; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); justify-content: center; text-align: center;">¿Eliminar o Restablecer Cuenta?</h4>
+        <p style="margin: 0 0 20px 0; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.5;">
+            ¿Estás seguro de que deseas eliminar esta cuenta contable o restablecerla a su ubicación y valor base del sistema?
+        </p>
+        <div class="modal-actions-custom" style="justify-content: center; gap: 12px; margin-top: 15px;">
+            <button type="button" class="btn-cont-action" onclick="cerrarModalEliminarCuenta()">Cancelar</button>
+            <button type="button" class="btn-cont-action" style="background: #ef4444; color: white; border: none; font-weight: 700;" onclick="ejecutarEliminarCuenta()">
+                <i class="fa-solid fa-trash"></i> Sí, Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- FORMULARIO OCULTO PARA ELIMINAR -->
+<form id="formEliminarCuenta" method="POST" style="display: none;">
+    <input type="hidden" name="tipo_reporte" id="delTipoReporte">
+    <input type="hidden" name="mes" value="{{ mes_seleccionado }}">
+    <input type="hidden" name="anio" value="{{ anio_seleccionado }}">
+</form>
+
+<script>
+    const CATEGORIAS_BALANCE = [
+        'Activo Corriente',
+        'Activo No Corriente',
+        'Pasivo Corriente',
+        'Pasivo No Corriente',
+        'Patrimonio'
+    ];
+
+    const CATEGORIAS_ESTADO = [
+        'Ingresos Operativos',
+        'Costos de Ventas',
+        'Gastos Operativos',
+        'Otros Ingresos',
+        'Otros Gastos'
+    ];
+
+    let cuentaIdParaEliminar = null;
+    let tipoReporteParaEliminar = null;
+
+    function abrirModalAgregarCuenta(tipo) {
+        document.getElementById('inputTipoReporte').value = tipo;
+        const select = document.getElementById('selectCategoriaCuenta');
+        select.innerHTML = '';
+        const cats = tipo === 'Balance' ? CATEGORIAS_BALANCE : CATEGORIAS_ESTADO;
+        cats.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            select.appendChild(opt);
+        });
+        document.getElementById('inputNombreCuenta').value = '';
+        document.getElementById('inputMontoCuenta').value = '';
+        const modal = document.getElementById('modalAgregarCuenta');
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModalAgregarCuenta() {
+        document.getElementById('modalAgregarCuenta').style.display = 'none';
+    }
+
+    function abrirModalEditarDesdeBoton(btn) {
+        const id = parseInt(btn.getAttribute('data-id') || 0);
+        const nombre = btn.getAttribute('data-nombre') || '';
+        const monto = parseFloat(btn.getAttribute('data-monto') || 0);
+        const categoria = btn.getAttribute('data-categoria') || '';
+        const tipo = btn.getAttribute('data-tipo') || 'EstadoResultados';
+        const clave = btn.getAttribute('data-clave') || '';
+        editarCuentaPersonalizada(id, nombre, monto, categoria, tipo, clave);
+    }
+
+    function editarCuentaPersonalizada(id, nombre, monto, categoria, tipo, clave = '') {
+        document.getElementById('editAjusteId').value = id;
+        document.getElementById('editTipoReporte').value = tipo;
+        document.getElementById('editClaveCuenta').value = clave;
+        document.getElementById('editNombreCuenta').value = nombre;
+        document.getElementById('editMontoCuenta').value = monto;
+        const select = document.getElementById('editSelectCategoria');
+        select.innerHTML = '';
+        const cats = tipo === 'Balance' ? [...CATEGORIAS_BALANCE] : [...CATEGORIAS_ESTADO];
+        if (categoria && !cats.some(c => c.toLowerCase() === categoria.toLowerCase())) {
+            cats.push(categoria);
+        }
+        cats.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            if (c.toLowerCase() === categoria.toLowerCase()) opt.selected = true;
+            select.appendChild(opt);
+        });
+        document.getElementById('modalEditarCuenta').style.display = 'flex';
+    }
+
+    function cerrarModalEditarCuenta() {
+        document.getElementById('modalEditarCuenta').style.display = 'none';
+    }
+
+    function eliminarCuentaPersonalizada(id, tipo) {
+        cuentaIdParaEliminar = id;
+        tipoReporteParaEliminar = tipo || 'EstadoResultados';
+        const modal = document.getElementById('modalConfirmarEliminarCuenta');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function cerrarModalEliminarCuenta() {
+        cuentaIdParaEliminar = null;
+        tipoReporteParaEliminar = null;
+        const modal = document.getElementById('modalConfirmarEliminarCuenta');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function ejecutarEliminarCuenta() {
+        if (cuentaIdParaEliminar) {
+            const form = document.getElementById('formEliminarCuenta');
+            form.action = '/contador/eliminar_cuenta/' + cuentaIdParaEliminar;
+            document.getElementById('delTipoReporte').value = tipoReporteParaEliminar || 'EstadoResultados';
+            form.submit();
+        }
+    }
+
+    function abrirModalCierreOficial(modo) {
+        const modal = document.getElementById('modalConfirmarCierre');
+        const actionInp = document.getElementById('cierreActionInput');
+        const titleEl = document.getElementById('cierreModalTitle');
+        const msgEl = document.getElementById('cierreModalMsg');
+        const iconEl = document.getElementById('cierreModalIcon');
+        const iconWrap = document.getElementById('cierreModalIconWrap');
+        const submitBtn = document.getElementById('cierreModalBtnSubmit');
+
+        if (modo === 'desellar') {
+            actionInp.value = 'desellar_cierre';
+            titleEl.innerText = '¿Desellar Cierre Oficial?';
+            msgEl.innerText = 'Al desellar el Estado de Resultados de {{ fin.periodo_texto }}, el reporte quedará abierto y las Razones Financieras volverán a permanecer en 0 hasta volver a sellar.';
+            iconEl.className = 'fa-solid fa-lock-open';
+            iconEl.style.color = '#ef4444';
+            iconWrap.style.background = 'rgba(239, 68, 68, 0.14)';
+            submitBtn.style.background = '#dc2626';
+            submitBtn.innerHTML = '<i class="fa-solid fa-lock-open"></i> Sí, Desellar';
+        } else {
+            actionInp.value = 'guardar_cierre';
+            titleEl.innerText = '¿Sellar Cierre Oficial?';
+            msgEl.innerText = 'Se sellará oficialmente el Estado de Resultados para {{ fin.periodo_texto }}. Cuando el Balance General también esté sellado, las Razones Financieras se autocalcularán automáticamente.';
+            iconEl.className = 'fa-solid fa-shield-halved';
+            iconEl.style.color = '#10b981';
+            iconWrap.style.background = 'rgba(16, 185, 129, 0.14)';
+            submitBtn.style.background = '#10b981';
+            submitBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Sí, Sellar Oficialmente';
+        }
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModalCierreOficial() {
+        document.getElementById('modalConfirmarCierre').style.display = 'none';
+    }
+</script>
+
+<!-- MODAL CONFIRMAR SELLADO / DESELLADO -->
+<div id="modalConfirmarCierre" class="modal-backdrop-custom" style="display: none; align-items: center; justify-content: center;" onclick="if(event.target === this) cerrarModalCierreOficial();">
+    <div class="modal-card-custom" style="max-width: 450px; text-align: center; border-radius: 20px; padding: 28px;">
+        <div id="cierreModalIconWrap" style="width: 60px; height: 60px; margin: 0 auto 14px auto; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i id="cierreModalIcon" class="fa-solid fa-shield-halved" style="font-size: 1.7rem;"></i>
+        </div>
+        <h4 id="cierreModalTitle" style="margin: 0 auto 10px auto; font-size: 1.25rem; font-weight: 800; color: var(--text-primary); text-align: center; display: block; width: 100%;">Confirmar Cierre</h4>
+        <p id="cierreModalMsg" style="margin: 0 auto 22px auto; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.5; text-align: center; display: block; width: 100%;"></p>
+        <form method="POST" action="{{ url_for('contador.estado_resultados', mes=mes_seleccionado, anio=anio_seleccionado) }}" style="display: flex; justify-content: center; gap: 12px;">
+            <input type="hidden" name="action" id="cierreActionInput" value="guardar_cierre">
+            <button type="button" class="btn-cont-action" onclick="cerrarModalCierreOficial()">Cancelar</button>
+            <button type="submit" id="cierreModalBtnSubmit" class="btn-cont-action" style="color: white; border: none; font-weight: 700;"></button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

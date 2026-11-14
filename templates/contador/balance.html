@@ -1,0 +1,2210 @@
+{% extends "base.html" %}
+
+{% block title %}Balance General - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Balance General{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos Corporativos Financieros */
+    .accounting-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding-bottom: 50px;
+    }
+
+    /* Barra Superior de Control y Período */
+    .period-control-bar {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 18px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .period-selector-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .period-title h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .period-title p {
+        margin: 3px 0 0 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .period-select-custom {
+        padding: 8px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .btn-period-nav {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-period-nav:hover {
+        background: var(--bg-primary);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+    }
+
+    .action-buttons-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-cont-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+    }
+
+    .btn-cont-action:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-cont-action.primary {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+    .btn-cont-action.primary:hover { background: #1d4ed8; }
+
+    .btn-cont-action.success {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    .btn-cont-action.success:hover { background: #059669; }
+
+    .btn-cont-action.warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+    .btn-cont-action.warning:hover {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-cont-action.danger-sealed {
+        background: #dc2626;
+        color: #ffffff;
+        border-color: #dc2626;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+    }
+    .btn-cont-action.danger-sealed:hover {
+        background: #b91c1c;
+        border-color: #b91c1c;
+        color: #ffffff;
+    }
+
+    /* Tarjetas de Indicadores Clave */
+    .kpi-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+    }
+
+    .kpi-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--kpi-color, var(--accent-primary));
+    }
+
+    .kpi-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-card-header i {
+        font-size: 1.1rem;
+        color: var(--kpi-color, var(--accent-primary));
+    }
+
+    .kpi-card-value {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
+    }
+
+    .kpi-card-sub {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Estado de Cierre / Conciliación */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    .status-badge.live {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .status-badge.sealed {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    /* Contenedor Principal del Balance General */
+    .report-sheet {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 40px 48px;
+        box-shadow: var(--shadow-md);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .report-sheet-header {
+        text-align: center;
+        padding-bottom: 25px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid var(--border-color);
+        position: relative;
+    }
+
+    .report-sheet-header .logo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+    }
+
+    .report-sheet-header h2 {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.5px;
+    }
+
+    .report-sheet-header h3 {
+        margin: 6px 0 0 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+    }
+
+    .report-sheet-header .subtitle {
+        margin: 6px 0 0 0;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+    }
+
+    /* Tabla Contable de Partida Doble */
+    .balance-category {
+        margin-bottom: 32px;
+    }
+
+    .category-header {
+        background: rgba(37, 99, 235, 0.08);
+        border-left: 4px solid #2563eb;
+        padding: 10px 16px;
+        border-radius: 0 8px 8px 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .subcategory-header {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+        padding: 8px 12px;
+        border-bottom: 1px dashed var(--border-color);
+        margin-top: 14px;
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .account-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 14px 9px 24px;
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        border-radius: 6px;
+        transition: background 0.15s;
+    }
+
+    .account-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    [data-theme="light"] .account-row:hover {
+        background: rgba(0, 0, 0, 0.02);
+    }
+
+    .account-code {
+        color: var(--text-secondary);
+        font-family: monospace;
+        font-size: 0.85rem;
+        margin-right: 12px;
+        font-weight: 600;
+    }
+
+    .account-name {
+        flex: 1;
+    }
+
+    .account-detail-tag {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-left: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .account-amount {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: var(--text-primary);
+    }
+
+    .subtotal-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px 10px 24px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        border-top: 1px solid var(--border-color);
+        margin-top: 6px;
+        margin-bottom: 12px;
+    }
+
+    .subtotal-row .amount {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .category-total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 18px;
+        border-radius: 10px;
+        font-size: 1.08rem;
+        font-weight: 800;
+        margin-top: 12px;
+        margin-bottom: 20px;
+    }
+
+    .category-total-row.activos {
+        background: rgba(37, 99, 235, 0.1);
+        color: #3b82f6;
+        border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+
+    .category-total-row.pasivos {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .category-total-row.patrimonio {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    /* Caja de Ecuación Contable y Cuadre */
+    .balance-equation-box {
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 14px;
+        padding: 24px;
+        margin-top: 36px;
+        text-align: center;
+    }
+
+    .balance-equation-box.unbalanced {
+        border-color: rgba(239, 68, 68, 0.45);
+        background: rgba(239, 68, 68, 0.04);
+    }
+
+    .balance-equation-box.balanced {
+        border-color: rgba(16, 185, 129, 0.4);
+        background: rgba(16, 185, 129, 0.04);
+    }
+
+    .equation-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .equation-details {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .equation-term {
+        padding: 8px 16px;
+        border-radius: 8px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+    }
+
+    /* Firmas Oficiales Contables */
+    .signatures-block {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        margin-top: 55px;
+        padding-top: 35px;
+        border-top: 1px dashed var(--border-color);
+        text-align: center;
+    }
+
+    .signature-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .signature-line {
+        width: 80%;
+        border-top: 1px solid var(--text-primary);
+        margin-bottom: 10px;
+    }
+
+    .signature-name {
+        font-weight: 700;
+        font-size: 0.92rem;
+        color: var(--text-primary);
+    }
+
+    .signature-role {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    /* Formulario Oculto de Ajustes Manuales */
+    .ajustes-drawer {
+        background: var(--bg-surface);
+        border: 1px dashed var(--border-color);
+        border-radius: 14px;
+        padding: 24px;
+        display: none;
+        margin-top: 20px;
+    }
+
+    /* Modal de Detalle Transaccional */
+    .drilldown-modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(4px);
+    }
+
+    .drilldown-content {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 850px;
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 28px;
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* ESTILOS DE IMPRESIÓN PROFESIONAL (PDF) */
+    @media print {
+        @page {
+            size: letter portrait;
+            margin: 12mm 14mm;
+        }
+        html, body, .app-container, .main-content, .content, .accounting-wrapper {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            position: static !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        header, .topbar, .sidebar, .period-control-bar, .kpi-cards-grid, .action-buttons-group, .btn-cont-action, .ajustes-drawer, .nav-links, .row-actions, .btn-table-icon, .flash-messages, .modal-backdrop-custom {
+            display: none !important;
+        }
+        .report-sheet {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+        }
+        .report-sheet-header h2,
+        .report-sheet-header h3,
+        .account-row,
+        .account-name,
+        .account-amount {
+            color: #0f172a !important;
+        }
+        .account-row {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .category-header {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            border-left: 4px solid #0f172a !important;
+            break-after: avoid;
+            page-break-after: avoid;
+        }
+        .category-total-row {
+            background: #f8fafc !important;
+            color: #000000 !important;
+            border: 1px solid #000000 !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .signatures-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="accounting-wrapper">
+
+    <!-- BARRA SUPERIOR DE CONTROL Y SELECTOR MENSUAL -->
+    <div class="period-control-bar">
+        <div class="period-selector-group">
+            <div class="period-title">
+                <h3>
+                    <i class="fa-solid fa-scale-balanced" style="color: #2563eb;"></i>
+                    Balance General
+                    {% if es_oficial_cerrado %}
+                    <span class="status-badge sealed"><i class="fa-solid fa-lock"></i> Cierre Sellado Oficial</span>
+                    {% else %}
+                    <span class="status-badge live"><i class="fa-solid fa-bolt"></i> Conciliado en Vivo</span>
+                    {% endif %}
+                </h3>
+                <p>Taller y Lubricantes CR • Período: <strong>{{ fin.periodo_texto }}</strong></p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px;">
+                <label for="periodoSelect" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Mes:</label>
+                <select id="periodoSelect" class="period-select-custom" onchange="cambiarPeriodo(this.value)">
+                    {% for p in fin.periodos_disponibles %}
+                    <option value="{{ p.mes }}-{{ p.anio }}" {% if p.mes == mes_seleccionado and p.anio == anio_seleccionado %}selected{% endif %}>
+                        {{ p.texto }}{% if p.es_actual %} (Actual){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="action-buttons-group">
+            <!-- Botón Ver Estado de Resultados del mismo período -->
+            <a href="{{ url_for('contador.estado_resultados', mes=mes_seleccionado, anio=anio_seleccionado) }}" class="btn-cont-action" title="Ver Estado de Resultados correspondiente">
+                <i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i>
+                Estado de Resultados
+            </a>
+
+            <!-- Botón Ver Historial Mensual -->
+            <a href="{{ url_for('contador.historial', anio=anio_seleccionado) }}" class="btn-cont-action" title="Ver Historial Comparativo por Meses">
+                <i class="fa-solid fa-clock-rotate-left" style="color: #6366f1;"></i>
+                Historial Mensual
+            </a>
+
+            <!-- Botón Desglose Analítico -->
+            <button type="button" class="btn-cont-action" onclick="abrirModalDetalle('facturas')" title="Ver facturas que integran las cuentas">
+                <i class="fa-solid fa-receipt"></i>
+                Ver Facturas
+            </button>
+
+            <!-- Botón Imprimir / PDF -->
+            <button type="button" class="btn-cont-action primary" onclick="window.print()" title="Imprimir reporte en formato bancario/oficial">
+                <i class="fa-solid fa-print"></i>
+                Imprimir / PDF
+            </button>
+
+            <!-- Recalcular en vivo -->
+            <form method="POST" action="{{ url_for('contador.balance', mes=mes_seleccionado, anio=anio_seleccionado) }}" style="display: inline;">
+                <input type="hidden" name="action" value="recalcular_vivo">
+                <button type="submit" class="btn-cont-action" title="Forzar sincronización inmediata con la base de datos">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    Recalcular en Vivo
+                </button>
+            </form>
+
+            <!-- Botón Agregar Cuenta Contable -->
+            <button type="button" class="btn-cont-action primary" onclick="abrirModalAgregarCuenta('Balance')" title="Añadir nueva cuenta contable o ajuste dinámico">
+                <i class="fa-solid fa-plus-circle"></i> Agregar Cuenta
+            </button>
+
+            <!-- Sellar / Desellar Cierre Oficial -->
+            {% if not es_oficial_cerrado %}
+            <button type="button" class="btn-cont-action success" onclick="abrirModalCierreOficial('sellar')" title="Sella y archiva el balance oficial del mes para auditoría y cálculo de razones">
+                <i class="fa-solid fa-shield-halved"></i>
+                Sellar Cierre Oficial
+            </button>
+            {% else %}
+            <button type="button" class="btn-cont-action danger-sealed" onclick="abrirModalCierreOficial('desellar')" title="Balance General sellado. Haz clic para desellar y abrir el período.">
+                <i class="fa-solid fa-lock"></i>
+                Sellado
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TARJETAS DE INDICADORES CLAVE (KPIS DEL BALANCE) -->
+    <div class="kpi-cards-grid">
+        <div class="kpi-card" style="--kpi-color: #2563eb;">
+            <div class="kpi-card-header">
+                <span>Total Activos</span>
+                <i class="fa-solid fa-building-columns"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.activo_total) }}</div>
+            <div class="kpi-card-sub">
+                <span>Corriente: C$ {{ "{:,.2f}".format(fin.activo_circulante) }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: #ef4444;">
+            <div class="kpi-card-header">
+                <span>Total Pasivos</span>
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.pasivo_total) }}</div>
+            <div class="kpi-card-sub">
+                <span>Corto Plazo: C$ {{ "{:,.2f}".format(fin.pasivo_circulante) }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-color: #10b981;">
+            <div class="kpi-card-header">
+                <span>Patrimonio Neto</span>
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="kpi-card-value">C$ {{ "{:,.2f}".format(fin.patrimonio) }}</div>
+            <div class="kpi-card-sub">
+                <span>Utilidad Mes: C$ {{ "{:,.2f}".format(fin.utilidad_ejercicio) }}</span>
+            </div>
+        </div>
+
+        
+    </div>
+
+    <!-- BALANCE GENERAL FORMAL (ESTADO DE SITUACIÓN FINANCIERA) -->
+    <div class="report-sheet">
+        
+        <!-- ENCABEZADO FORMAL DE LA EMPRESA -->
+        <div class="report-sheet-header">
+            <div class="logo-badge">
+                <i class="fa-solid fa-wrench"></i> TALLER Y LUBRICANTES CR
+            </div>
+            <h2>TALLER Y LUBRICANTES CR</h2>
+            <h3>ESTADO DE SITUACIÓN FINANCIERA (BALANCE GENERAL)</h3>
+            <p class="subtitle">
+                Al cierre de <strong>{{ fin.periodo_texto }}</strong> • RUC: J0310000000000 • Expresado en Córdobas (C$)<br>
+                <small style="color: var(--text-secondary);">Elaborado conforme a Normas Internacionales de Información Financiera (NIIF para las MIPYMES)</small>
+            </p>
+            {% if es_oficial_cerrado %}
+            <p style="margin-top: 8px; font-size: 0.8rem; color: #3b82f6; font-weight: 600;">
+                <i class="fa-solid fa-circle-check"></i> Cierre Mensual Certificado por: <strong>{{ autor_cierre }}</strong> el {{ fecha_cierre_str }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- 1. ACTIVOS -->
+        <div class="balance-category">
+            <div class="category-header">
+                <span>1. ACTIVOS</span>
+                <span>C$ {{ "{:,.2f}".format(fin.activo_total) }}</span>
+            </div>
+
+            <!-- 1.1 Activo Corriente -->
+            <div class="subcategory-header">
+                <span>1.1 ACTIVO CORRIENTE (CIRCULANTE)</span>
+                <span>SUBTOTAL</span>
+            </div>
+
+            {% if not fin.get('ocultar_efectivo_caja') %}
+            <div class="account-row" onclick="abrirModalDetalle('caja')" style="cursor: pointer;" title="Clic para ver detalle de Caja">
+                <div class="account-name">
+                    <span class="account-code">1.1.01</span>
+                    <span>{{ fin.get('nombre_efectivo_caja') or 'Efectivo y Equivalentes de Efectivo (Caja General y Bancos)' }}</span>
+                    <span class="account-detail-tag"><i class="fa-solid fa-cash-register"></i> Conciliado ControlCaja</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.efectivo_caja) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_efectivo_caja or 0 }}" data-clave="efectivo_caja" 
+                            data-nombre="{{ fin.get('nombre_efectivo_caja') or 'Efectivo y Equivalentes de Efectivo (Caja General y Bancos)' }}" 
+                            data-monto="{{ fin.efectivo_caja }}" 
+                            data-categoria="{{ fin.get('categoria_efectivo_caja') or 'Activo Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_efectivo_caja %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_efectivo_caja }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_cuentas_por_cobrar') %}
+            <div class="account-row" onclick="abrirModalDetalle('cobrar')" style="cursor: pointer;" title="Clic para ver órdenes y facturas pendientes de cobro">
+                <div class="account-name">
+                    <span class="account-code">1.1.02</span>
+                    <span>{{ fin.get('nombre_cuentas_por_cobrar') or 'Cuentas por Cobrar Comerciales (Servicios y Órdenes de Taller)' }}</span>
+                    <span class="account-detail-tag">Órdenes pendientes de cobro</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.cuentas_por_cobrar) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_cuentas_por_cobrar or 0 }}" data-clave="cuentas_por_cobrar" 
+                            data-nombre="{{ fin.get('nombre_cuentas_por_cobrar') or 'Cuentas por Cobrar Comerciales (Servicios y Órdenes de Taller)' }}" 
+                            data-monto="{{ fin.cuentas_por_cobrar }}" 
+                            data-categoria="{{ fin.get('categoria_cuentas_por_cobrar') or 'Activo Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_cuentas_por_cobrar %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_cuentas_por_cobrar }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_inventario_costo') %}
+            <div class="account-row" onclick="abrirModalDetalle('inventario')" style="cursor: pointer;" title="Clic para ver inventario valorado">
+                <div class="account-name">
+                    <span class="account-code">1.1.03</span>
+                    <span>{{ fin.get('nombre_inventario_costo') or 'Inventario de Mercaderías, Repuestos y Lubricantes al Costo' }}</span>
+                    <span class="account-detail-tag">{{ fin.articulos_inventario }} artículos valorados en bodega</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.inventario_costo) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_inventario_costo or 0 }}" data-clave="inventario_costo" 
+                            data-nombre="{{ fin.get('nombre_inventario_costo') or 'Inventario de Mercaderías, Repuestos y Lubricantes al Costo' }}" 
+                            data-monto="{{ fin.inventario_costo }}" 
+                            data-categoria="{{ fin.get('categoria_inventario_costo') or 'Activo Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar o Ajustar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_inventario_costo %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_inventario_costo }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_credito_fiscal_iva') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">1.1.04</span>
+                    <span>{{ fin.get('nombre_credito_fiscal_iva') or 'Crédito Fiscal IVA por Acreditar (Soportado en Compras)' }}</span>
+                    <span class="account-detail-tag">15% IVA sobre compras</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.credito_fiscal_iva) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_credito_fiscal_iva or 0 }}" data-clave="credito_fiscal_iva" 
+                            data-nombre="{{ fin.get('nombre_credito_fiscal_iva') or 'Crédito Fiscal IVA por Acreditar (Soportado en Compras)' }}" 
+                            data-monto="{{ fin.credito_fiscal_iva }}" 
+                            data-categoria="{{ fin.get('categoria_credito_fiscal_iva') or 'Activo Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_credito_fiscal_iva %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_credito_fiscal_iva }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cuentas Personalizadas de Activo Corriente -->
+            {% for c in fin.cuentas_pers_activo_corriente %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">1.1.{{ loop.index + 4 }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}<span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>{% else %}<span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">Personalizada</span>{% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(c.monto) }}</div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.monto }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="Balance" onclick="abrirModalEditarDesdeBoton(this)" title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'Balance')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="subtotal-row">
+                <span>TOTAL ACTIVO CORRIENTE</span>
+                <span class="amount">C$ {{ "{:,.2f}".format(fin.activo_circulante) }}</span>
+            </div>
+
+            <!-- 1.2 Activo No Corriente (Activo Fijo) -->
+            <div class="subcategory-header" style="margin-top: 24px;">
+                <span>1.2 ACTIVO NO CORRIENTE (ACTIVO FIJO Y OTROS)</span>
+                <span>SUBTOTAL</span>
+            </div>
+
+            {% if not fin.get('ocultar_activo_fijo_maquinaria') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">1.2.01</span>
+                    <span>{{ fin.get('nombre_activo_fijo_maquinaria') or 'Maquinaria, Rampas y Elevadores Hidráulicos' }}</span>
+                    <span class="account-detail-tag">2 rampas de elevación activas</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.activo_fijo_maquinaria) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_activo_fijo_maquinaria or 0 }}" data-clave="activo_fijo_maquinaria" 
+                            data-nombre="{{ fin.get('nombre_activo_fijo_maquinaria') or 'Maquinaria, Rampas y Elevadores Hidráulicos' }}" 
+                            data-monto="{{ fin.activo_fijo_maquinaria }}" 
+                            data-categoria="{{ fin.get('categoria_activo_fijo_maquinaria') or 'Activo No Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_activo_fijo_maquinaria %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_activo_fijo_maquinaria }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_activo_fijo_herramientas') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">1.2.02</span>
+                    <span>{{ fin.get('nombre_activo_fijo_herramientas') or 'Herramientas Especializadas y Scanners de Diagnóstico' }}</span>
+                    <span class="account-detail-tag">Scanner OBD + banco de llaves</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.activo_fijo_herramientas) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_activo_fijo_herramientas or 0 }}" data-clave="activo_fijo_herramientas" 
+                            data-nombre="{{ fin.get('nombre_activo_fijo_herramientas') or 'Herramientas Especializadas y Scanners de Diagnóstico' }}" 
+                            data-monto="{{ fin.activo_fijo_herramientas }}" 
+                            data-categoria="{{ fin.get('categoria_activo_fijo_herramientas') or 'Activo No Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_activo_fijo_herramientas %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_activo_fijo_herramientas }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_activo_fijo_mobiliario') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">1.2.03</span>
+                    <span>{{ fin.get('nombre_activo_fijo_mobiliario') or 'Mobiliario de Atención, Mostrador y Estantería' }}</span>
+                    <span class="account-detail-tag">Estantes de lubricantes y sala de espera</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.activo_fijo_mobiliario) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_activo_fijo_mobiliario or 0 }}" data-clave="activo_fijo_mobiliario" 
+                            data-nombre="{{ fin.get('nombre_activo_fijo_mobiliario') or 'Mobiliario de Atención, Mostrador y Estantería' }}" 
+                            data-monto="{{ fin.activo_fijo_mobiliario }}" 
+                            data-categoria="{{ fin.get('categoria_activo_fijo_mobiliario') or 'Activo No Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_activo_fijo_mobiliario %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_activo_fijo_mobiliario }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_depreciacion_acumulada') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">1.2.04</span>
+                    <span>{{ fin.get('nombre_depreciacion_acumulada') or '(-) Depreciación Acumulada de Propiedad, Planta y Equipo' }}</span>
+                    <span class="account-detail-tag">Método línea recta fiscal (DGI)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount" style="color: #ef4444;">(C$ {{ "{:,.2f}".format(fin.depreciacion_acumulada|abs) }})</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_depreciacion_acumulada or 0 }}" data-clave="depreciacion_acumulada" 
+                            data-nombre="{{ fin.get('nombre_depreciacion_acumulada') or '(-) Depreciación Acumulada de Propiedad, Planta y Equipo' }}" 
+                            data-monto="{{ fin.depreciacion_acumulada|abs }}" 
+                            data-categoria="{{ fin.get('categoria_depreciacion_acumulada') or 'Activo No Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Depreciación"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_depreciacion_acumulada %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_depreciacion_acumulada }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cuentas Personalizadas de Activo No Corriente -->
+            {% for c in fin.cuentas_pers_activo_no_corriente %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">1.2.{{ loop.index + 4 }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}<span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>{% else %}<span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">Personalizada</span>{% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(c.monto) }}</div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.monto }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="Balance" onclick="abrirModalEditarDesdeBoton(this)" title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'Balance')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="subtotal-row">
+                <span>TOTAL ACTIVO NO CORRIENTE (NETO)</span>
+                <span class="amount">C$ {{ "{:,.2f}".format(fin.activo_fijo_total) }}</span>
+            </div>
+
+            <!-- Total General Activos -->
+            <div class="category-total-row activos">
+                <span>TOTAL GENERAL DE ACTIVOS</span>
+                <span>C$ {{ "{:,.2f}".format(fin.activo_total) }}</span>
+            </div>
+        </div>
+
+        <!-- 2. PASIVOS -->
+        <div class="balance-category">
+            <div class="category-header" style="border-left-color: #ef4444;">
+                <span style="color: #ef4444;">2. PASIVOS</span>
+                <span style="color: #ef4444;">C$ {{ "{:,.2f}".format(fin.pasivo_total) }}</span>
+            </div>
+
+            <!-- 2.1 Pasivo Corriente -->
+            <div class="subcategory-header">
+                <span>2.1 PASIVO CORRIENTE (CORTO PLAZO)</span>
+                <span>SUBTOTAL</span>
+            </div>
+
+            {% if not fin.get('ocultar_proveedores_por_pagar') %}
+            <div class="account-row" onclick="abrirModalDetalle('compras')" style="cursor: pointer;" title="Clic para ver compras de bodega">
+                <div class="account-name">
+                    <span class="account-code">2.1.01</span>
+                    <span>{{ fin.get('nombre_proveedores_por_pagar') or 'Cuentas por Pagar Comerciales (Proveedores de Repuestos y Lubricantes)' }}</span>
+                    <span class="account-detail-tag">Compras a crédito / crédito comercial</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.proveedores_por_pagar) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_proveedores_por_pagar or 0 }}" data-clave="proveedores_por_pagar" 
+                            data-nombre="{{ fin.get('nombre_proveedores_por_pagar') or 'Cuentas por Pagar Comerciales (Proveedores de Repuestos y Lubricantes)' }}" 
+                            data-monto="{{ fin.proveedores_por_pagar }}" 
+                            data-categoria="{{ fin.get('categoria_proveedores_por_pagar') or 'Pasivo Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_proveedores_por_pagar %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_proveedores_por_pagar }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_iva_por_enterar') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">2.1.02</span>
+                    <span>{{ fin.get('nombre_iva_por_enterar') or 'Débito Fiscal IVA por Enterar (Cobrado en Ventas de Taller)' }}</span>
+                    <span class="account-detail-tag">IVA 15% neto a favor de DGI</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.iva_por_enterar) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_iva_por_enterar or 0 }}" data-clave="iva_por_enterar" 
+                            data-nombre="{{ fin.get('nombre_iva_por_enterar') or 'Débito Fiscal IVA por Enterar (Cobrado en Ventas de Taller)' }}" 
+                            data-monto="{{ fin.iva_por_enterar }}" 
+                            data-categoria="{{ fin.get('categoria_iva_por_enterar') or 'Pasivo Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_iva_por_enterar %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_iva_por_enterar }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_retenciones_dgi') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">2.1.03</span>
+                    <span>{{ fin.get('nombre_retenciones_dgi') or 'Retenciones Fiscales en la Fuente por Pagar (DGI & Alcaldía)' }}</span>
+                    <span class="account-detail-tag">IR Laboral + Pago Mínimo Definitivo 1%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.retenciones_dgi) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_retenciones_dgi or 0 }}" data-clave="retenciones_dgi" 
+                            data-nombre="{{ fin.get('nombre_retenciones_dgi') or 'Retenciones Fiscales en la Fuente por Pagar (DGI & Alcaldía)' }}" 
+                            data-monto="{{ fin.retenciones_dgi }}" 
+                            data-categoria="{{ fin.get('categoria_retenciones_dgi') or 'Pasivo Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_retenciones_dgi %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_retenciones_dgi }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_obligaciones_laborales') %}
+            <div class="account-row" onclick="abrirModalDetalle('obligaciones_laborales')" style="cursor: pointer;" title="Clic para ver detalle de Nómina y Cargas Laborales">
+                <div class="account-name">
+                    <span class="account-code">2.1.04</span>
+                    <span>{{ fin.get('nombre_obligaciones_laborales') or 'Obligaciones Laborales y Cargas Sociales por Pagar (INSS / INATEC)' }}</span>
+                    <span class="account-detail-tag">INSS Patronal (22.5%) + Laboral (7%) + Salarios pendientes</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;" onclick="event.stopPropagation();">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.obligaciones_laborales) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_obligaciones_laborales or 0 }}" data-clave="obligaciones_laborales" 
+                            data-nombre="{{ fin.get('nombre_obligaciones_laborales') or 'Obligaciones Laborales y Cargas Sociales por Pagar (INSS / INATEC)' }}" 
+                            data-monto="{{ fin.obligaciones_laborales }}" 
+                            data-categoria="{{ fin.get('categoria_obligaciones_laborales') or 'Pasivo Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_obligaciones_laborales %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_obligaciones_laborales }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cuentas Personalizadas de Pasivo Corriente -->
+            {% for c in fin.cuentas_pers_pasivo_corriente %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">2.1.{{ loop.index + 4 }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}<span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>{% else %}<span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">Personalizada</span>{% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(c.monto) }}</div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.monto }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="Balance" onclick="abrirModalEditarDesdeBoton(this)" title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'Balance')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="subtotal-row">
+                <span>TOTAL PASIVO CORRIENTE</span>
+                <span class="amount">C$ {{ "{:,.2f}".format(fin.pasivo_circulante) }}</span>
+            </div>
+
+            <!-- 2.2 Pasivo No Corriente -->
+            <div class="subcategory-header" style="margin-top: 24px;">
+                <span>2.2 PASIVO NO CORRIENTE (LARGO PLAZO)</span>
+                <span>SUBTOTAL</span>
+            </div>
+
+            {% if not fin.get('ocultar_pasivo_largo_plazo') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">2.2.01</span>
+                    <span>{{ fin.get('nombre_pasivo_largo_plazo') or 'Préstamos Bancarios y Financiamiento de Equipamiento de Taller' }}</span>
+                    <span class="account-detail-tag">Créditos de equipamiento > 1 año</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.pasivo_largo_plazo) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_pasivo_largo_plazo or 0 }}" data-clave="pasivo_largo_plazo" 
+                            data-nombre="{{ fin.get('nombre_pasivo_largo_plazo') or 'Préstamos Bancarios y Financiamiento de Equipamiento de Taller' }}" 
+                            data-monto="{{ fin.pasivo_largo_plazo }}" 
+                            data-categoria="{{ fin.get('categoria_pasivo_largo_plazo') or 'Pasivo No Corriente' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_pasivo_largo_plazo %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_pasivo_largo_plazo }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cuentas Personalizadas de Pasivo No Corriente -->
+            {% for c in fin.cuentas_pers_pasivo_no_corriente %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">2.2.{{ loop.index + 1 }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}<span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>{% else %}<span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">Personalizada</span>{% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(c.monto) }}</div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.monto }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="Balance" onclick="abrirModalEditarDesdeBoton(this)" title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'Balance')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="subtotal-row">
+                <span>TOTAL PASIVO NO CORRIENTE</span>
+                <span class="amount">C$ {{ "{:,.2f}".format(fin.pasivo_largo_plazo) }}</span>
+            </div>
+
+            <!-- Total General Pasivos -->
+            <div class="category-total-row pasivos">
+                <span>TOTAL GENERAL DE PASIVOS</span>
+                <span>C$ {{ "{:,.2f}".format(fin.pasivo_total) }}</span>
+            </div>
+        </div>
+
+        <!-- 3. PATRIMONIO NETO -->
+        <div class="balance-category">
+            <div class="category-header" style="border-left-color: #10b981;">
+                <span style="color: #10b981;">3. PATRIMONIO NETO (CAPITAL CONTABLE)</span>
+                <span style="color: #10b981;">C$ {{ "{:,.2f}".format(fin.patrimonio) }}</span>
+            </div>
+
+            <div class="subcategory-header">
+                <span>3.1 FONDOS PROPIOS Y RESULTADOS</span>
+                <span>SUBTOTAL</span>
+            </div>
+
+            {% if not fin.get('ocultar_capital_social') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">3.1.01</span>
+                    <span>{{ fin.get('nombre_capital_social') or 'Capital Social Suscrito y Pagado' }}</span>
+                    <span class="account-detail-tag">Aporte de los socios fundadores</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.capital_social) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_capital_social or 0 }}" data-clave="capital_social" 
+                            data-nombre="{{ fin.get('nombre_capital_social') or 'Capital Social Suscrito y Pagado' }}" 
+                            data-monto="{{ fin.capital_social }}" 
+                            data-categoria="{{ fin.get('categoria_capital_social') or 'Patrimonio' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_capital_social %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_capital_social }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not fin.get('ocultar_utilidades_acumuladas') %}
+            <div class="account-row">
+                <div class="account-name">
+                    <span class="account-code">3.1.02</span>
+                    <span>{{ fin.get('nombre_utilidades_acumuladas') or 'Resultados y Utilidades Acumuladas de Ejercicios Anteriores' }}</span>
+                    <span class="account-detail-tag">Reservas retenidas</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(fin.utilidades_acumuladas) }}</div>
+                    <button type="button" class="btn-table-icon edit" 
+                            data-id="{{ fin.ajuste_id_utilidades_acumuladas or 0 }}" data-clave="utilidades_acumuladas" 
+                            data-nombre="{{ fin.get('nombre_utilidades_acumuladas') or 'Resultados y Utilidades Acumuladas de Ejercicios Anteriores' }}" 
+                            data-monto="{{ fin.utilidades_acumuladas }}" 
+                            data-categoria="{{ fin.get('categoria_utilidades_acumuladas') or 'Patrimonio' }}" 
+                            data-tipo="Balance" 
+                            onclick="abrirModalEditarDesdeBoton(this)" 
+                            title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    {% if fin.ajuste_id_utilidades_acumuladas %}
+                    <button type="button" class="btn-table-icon reset" onclick="eliminarCuentaPersonalizada({{ fin.ajuste_id_utilidades_acumuladas }}, 'Balance')" title="Restablecer valor por defecto"><i class="fa-solid fa-rotate-left"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cuentas Personalizadas de Patrimonio -->
+            {% for c in fin.cuentas_pers_patrimonio %}
+            <div class="account-row custom-account-row">
+                <div class="account-name">
+                    <span class="account-code">3.1.{{ loop.index + 2 }}</span>
+                    <span>{{ c.nombre }}</span>
+                    {% if c.clave_cuenta %}<span class="account-detail-tag" style="background: rgba(217, 119, 6, 0.14); color: #d97706;">Reubicada</span>{% else %}<span class="account-detail-tag" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;">Personalizada</span>{% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="account-amount">C$ {{ "{:,.2f}".format(c.monto) }}</div>
+                    <button type="button" class="btn-table-icon edit" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" data-monto="{{ c.monto }}" data-categoria="{{ c.categoria }}" data-clave="{{ c.clave_cuenta or '' }}" data-tipo="Balance" onclick="abrirModalEditarDesdeBoton(this)" title="Editar Cuenta"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn-table-icon delete" onclick="eliminarCuentaPersonalizada({{ c.id }}, 'Balance')" title="{{ 'Restablecer ubicación y valor base' if c.clave_cuenta else 'Eliminar Cuenta' }}"><i class="fa-solid {{ 'fa-rotate-left' if c.clave_cuenta else 'fa-trash' }}"></i></button>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="account-row" style="font-weight: 700;">
+                <div class="account-name">
+                    <span class="account-code">3.1.03</span>
+                    <span style="color: {% if fin.utilidad_ejercicio >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+                        Utilidad (o Pérdida) Neta del Ejercicio Actual • {{ fin.periodo_texto }}
+                    </span>
+                    <span class="account-detail-tag">Vinculado al Estado de Resultados</span>
+                </div>
+                <div class="account-amount" style="color: {% if fin.utilidad_ejercicio >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+                    C$ {{ "{:,.2f}".format(fin.utilidad_ejercicio) }}
+                </div>
+            </div>
+
+            <div class="category-total-row patrimonio">
+                <span>TOTAL PATRIMONIO NETO</span>
+                <span>C$ {{ "{:,.2f}".format(fin.patrimonio) }}</span>
+            </div>
+        </div>
+
+        <!-- VALIDACIÓN DE LA ECUACIÓN CONTABLE -->
+        <div class="balance-equation-box {% if fin.cuadra %}balanced{% else %}unbalanced{% endif %}">
+            <div class="equation-title">
+                {% if fin.cuadra %}
+                <span style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> ECUACIÓN CONTABLE CUADRADA AL 100%</span>
+                {% else %}
+                <span style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> BALANCE DESCUADRADO (DIFERENCIA EN CONCILIACIÓN)</span>
+                {% endif %}
+            </div>
+
+            <div class="equation-details">
+                <div class="equation-term">
+                    <small style="display:block; color: var(--text-secondary); font-size: 0.75rem;">TOTAL ACTIVOS</small>
+                    <strong style="color: {% if fin.cuadra %}#10b981{% else %}var(--text-primary){% endif %};">C$ {{ "{:,.2f}".format(fin.activo_total) }}</strong>
+                </div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: {% if fin.cuadra %}#10b981{% else %}#ef4444{% endif %};">
+                    {% if fin.cuadra %}={% else %}≠{% endif %}
+                </div>
+                <div class="equation-term">
+                    <small style="display:block; color: var(--text-secondary); font-size: 0.75rem;">TOTAL PASIVOS</small>
+                    <strong>C$ {{ "{:,.2f}".format(fin.pasivo_total) }}</strong>
+                </div>
+                <div style="font-size: 1.5rem; color: var(--accent-primary);">+</div>
+                <div class="equation-term">
+                    <small style="display:block; color: var(--text-secondary); font-size: 0.75rem;">PATRIMONIO NETO</small>
+                    <strong>C$ {{ "{:,.2f}".format(fin.patrimonio) }}</strong>
+                </div>
+            </div>
+
+            <div style="font-size: 0.95rem; color: var(--text-secondary); margin-top: 10px;">
+                PASIVO + PATRIMONIO = <strong>C$ {{ "{:,.2f}".format(fin.pasivo_mas_patrimonio) }}</strong> | 
+                Diferencia: <strong style="color: {% if fin.cuadra %}#10b981{% else %}#ef4444{% endif %}; font-size: 1.1rem;">C$ {{ "{:,.2f}".format(fin.diferencia_cuadre) }}</strong>
+            </div>
+
+            {% if not fin.cuadra %}
+            <div style="margin-top: 16px; padding: 14px 18px; border-radius: 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); font-size: 0.88rem; color: var(--text-primary); text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 280px;">
+                    <div style="font-weight: 700; color: #ef4444; margin-bottom: 3px;">
+                        <i class="fa-solid fa-circle-exclamation"></i> El Balance General no está cuadrado
+                    </div>
+                    Los activos registrados (C$ {{ "{:,.2f}".format(fin.activo_total) }}) superan a la suma de pasivos y patrimonio (C$ {{ "{:,.2f}".format(fin.pasivo_mas_patrimonio) }}) por <strong>C$ {{ "{:,.2f}".format(fin.diferencia_cuadre) }}</strong>. Puedes ingresar el aporte real de los socios en <strong>Capital Social</strong> o las <strong>Utilidades Acumuladas</strong> para cuadrarlo.
+                </div>
+                <button type="button" class="btn-cont-action" style="background: #3b82f6; color: #ffffff; border: none; padding: 8px 16px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"
+                        onclick="autoCuadrarEnCapital({{ fin.diferencia_cuadre }}, {{ fin.capital_social }})"
+                        title="Ajustar Capital Social para cuadrar exactamente el Balance">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Cuadrar en Capital
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- BLOQUE DE FIRMAS OFICIALES DE AUDITORÍA Y DIRECCIÓN -->
+        <div class="signatures-block">
+            <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-name">Lic. Carlos Rene Gavarrete Calero</div>
+                <div class="signature-role">Responsable de Finanzas y Contabilidad • Reg. CPA-NI-4821</div>
+            </div>
+
+            <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-name">Jhosep David Cooper Sandino</div>
+                <div class="signature-role">Gerente General</div>
+            </div>
+
+            <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-name">Elvin Alexander Méndez Cruz</div>
+                <div class="signature-role">Director General de Operaciones</div>
+            </div>
+        </div>
+
+        <!-- NOTA AL PIE DE PÁGINA -->
+        <div style="text-align: center; margin-top: 35px; color: var(--text-secondary); font-size: 0.78rem;">
+            Documento contable generado automáticamente por el Sistema Integral de Gestión de Taller y Lubricantes CR.<br>
+            Emisión: {{ fin.periodo_texto }} • Los saldos reflejan con exactitud los registros de facturación, caja, bodega y gastos del taller.
+        </div>
+    </div>
+
+    <!-- DRAWER / MODAL DE AJUSTES CONTABLES SUPLEMENTARIOS -->
+    <div id="drawerAjustes" class="ajustes-drawer">
+        <h4 style="margin-top:0; color: var(--text-primary);"><i class="fa-solid fa-sliders"></i> Ajustes Contables Manuales (Opcional)</h4>
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">Si requiere registrar una partida extraordinaria o reclasificar cuentas para este mes, puede agregarlas aquí.</p>
+        
+        <form method="POST" action="{{ url_for('contador.balance', mes=mes_seleccionado, anio=anio_seleccionado) }}">
+            <input type="hidden" name="action" value="ajuste_manual">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h5 style="color: var(--accent-primary);">Activos Extraordinarios</h5>
+                    <div id="activosAjusteList">
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <input type="text" name="activo_nombres[]" placeholder="Ej. Depósito en Garantía" style="flex:1; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                            <input type="number" step="0.01" name="activo_montos[]" placeholder="0.00" style="width: 120px; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 style="color: #ef4444;">Pasivos Extraordinarios</h5>
+                    <div id="pasivosAjusteList">
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <input type="text" name="pasivo_nombres[]" placeholder="Ej. Provisión Especial" style="flex:1; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                            <input type="number" step="0.01" name="pasivo_montos[]" placeholder="0.00" style="width: 120px; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button type="submit" class="btn-cont-action primary"><i class="fa-solid fa-save"></i> Guardar Ajuste</button>
+                <button type="button" class="btn-cont-action" onclick="document.getElementById('drawerAjustes').style.display='none'">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<!-- MODAL DRILL-DOWN ANALÍTICO -->
+<div id="drillModal" class="drilldown-modal" onclick="if(event.target===this) cerrarModalDetalle()">
+    <div class="drilldown-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+            <h3 id="drillTitle" style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Detalle de Transacciones</h3>
+            <button type="button" onclick="cerrarModalDetalle()" style="background: transparent; border: none; font-size: 1.3rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        </div>
+        <div id="drillBody" style="font-size: 0.9rem;">
+            <div style="text-align: center; padding: 30px; color: var(--text-secondary);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                <p style="margin-top: 10px;">Cargando registros conciliados...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function cambiarPeriodo(val) {
+        if (!val) return;
+        const [mes, anio] = val.split('-');
+        window.location.href = `{{ url_for('contador.balance') }}?mes=${mes}&anio=${anio}`;
+    }
+
+    function abrirModalDetalle(tipo) {
+        const modal = document.getElementById('drillModal');
+        const title = document.getElementById('drillTitle');
+        const body = document.getElementById('drillBody');
+        
+        modal.style.display = 'flex';
+        body.innerHTML = `
+            <div style="text-align: center; padding: 35px; color: var(--text-secondary);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--accent-primary);"></i>
+                <p style="margin-top: 12px; font-weight: 600;">Consultando base de datos en tiempo real...</p>
+            </div>
+        `;
+
+        if (tipo === 'caja') {
+            title.innerHTML = '<i class="fa-solid fa-cash-register" style="color: #10b981;"></i> Cierres y Movimientos de Caja General';
+        } else if (tipo === 'cobrar') {
+            title.innerHTML = '<i class="fa-solid fa-clock-rotate-left" style="color: #3b82f6;"></i> Cuentas por Cobrar Comerciales';
+        } else if (tipo === 'inventario') {
+            title.innerHTML = '<i class="fa-solid fa-boxes-stacked" style="color: #8b5cf6;"></i> Inventario Valorado al Costo (Bodega)';
+        } else if (tipo === 'credito_iva') {
+            title.innerHTML = '<i class="fa-solid fa-receipt" style="color: #10b981;"></i> Crédito Fiscal IVA Soportado (Compras)';
+        } else if (tipo === 'compras') {
+            title.innerHTML = '<i class="fa-solid fa-truck" style="color: #f59e0b;"></i> Cuentas por Pagar y Compras a Proveedores';
+        } else if (tipo === 'debito_iva') {
+            title.innerHTML = '<i class="fa-solid fa-file-invoice-dollar" style="color: #ef4444;"></i> Débito Fiscal IVA Facturado por Enterar (DGI)';
+        } else if (tipo === 'retenciones_dgi') {
+            title.innerHTML = '<i class="fa-solid fa-landmark" style="color: #ef4444;"></i> Retenciones Fiscales en la Fuente por Pagar (DGI)';
+        } else if (tipo === 'obligaciones_laborales' || tipo === 'nomina') {
+            title.innerHTML = '<i class="fa-solid fa-users-gear" style="color: #3b82f6;"></i> Obligaciones Laborales y Cargas Sociales (INSS / Planilla)';
+        } else if (tipo === 'facturas') {
+            title.innerHTML = '<i class="fa-solid fa-receipt" style="color: var(--accent-primary);"></i> Facturas Pagadas del Período';
+        }
+
+        fetch(`{{ url_for('contador.api_detalle_transacciones') }}?tipo=${tipo}&mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}`)
+            .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+            .then(data => {
+                if (!data.items || data.items.length === 0) {
+                    const t = data.empty_title || 'Sin movimientos registrados';
+                    const m = data.empty_msg || 'No se registraron movimientos en este período.';
+                    body.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px;">
+                            <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(16, 185, 129, 0.12); margin-bottom: 16px;">
+                                <i class="fa-solid fa-circle-check fa-2x" style="color: #10b981;"></i>
+                            </div>
+                            <h4 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); font-weight: 700;">${t}</h4>
+                            <p style="margin: 8px auto 0; max-width: 480px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">${m}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+
+                if (tipo === 'caja') {
+                    const res = data.resumen || {};
+                    const difArqueo = res.diferencia_arqueo || 0;
+                    let difColor = '#10b981';
+                    let difBadge = 'Cuadrada C$ 0.00';
+                    if (difArqueo > 0.001) {
+                        difColor = '#3b82f6';
+                        difBadge = `Sobrante: +C$ ${difArqueo.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    } else if (difArqueo < -0.001) {
+                        difColor = '#ef4444';
+                        difBadge = `Faltante: C$ ${difArqueo.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    }
+                    html += `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 12px 16px;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Total Efectivo en Caja</div>
+                                <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 4px;">C$ ${(res.total_caja || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Cobros en Efectivo</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">C$ ${(res.total_ingresos_efectivo || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Base Apertura</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-secondary); margin-top: 4px;">C$ ${(res.monto_inicial || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Arqueo Conciliado</div>
+                                <div style="font-size: 1.15rem; font-weight: 700; color: ${difColor}; margin-top: 4px;">${difBadge}</div>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 10px 8px;">FECHA Y HORA</th>
+                                    <th style="padding: 10px 8px;">TIPO MOVIMIENTO</th>
+                                    <th style="padding: 10px 8px;">CONCEPTO / REFERENCIA</th>
+                                    <th style="padding: 10px 8px;">CLIENTE / CAJERO</th>
+                                    <th style="padding: 10px 8px; text-align: right;">INGRESO (+)</th>
+                                    <th style="padding: 10px 8px; text-align: right;">SALDO ACUM.</th>
+                                    <th style="padding: 10px 8px; text-align: center;">ESTADO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(it => {
+                        const isIngreso = it.ingreso > 0;
+                        const badgeBg = it.tipo_mov.includes('Apertura') ? 'rgba(59, 130, 246, 0.15)' : (it.tipo_mov.includes('Cierre') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)');
+                        const badgeColor = it.tipo_mov.includes('Apertura') ? '#3b82f6' : (it.tipo_mov.includes('Cierre') ? '#ef4444' : '#10b981');
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px 8px; font-size: 0.85rem; color: var(--text-secondary);">${it.fecha}</td>
+                                <td style="padding: 10px 8px;"><span style="background: ${badgeBg}; color: ${badgeColor}; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">${it.tipo_mov}</span></td>
+                                <td style="padding: 10px 8px; font-weight: 600;">${it.concepto}</td>
+                                <td style="padding: 10px 8px; color: var(--text-secondary); font-size: 0.85rem;">${it.cliente}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: ${isIngreso ? '#10b981' : 'var(--text-secondary)'};">C$ ${it.ingreso.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: #10b981;">C$ ${it.saldo.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: center;"><span style="background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">${it.estado}</span></td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'cobrar') {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 10px 8px;">REFERENCIA</th>
+                                    <th style="padding: 10px 8px;">FECHA</th>
+                                    <th style="padding: 10px 8px;">CLIENTE</th>
+                                    <th style="padding: 10px 8px;">CONCEPTO / SERVICIO</th>
+                                    <th style="padding: 10px 8px; text-align: right;">MONTO PENDIENTE</th>
+                                    <th style="padding: 10px 8px; text-align: center;">ESTADO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(it => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px 8px; font-weight: 700; color: var(--accent-primary);">${it.numero}</td>
+                                <td style="padding: 10px 8px; color: var(--text-secondary); font-size: 0.85rem;">${it.fecha}</td>
+                                <td style="padding: 10px 8px; font-weight: 600;">${it.cliente}</td>
+                                <td style="padding: 10px 8px;">${it.concepto}</td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: #f59e0b;">C$ ${it.monto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; text-align: center;"><span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${it.estado}</span></td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'inventario') {
+                    const res = data.resumen || {};
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px;">
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Total Unidades en Existencia:</span>
+                                <strong style="font-size: 1.1rem; color: var(--text-primary); margin-left: 8px;">${res.total_articulos || 0} unidades</strong>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Valoración Total en Bodega:</span>
+                                <strong style="font-size: 1.25rem; color: #3b82f6; margin-left: 8px;">C$ ${(res.total_valorizado || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">SKU</th>
+                                    <th style="padding: 8px;">PRODUCTO</th>
+                                    <th style="padding: 8px;">CATEGORÍA</th>
+                                    <th style="padding: 8px; text-align: center;">STOCK</th>
+                                    <th style="padding: 8px; text-align: right;">COSTO COMPRA</th>
+                                    <th style="padding: 8px; text-align: right;">VALOR TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        const hasStock = item.stock > 0;
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color); opacity: ${hasStock ? '1' : '0.5'};">
+                                <td style="padding: 8px; font-family: monospace; font-size: 0.85rem;">${item.sku}</td>
+                                <td style="padding: 8px; font-weight: 600;">${item.nombre}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${item.categoria}</td>
+                                <td style="padding: 8px; text-align: center; font-weight: 700; color: ${hasStock ? 'var(--text-primary)' : 'var(--text-secondary)'};">${item.stock}</td>
+                                <td style="padding: 8px; text-align: right; color: var(--text-secondary);">C$ ${item.costo_unit.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: ${hasStock ? '#3b82f6' : 'var(--text-secondary)'};">C$ ${item.costo_total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'debito_iva') {
+                    const res = data.resumen || {};
+                    html += `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Subtotal Gravado (Neto)</div>
+                                <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">C$ ${(res.subtotal_gravado || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px; padding: 12px 16px;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Débito Fiscal IVA (15% DGI)</div>
+                                <div style="font-size: 1.25rem; font-weight: 800; color: #ef4444; margin-top: 4px;">C$ ${(res.debito_fiscal_iva || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Total Bruto Facturado</div>
+                                <div style="font-size: 1.2rem; font-weight: 700; color: #10b981; margin-top: 4px;">C$ ${(res.total_facturado || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">N° FACTURA</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px;">TIPO</th>
+                                    <th style="padding: 8px; text-align: right;">SUBTOTAL GRAVADO</th>
+                                    <th style="padding: 8px; text-align: right;">IVA (15%)</th>
+                                    <th style="padding: 8px; text-align: right;">TOTAL FACTURA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(it => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700; color: var(--accent-primary);">${it.numero}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${it.fecha}</td>
+                                <td style="padding: 8px;"><span style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">${it.tipo}</span></td>
+                                <td style="padding: 8px; text-align: right;">C$ ${it.subtotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #ef4444;">C$ ${it.iva.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${it.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'retenciones_dgi') {
+                    const res = data.resumen || {};
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px;">
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Obligación Tributaria DGI:</span>
+                                <strong style="font-size: 1.05rem; color: var(--text-primary); margin-left: 8px;">Retenciones en la Fuente</strong>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Total Retenciones por Enterar:</span>
+                                <strong style="font-size: 1.25rem; color: #ef4444; margin-left: 8px;">C$ ${(res.total_retenciones || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 10px 8px;">CONCEPTO FISCAL DGI</th>
+                                    <th style="padding: 10px 8px; text-align: right;">BASE IMPONIBLE</th>
+                                    <th style="padding: 10px 8px;">TASA APLICADA</th>
+                                    <th style="padding: 10px 8px; text-align: right;">MONTO RETENIDO</th>
+                                    <th style="padding: 10px 8px;">REFERENCIA LEGAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(it => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 10px 8px; font-weight: 700; color: var(--text-primary);">${it.concepto}</td>
+                                <td style="padding: 10px 8px; text-align: right; color: var(--text-secondary);">C$ ${it.base.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px;"><span style="background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${it.tasa}</span></td>
+                                <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: #ef4444;">C$ ${it.monto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 10px 8px; font-size: 0.85rem; color: var(--text-secondary);">${it.referencia}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'obligaciones_laborales' || tipo === 'nomina') {
+                    const res = data.resumen || {};
+                    html += `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">INSS PATRONAL (22.5%)</div>
+                                <div style="font-size: 1.1rem; font-weight: 700; color: #3b82f6;">C$ ${(res.inss_patronal || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">INATEC (2%)</div>
+                                <div style="font-size: 1.1rem; font-weight: 700; color: #8b5cf6;">C$ ${(res.inatec || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">INSS LABORAL (7%)</div>
+                                <div style="font-size: 1.1rem; font-weight: 700; color: #ef4444;">C$ ${(res.inss_laboral || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">PROVISIONES LEY 185</div>
+                                <div style="font-size: 1.1rem; font-weight: 700; color: #f59e0b;">C$ ${(res.provisiones || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">COLABORADOR</th>
+                                    <th style="padding: 8px;">CARGO</th>
+                                    <th style="padding: 8px; text-align: right;">SALARIO BRUTO</th>
+                                    <th style="padding: 8px; text-align: right;">INSS (7%)</th>
+                                    <th style="padding: 8px; text-align: right;">IR DGI</th>
+                                    <th style="padding: 8px; text-align: right;">NETO</th>
+                                    <th style="padding: 8px; text-align: right;">CARGAS PATR.</th>
+                                    <th style="padding: 8px; text-align: center;">ESTADO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(emp => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color); opacity: ${emp.pagado ? '1' : '0.6'};">
+                                <td style="padding: 8px; font-weight: 700;">${emp.nombre}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${emp.cargo}</td>
+                                <td style="padding: 8px; text-align: right;">C$ ${emp.salario_bruto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; color: #ef4444;">C$ ${emp.inss_laboral.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; color: #ef4444;">C$ ${emp.ir.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${emp.salario_neto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; color: #3b82f6;">C$ ${(emp.inss_patronal + emp.inatec).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: center;"><span style="background: ${emp.pagado ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${emp.pagado ? '#10b981' : '#ef4444'}; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${emp.pagado ? 'Pagado' : 'Pendiente'}</span></td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'compras' || tipo === 'credito_iva') {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">ORDEN COMPRA</th>
+                                    <th style="padding: 8px;">PROVEEDOR</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px; text-align: right;">SUBTOTAL</th>
+                                    <th style="padding: 8px; text-align: right;">IVA (15%)</th>
+                                    <th style="padding: 8px; text-align: right;">TOTAL COMPRA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700;">#COM-${item.id}</td>
+                                <td style="padding: 8px;">${item.proveedor}</td>
+                                <td style="padding: 8px; color: var(--text-secondary);">${item.fecha}</td>
+                                <td style="padding: 8px; text-align: right;">C$ ${(item.subtotal || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; color: #10b981;">C$ ${(item.iva || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #ef4444;">C$ ${(item.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                } else if (tipo === 'facturas') {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;">
+                                    <th style="padding: 8px;">N° FACTURA</th>
+                                    <th style="padding: 8px;">FECHA</th>
+                                    <th style="padding: 8px;">TIPO</th>
+                                    <th style="padding: 8px;">SUBTOTAL</th>
+                                    <th style="padding: 8px;">IVA (15%)</th>
+                                    <th style="padding: 8px; text-align: right;">TOTAL NETO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.items.forEach(item => {
+                        html += `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 8px; font-weight: 700; color: var(--accent-primary);">${item.numero}</td>
+                                <td style="padding: 8px; color: var(--text-secondary); font-size: 0.85rem;">${item.fecha}</td>
+                                <td style="padding: 8px;"><span style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">${item.tipo}</span></td>
+                                <td style="padding: 8px;">C$ ${item.subtotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; color: var(--text-secondary);">C$ ${item.iva.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: 700; color: #10b981;">C$ ${item.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `</tbody></table>`;
+                    body.innerHTML = html;
+                }
+            })
+            .catch(err => {
+                body.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #ef4444;">
+                        <i class="fa-solid fa-circle-exclamation fa-2x"></i>
+                        <p style="margin-top: 10px; font-weight: 600;">No se pudieron cargar los registros de la base de datos.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;">Detalle: ${err.message || err}</p>
+                        <button type="button" class="btn-cont-action primary" onclick="abrirModalDetalle('${tipo}')" style="margin-top: 12px; display: inline-flex;">
+                            <i class="fa-solid fa-rotate-right"></i> Reintentar Consulta
+                        </button>
+                    </div>
+                `;
+            });
+    }
+
+    function cerrarModalDetalle() {
+        document.getElementById('drillModal').style.display = 'none';
+    }
+</script>
+
+<style>
+    .btn-table-icon {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text-primary);
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .btn-table-icon.edit {
+        color: #2563eb;
+    }
+    .btn-table-icon.edit:hover {
+        background: rgba(37, 99, 235, 0.15);
+        color: #1d4ed8;
+        border-color: #2563eb;
+        transform: translateY(-1px);
+    }
+    .btn-table-icon.delete {
+        color: #ef4444;
+    }
+    .btn-table-icon.delete:hover {
+        background: rgba(239, 68, 68, 0.15);
+        color: #dc2626;
+        border-color: #ef4444;
+        transform: translateY(-1px);
+    }
+    .btn-table-icon.reset {
+        color: #d97706;
+    }
+    .btn-table-icon.reset:hover {
+        background: rgba(217, 119, 6, 0.15);
+        color: #b45309;
+        border-color: #d97706;
+        transform: translateY(-1px);
+    }
+    .custom-account-row {
+        background: rgba(37, 99, 235, 0.03);
+        border-left: 3px solid #2563eb !important;
+    }
+    .modal-backdrop-custom {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-card-custom {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 500px;
+        padding: 26px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .modal-card-custom h4 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    #modalConfirmarEliminarCuenta .modal-card-custom,
+    #modalConfirmarCierre .modal-card-custom {
+        align-items: center !important;
+        text-align: center !important;
+    }
+    #modalConfirmarEliminarCuenta .modal-card-custom h4,
+    #modalConfirmarCierre .modal-card-custom h4 {
+        display: block !important;
+        text-align: center !important;
+        width: 100% !important;
+        margin: 0 auto 10px auto !important;
+    }
+    #modalConfirmarEliminarCuenta .modal-card-custom p,
+    #modalConfirmarCierre .modal-card-custom p {
+        display: block !important;
+        text-align: center !important;
+        width: 100% !important;
+        margin: 0 auto 22px auto !important;
+    }
+    .form-group-custom {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group-custom label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .form-input-custom, .form-select-custom {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 0.92rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .form-input-custom:focus, .form-select-custom:focus {
+        border-color: #2563eb;
+    }
+    .modal-actions-custom {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 10px;
+    }
+</style>
+
+<!-- MODAL AGREGAR CUENTA -->
+<div id="modalAgregarCuenta" class="modal-backdrop-custom">
+    <div class="modal-card-custom">
+        <h4><i class="fa-solid fa-plus-circle" style="color: #2563eb;"></i> Agregar Cuenta Contable</h4>
+        <form method="POST" action="{{ url_for('contador.agregar_cuenta') }}">
+            <input type="hidden" name="tipo_reporte" id="inputTipoReporte" value="Balance">
+            <input type="hidden" name="mes" value="{{ mes_seleccionado }}">
+            <input type="hidden" name="anio" value="{{ anio_seleccionado }}">
+            <div class="form-group-custom">
+                <label for="selectCategoriaCuenta">Categoría Contable:</label>
+                <select name="categoria" id="selectCategoriaCuenta" class="form-select-custom" required>
+                    <!-- Dinámico según tipo_reporte -->
+                </select>
+            </div>
+            <div class="form-group-custom" style="margin-top: 12px;">
+                <label for="inputNombreCuenta">Nombre de la Cuenta:</label>
+                <input type="text" name="nombre_cuenta" id="inputNombreCuenta" class="form-input-custom" placeholder="Ej: Herramientas Neumáticas Especializadas" required>
+            </div>
+            <div class="form-group-custom" style="margin-top: 12px;">
+                <label for="inputMontoCuenta">Monto en Córdobas (C$):</label>
+                <input type="number" step="0.01" min="0" name="monto" id="inputMontoCuenta" class="form-input-custom" placeholder="0.00" required>
+            </div>
+            <div class="modal-actions-custom">
+                <button type="button" class="btn-cont-action" onclick="cerrarModalAgregarCuenta()">Cancelar</button>
+                <button type="submit" class="btn-cont-action primary"><i class="fa-solid fa-check"></i> Guardar Cuenta</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL EDITAR CUENTA -->
+<div id="modalEditarCuenta" class="modal-backdrop-custom">
+    <div class="modal-card-custom">
+        <h4><i class="fa-solid fa-pen-to-square" style="color: #2563eb;"></i> Editar Cuenta Contable</h4>
+        <form method="POST" action="{{ url_for('contador.editar_cuenta') }}">
+            <input type="hidden" name="ajuste_id" id="editAjusteId">
+            <input type="hidden" name="tipo_reporte" id="editTipoReporte">
+            <input type="hidden" name="clave_cuenta" id="editClaveCuenta">
+            <input type="hidden" name="mes" value="{{ mes_seleccionado }}">
+            <input type="hidden" name="anio" value="{{ anio_seleccionado }}">
+            <div class="form-group-custom">
+                <label for="editSelectCategoria">Categoría Contable:</label>
+                <select name="categoria" id="editSelectCategoria" class="form-select-custom" required>
+                </select>
+            </div>
+            <div class="form-group-custom" style="margin-top: 12px;">
+                <label for="editNombreCuenta">Nombre de la Cuenta:</label>
+                <input type="text" name="nombre_cuenta" id="editNombreCuenta" class="form-input-custom" required>
+            </div>
+            <div class="form-group-custom" style="margin-top: 12px;">
+                <label for="editMontoCuenta">Monto en Córdobas (C$):</label>
+                <input type="number" step="0.01" min="0" name="monto" id="editMontoCuenta" class="form-input-custom" required>
+            </div>
+            <div class="modal-actions-custom">
+                <button type="button" class="btn-cont-action" onclick="cerrarModalEditarCuenta()">Cancelar</button>
+                <button type="submit" class="btn-cont-action primary"><i class="fa-solid fa-save"></i> Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINAR / RESTABLECER CUENTA CONTABLE (INTERNO DEL SISTEMA) -->
+<div id="modalConfirmarEliminarCuenta" class="modal-backdrop-custom" style="display: none; align-items: center; justify-content: center;">
+    <div class="modal-card-custom" style="max-width: 440px; text-align: center; border-top: 4px solid #ef4444; border-radius: 20px; padding: 28px;">
+        <div style="width: 60px; height: 60px; margin: 0 auto 16px auto; border-radius: 50%; background: rgba(239, 68, 68, 0.12); border: 2px solid rgba(239, 68, 68, 0.3); display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.8rem; color: #ef4444;"></i>
+        </div>
+        <h4 style="margin: 0 0 8px 0; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); justify-content: center; text-align: center;">¿Eliminar o Restablecer Cuenta?</h4>
+        <p style="margin: 0 0 20px 0; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.5;">
+            ¿Estás seguro de que deseas eliminar esta cuenta contable o restablecerla a su configuración base del sistema?
+        </p>
+        <div class="modal-actions-custom" style="justify-content: center; gap: 12px; margin-top: 15px;">
+            <button type="button" class="btn-cont-action" onclick="cerrarModalEliminarCuenta()">Cancelar</button>
+            <button type="button" class="btn-cont-action" style="background: #ef4444; color: white; border: none; font-weight: 700;" onclick="ejecutarEliminarCuenta()">
+                <i class="fa-solid fa-trash"></i> Sí, Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- FORMULARIO OCULTO PARA ELIMINAR -->
+<form id="formEliminarCuenta" method="POST" style="display: none;">
+    <input type="hidden" name="tipo_reporte" id="delTipoReporte">
+    <input type="hidden" name="mes" value="{{ mes_seleccionado }}">
+    <input type="hidden" name="anio" value="{{ anio_seleccionado }}">
+</form>
+
+<script>
+    const CATEGORIAS_BALANCE = [
+        'Activo Corriente',
+        'Activo No Corriente',
+        'Pasivo Corriente',
+        'Pasivo No Corriente',
+        'Patrimonio'
+    ];
+
+    const CATEGORIAS_ESTADO = [
+        'Ingresos Operativos',
+        'Costos de Ventas',
+        'Gastos Operativos',
+        'Otros Ingresos / Gastos'
+    ];
+
+    function abrirModalAgregarCuenta(tipo) {
+        document.getElementById('inputTipoReporte').value = tipo;
+        const select = document.getElementById('selectCategoriaCuenta');
+        select.innerHTML = '';
+        const cats = tipo === 'Balance' ? CATEGORIAS_BALANCE : CATEGORIAS_ESTADO;
+        cats.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            select.appendChild(opt);
+        });
+        document.getElementById('inputNombreCuenta').value = '';
+        document.getElementById('inputMontoCuenta').value = '';
+        const modal = document.getElementById('modalAgregarCuenta');
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModalAgregarCuenta() {
+        document.getElementById('modalAgregarCuenta').style.display = 'none';
+    }
+
+    function autoCuadrarEnCapital(diferencia, capitalActual) {
+        const nuevoCapital = Math.round((capitalActual + diferencia) * 100) / 100;
+        const capBtn = document.querySelector('[data-clave="capital_social"]');
+        const capId = capBtn ? (capBtn.getAttribute('data-id') || 0) : 0;
+        const capNombre = capBtn ? (capBtn.getAttribute('data-nombre') || 'Capital Social Suscrito y Pagado') : 'Capital Social Suscrito y Pagado';
+        const capCat = capBtn ? (capBtn.getAttribute('data-categoria') || 'Patrimonio') : 'Patrimonio';
+
+        document.getElementById('editAjusteId').value = capId;
+        document.getElementById('editTipoReporte').value = 'Balance';
+        document.getElementById('editClaveCuenta').value = 'capital_social';
+        document.getElementById('editNombreCuenta').value = capNombre;
+        document.getElementById('editMontoCuenta').value = nuevoCapital.toFixed(2);
+
+        const sel = document.getElementById('editSelectCategoria');
+        if (sel) {
+            sel.innerHTML = '';
+            (typeof CATEGORIAS_BALANCE !== 'undefined' ? CATEGORIAS_BALANCE : ['Activo Corriente', 'Activo No Corriente', 'Pasivo Corriente', 'Pasivo No Corriente', 'Patrimonio']).forEach(op => {
+                const o = document.createElement('option');
+                o.value = op;
+                o.textContent = op;
+                if (op === capCat) o.selected = true;
+                sel.appendChild(o);
+            });
+            if (!sel.value) sel.value = 'Patrimonio';
+        }
+        document.getElementById('modalEditarCuenta').style.display = 'flex';
+    }
+
+    function abrirModalEditarDesdeBoton(btn) {
+        const id = parseInt(btn.getAttribute('data-id') || 0);
+        const nombre = btn.getAttribute('data-nombre') || '';
+        const monto = parseFloat(btn.getAttribute('data-monto') || 0);
+        const categoria = btn.getAttribute('data-categoria') || '';
+        const tipo = btn.getAttribute('data-tipo') || 'Balance';
+        const clave = btn.getAttribute('data-clave') || '';
+        editarCuentaPersonalizada(id, nombre, monto, categoria, tipo, clave);
+    }
+
+    function editarCuentaPersonalizada(id, nombre, monto, categoria, tipo, clave = '') {
+        document.getElementById('editAjusteId').value = id;
+        document.getElementById('editTipoReporte').value = tipo;
+        document.getElementById('editClaveCuenta').value = clave;
+        document.getElementById('editNombreCuenta').value = nombre;
+        document.getElementById('editMontoCuenta').value = monto;
+        const select = document.getElementById('editSelectCategoria');
+        select.innerHTML = '';
+        const cats = tipo === 'Balance' ? CATEGORIAS_BALANCE : CATEGORIAS_ESTADO;
+        cats.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            if (c.toLowerCase() === categoria.toLowerCase()) opt.selected = true;
+            select.appendChild(opt);
+        });
+        document.getElementById('modalEditarCuenta').style.display = 'flex';
+    }
+
+    function cerrarModalEditarCuenta() {
+        document.getElementById('modalEditarCuenta').style.display = 'none';
+    }
+
+    let cuentaIdParaEliminar = null;
+    let tipoReporteParaEliminar = null;
+
+    function eliminarCuentaPersonalizada(id, tipo) {
+        cuentaIdParaEliminar = id;
+        tipoReporteParaEliminar = tipo || 'Balance';
+        const modal = document.getElementById('modalConfirmarEliminarCuenta');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function cerrarModalEliminarCuenta() {
+        cuentaIdParaEliminar = null;
+        tipoReporteParaEliminar = null;
+        const modal = document.getElementById('modalConfirmarEliminarCuenta');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function ejecutarEliminarCuenta() {
+        if (cuentaIdParaEliminar) {
+            const form = document.getElementById('formEliminarCuenta');
+            form.action = '/contador/eliminar_cuenta/' + cuentaIdParaEliminar;
+            document.getElementById('delTipoReporte').value = tipoReporteParaEliminar || 'Balance';
+            form.submit();
+        }
+    }
+
+    function abrirModalCierreOficial(modo) {
+        const modal = document.getElementById('modalConfirmarCierre');
+        const actionInp = document.getElementById('cierreActionInput');
+        const titleEl = document.getElementById('cierreModalTitle');
+        const msgEl = document.getElementById('cierreModalMsg');
+        const iconEl = document.getElementById('cierreModalIcon');
+        const iconWrap = document.getElementById('cierreModalIconWrap');
+        const submitBtn = document.getElementById('cierreModalBtnSubmit');
+
+        if (modo === 'desellar') {
+            actionInp.value = 'desellar_cierre';
+            titleEl.innerText = '¿Desellar Cierre Oficial?';
+            msgEl.innerText = 'Al desellar el Balance General de {{ meses_nombres[mes_seleccionado] if meses_nombres is defined else fin.periodo_texto }}, el estado quedará abierto para edición y las Razones Financieras volverán a permanecer en 0 hasta volver a sellar.';
+            iconEl.className = 'fa-solid fa-lock-open';
+            iconEl.style.color = '#ef4444';
+            iconWrap.style.background = 'rgba(239, 68, 68, 0.14)';
+            submitBtn.style.background = '#dc2626';
+            submitBtn.innerHTML = '<i class="fa-solid fa-lock-open"></i> Sí, Desellar';
+        } else {
+            actionInp.value = 'guardar_cierre';
+            titleEl.innerText = '¿Sellar Cierre Oficial?';
+            msgEl.innerText = 'Se sellará oficialmente el Balance General para {{ fin.periodo_texto }}. Cuando el Estado de Resultados también esté sellado, las Razones Financieras se autocalcularán automáticamente.';
+            iconEl.className = 'fa-solid fa-shield-halved';
+            iconEl.style.color = '#10b981';
+            iconWrap.style.background = 'rgba(16, 185, 129, 0.14)';
+            submitBtn.style.background = '#10b981';
+            submitBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Sí, Sellar Oficialmente';
+        }
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModalCierreOficial() {
+        document.getElementById('modalConfirmarCierre').style.display = 'none';
+    }
+</script>
+
+<!-- MODAL CONFIRMAR SELLADO / DESELLADO -->
+<div id="modalConfirmarCierre" class="modal-backdrop-custom" style="display: none; align-items: center; justify-content: center;" onclick="if(event.target === this) cerrarModalCierreOficial();">
+    <div class="modal-card-custom" style="max-width: 450px; text-align: center; border-radius: 20px; padding: 28px;">
+        <div id="cierreModalIconWrap" style="width: 60px; height: 60px; margin: 0 auto 14px auto; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i id="cierreModalIcon" class="fa-solid fa-shield-halved" style="font-size: 1.7rem;"></i>
+        </div>
+        <h4 id="cierreModalTitle" style="margin: 0 auto 10px auto; font-size: 1.25rem; font-weight: 800; color: var(--text-primary); text-align: center; display: block; width: 100%;">Confirmar Cierre</h4>
+        <p id="cierreModalMsg" style="margin: 0 auto 22px auto; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.5; text-align: center; display: block; width: 100%;"></p>
+        <form method="POST" action="{{ url_for('contador.balance', mes=mes_seleccionado, anio=anio_seleccionado) }}" style="display: flex; justify-content: center; gap: 12px;">
+            <input type="hidden" name="action" id="cierreActionInput" value="guardar_cierre">
+            <button type="button" class="btn-cont-action" onclick="cerrarModalCierreOficial()">Cancelar</button>
+            <button type="submit" id="cierreModalBtnSubmit" class="btn-cont-action" style="color: white; border: none; font-weight: 700;"></button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

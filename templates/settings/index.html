@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Ajustes Generales - Taller y Lubricantes CR{% endblock %}
+{% block page_title %}Ajustes de Interfaz de Usuario{% endblock %}
+
+{% block content %}
+<style>
+    .settings-container {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        max-width: 800px;
+        margin-top: 20px;
+    }
+    
+    .settings-section {
+        background: var(--bg-surface);
+        backdrop-filter: var(--backdrop-blur);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 30px;
+    }
+    
+    .settings-section h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+        font-size: 1.3rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+    }
+    
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .setting-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .setting-label h4 {
+        margin: 0 0 5px 0;
+        color: var(--text-primary);
+    }
+    
+    .setting-label p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+    
+    .setting-control select {
+        padding: 10px 15px;
+        border-radius: 8px;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        font-size: 1rem;
+        cursor: pointer;
+        min-width: 150px;
+    }
+
+    .setting-control select:focus {
+        outline: none;
+        border-color: var(--accent-red);
+    }
+    
+    .setting-control select option {
+        background: var(--bg-color);
+        color: var(--text-primary);
+    }
+    
+    .btn-save {
+        background: var(--accent-red);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        align-self: flex-start;
+    }
+    
+    .btn-save:hover {
+        background: var(--accent-red-hover);
+    }
+</style>
+
+<div class="settings-container">
+    <div class="settings-section">
+        <h3>Apariencia y Accesibilidad</h3>
+        
+        <div class="setting-item">
+            <div class="setting-label">
+                <h4>Tema de Color</h4>
+                <p>Elige entre modo claro o modo oscuro.</p>
+            </div>
+            <div class="setting-control">
+                <select id="setting-theme">
+                    <option value="dark">Modo Oscuro</option>
+                    <option value="light">Modo Claro</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="setting-item">
+            <div class="setting-label">
+                <h4>Tamaño de Letra</h4>
+                <p>Ajusta el tamaño del texto para leer mejor en pantalla.</p>
+            </div>
+            <div class="setting-control">
+                <select id="setting-font-size">
+                    <option value="small">Pequeña</option>
+                    <option value="medium">Mediana (Por Defecto)</option>
+                    <option value="large">Grande</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <button class="btn-save" id="btn-save-settings">
+        <i class="fa-solid fa-floppy-disk"></i> Guardar Ajustes
+    </button>
+    {% if session.get('rol_id') in [1, 5] %}
+    <div class="settings-section">
+        <h3>Seguridad y Accesos</h3>
+        
+
+
+        <form method="POST" action="{{ url_for('settings.index') }}">
+            <input type="hidden" name="action" value="change_password">
+            <div class="setting-item">
+                <div class="setting-label">
+                    <h4>Usuario a Modificar</h4>
+                    <p>Selecciona a quién le cambiarás la contraseña.</p>
+                </div>
+                <div class="setting-control">
+                    <select name="usuario_id" required>
+                        {% for u in usuarios %}
+                        <option value="{{ u.UsuarioID }}" {% if u.UsuarioID == session.get('usuario_id') %}selected{% endif %}>{{ u.NombreCompleto }} ({{ u.Email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">
+                    <h4>Nueva Contraseña</h4>
+                </div>
+                <div class="setting-control">
+                    <input type="password" name="nueva_password" required placeholder="********" style="padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">
+                    <h4>Confirmar Contraseña</h4>
+                </div>
+                <div class="setting-control">
+                    <input type="password" name="confirmar_password" required placeholder="********" style="padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-save" style="margin-top: 10px;">
+                <i class="fa-solid fa-key"></i> Actualizar Contraseña
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const themeSelect = document.getElementById('setting-theme');
+        const fontSizeSelect = document.getElementById('setting-font-size');
+        const saveBtn = document.getElementById('btn-save-settings');
+        
+        // Cargar ajustes actuales
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        const currentFontSize = localStorage.getItem('fontSize') || 'medium';
+        
+        themeSelect.value = currentTheme;
+        fontSizeSelect.value = currentFontSize;
+        
+        saveBtn.addEventListener('click', () => {
+            const newTheme = themeSelect.value;
+            const newFontSize = fontSizeSelect.value;
+            
+            // Guardar
+            localStorage.setItem('theme', newTheme);
+            localStorage.setItem('fontSize', newFontSize);
+            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            // Aplicar tema
+            if (newTheme === 'light') {
+                document.body.classList.add('light-mode');
+                const toggleIcon = document.querySelector('#theme-toggle i');
+                if(toggleIcon) {
+                    toggleIcon.classList.remove('fa-moon');
+                    toggleIcon.classList.add('fa-sun');
+                }
+            } else {
+                document.body.classList.remove('light-mode');
+                const toggleIcon = document.querySelector('#theme-toggle i');
+                if(toggleIcon) {
+                    toggleIcon.classList.remove('fa-sun');
+                    toggleIcon.classList.add('fa-moon');
+                }
+            }
+            
+            // Aplicar tamaño de letra
+            document.body.classList.remove('font-small', 'font-medium', 'font-large');
+            document.body.classList.add('font-' + newFontSize);
+            
+            // Recargar la página para aplicar los cambios a todos los elementos del layout
+            window.location.reload();
+        });
+    });
+</script>
+{% endblock %}
