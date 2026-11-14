@@ -358,7 +358,7 @@ def registro_ventas():
     cursor.execute(f"""
         SELECT F.FacturaID, F.NumeroFactura, F.FechaEmision, F.TotalNeto, F.MetodoPago,
                C.NombreCompleto AS ClienteFijo, F.NombreClienteDePaso, F.OrdenID,
-               (SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), DF.Cantidad) + 'x ' + DF.Descripcion, ', ') FROM DetalleFactura DF WHERE DF.FacturaID = F.FacturaID) AS Productos
+               (SELECT STRING_AGG(CONCAT(DF.Cantidad, 'x ', DF.Descripcion), ', ') FROM DetalleFactura DF WHERE DF.FacturaID = F.FacturaID) AS Productos
         FROM Facturas F
         LEFT JOIN Clientes C ON F.ClienteID = C.ClienteID
         {where_clause}

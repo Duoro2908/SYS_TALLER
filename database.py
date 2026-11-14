@@ -13,6 +13,49 @@ except ImportError:
     HAS_PYODBC = False
 
 
+class SmartStr(str):
+    def _parse(self):
+        s = str(self).strip()
+        for f in ('%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%H:%M:%S', '%H:%M'):
+            try:
+                return datetime.datetime.strptime(s, f)
+            except ValueError:
+                pass
+        try:
+            return datetime.datetime.fromisoformat(s)
+        except Exception:
+            return None
+
+    def strftime(self, fmt):
+        dt = self._parse()
+        if dt:
+            return dt.strftime(fmt)
+        return str(self)
+
+    @property
+    def year(self):
+        dt = self._parse()
+        return dt.year if dt else None
+
+    @property
+    def month(self):
+        dt = self._parse()
+        return dt.month if dt else None
+
+    @property
+    def day(self):
+        dt = self._parse()
+        return dt.day if dt else None
+
+
+def _wrap_val(v):
+    if v is None:
+        return None
+    if isinstance(v, str):
+        return SmartStr(v)
+    return v
+
+
 class SQLiteRow:
     def __init__(self, desc, values):
         self._values = tuple(values) if values is not None else ()
@@ -27,13 +70,15 @@ class SQLiteRow:
 
     def __getitem__(self, item):
         if isinstance(item, (int, slice)):
-            return self._values[item]
+            if isinstance(item, slice):
+                return tuple(_wrap_val(x) for x in self._values[item])
+            return _wrap_val(self._values[item])
         if isinstance(item, str):
             idx = self._mapping.get(item)
             if idx is None:
                 idx = self._mapping.get(item.lower())
             if idx is not None:
-                return self._values[idx]
+                return _wrap_val(self._values[idx])
         raise KeyError(item)
 
     def __getattr__(self, name):
@@ -43,14 +88,15 @@ class SQLiteRow:
         if idx is None:
             idx = self._mapping.get(name.lower())
         if idx is not None:
-            return self._values[idx]
+            return _wrap_val(self._values[idx])
         raise AttributeError(f"Row has no attribute '{name}'")
 
     def __len__(self):
         return len(self._values)
 
     def __iter__(self):
-        return iter(self._values)
+        for v in self._values:
+            yield _wrap_val(v)
 
     def __repr__(self):
         return repr(self._values)
@@ -63,6 +109,81 @@ class SQLiteRow:
             return self[key]
         except (KeyError, IndexError):
             return default
+
+
+class StringAgg:
+    def __init__(self):
+        self.parts = []
+        self.sep = ", "
+    def step(self, val, sep=", "):
+        if val is not None:
+            self.parts.append(str(val))
+            self.sep = sep
+    def finalize(self):
+        return self.sep.join(self.parts)
+
+
+def transform_query_sqlite(query):
+    if not isinstance(query, str):
+        return query
+    q = query
+
+    # 1. ISNULL -> COALESCE
+    q = re.sub(r'\bISNULL\s*\(', 'COALESCE(', q, flags=re.IGNORECASE)
+
+    # 2. GETDATE() con o sin offset
+    q = re.sub(r'\bGETDATE\(\)\s*-\s*(\d+)', r"DATETIME('now', '-\1 day')", q, flags=re.IGNORECASE)
+    q = re.sub(r'\bGETDATE\(\)', r"DATETIME('now')", q, flags=re.IGNORECASE)
+
+    # 3. CAST(expr AS DATE) -> DATE(expr)
+    q = re.sub(r'\bCAST\s*\(\s*(.*?)\s+AS\s+DATE\s*\)', r'DATE(\1)', q, flags=re.IGNORECASE)
+
+    # 4. CONVERT de tipos comunes de SQL Server
+    q = re.sub(r'\bCONVERT\s*\(\s*VARCHAR\(16\)\s*,\s*(.*?)\s*,\s*120\s*\)', r'SUBSTR(\1, 1, 16)', q, flags=re.IGNORECASE)
+    q = re.sub(r'\bCONVERT\s*\(\s*[N]?VARCHAR\s*\(\s*MAX\s*\)\s*,\s*(.*?)\s*\)', r'CAST(\1 AS TEXT)', q, flags=re.IGNORECASE)
+    q = re.sub(r'\bCONVERT\s*\(\s*[N]?VARCHAR(?:\([^)]*\))?\s*,\s*(.*?)(?:,\s*\d+)?\s*\)', r'CAST(\1 AS TEXT)', q, flags=re.IGNORECASE)
+
+    # 5. Quote datepart en DATENAME y DATEADD
+    q = re.sub(r'\bDATENAME\s*\(\s*month\s*,', "DATENAME('month',", q, flags=re.IGNORECASE)
+    q = re.sub(r'\bDATEADD\s*\(\s*month\s*,', "DATEADD('month',", q, flags=re.IGNORECASE)
+    q = re.sub(r'\bDATEADD\s*\(\s*day\s*,', "DATEADD('day',", q, flags=re.IGNORECASE)
+    q = re.sub(r'\bDATEADD\s*\(\s*year\s*,', "DATEADD('year',", q, flags=re.IGNORECASE)
+
+    # 6. Handle SELECT TOP N (both in subqueries and top-level)
+    while True:
+        match = re.search(r'\bSELECT\s+TOP\s+(\d+)\b', q, re.IGNORECASE)
+        if not match:
+            break
+        limit_val = match.group(1)
+        depth = 0
+        end_idx = len(q)
+        
+        for i in range(match.end(), len(q)):
+            if q[i] == '(':
+                depth += 1
+            elif q[i] == ')':
+                if depth == 0:
+                    end_idx = i
+                    break
+                else:
+                    depth -= 1
+            elif q[i] == ';' and depth == 0:
+                end_idx = i
+                break
+
+        before = q[:match.start()] + "SELECT "
+        middle = q[match.end():end_idx]
+        after = q[end_idx:]
+        q = f"{before}{middle} LIMIT {limit_val} {after}"
+
+    # 7. OUTPUT INSERTED.Columna -> RETURNING Columna
+    q = re.sub(r'\bOUTPUT\s+INSERTED\.(\w+)\b', r'RETURNING \1', q, flags=re.IGNORECASE)
+
+    # 8. Eliminar comandos exclusivos de SQL Server
+    q = re.sub(r'\bSET\s+NOCOUNT\s+ON\s*;?', '', q, flags=re.IGNORECASE)
+    q = re.sub(r'\bSELECT\s+SCOPE_IDENTITY\(\)\s*;?', '', q, flags=re.IGNORECASE)
+
+    return q
 
 
 class SQLiteCursorWrapper:
@@ -78,24 +199,7 @@ class SQLiteCursorWrapper:
         return self._cur.rowcount
 
     def _transform_query(self, query):
-        if not isinstance(query, str):
-            return query
-        q = query
-        # Reemplazar TOP N
-        top_match = re.search(r'\bSELECT\s+TOP\s+(\d+)\b', q, re.IGNORECASE)
-        if top_match:
-            limit_val = top_match.group(1)
-            q = re.sub(r'\bSELECT\s+TOP\s+\d+\b', 'SELECT', q, count=1, flags=re.IGNORECASE)
-            q = f"{q.rstrip(';')} LIMIT {limit_val}"
-
-        # Reemplazar OUTPUT INSERTED.Columna -> RETURNING Columna
-        output_match = re.search(r'\bOUTPUT\s+INSERTED\.(\w+)\b', q, re.IGNORECASE)
-        if output_match:
-            col_name = output_match.group(1)
-            q = re.sub(r'\bOUTPUT\s+INSERTED\.\w+\b', '', q, flags=re.IGNORECASE)
-            q = f"{q.rstrip(';')} RETURNING {col_name}"
-
-        return q
+        return transform_query_sqlite(query)
 
     def execute(self, query, params=None):
         transformed = self._transform_query(query)
@@ -161,6 +265,11 @@ def get_sqlite_connection():
     if not os.path.exists(db_file):
         return None
     conn = sqlite3.connect(db_file, check_same_thread=False)
+    conn.create_aggregate("STRING_AGG", 2, StringAgg)
+    conn.create_function("CONCAT", -1, lambda *args: "".join(str(a) if a is not None else "" for a in args))
+    conn.create_function("LEFT", 2, lambda s, n: str(s)[:int(n)] if s else "")
+    conn.create_function("DATENAME", 2, lambda part, d: (['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][int(str(d)[5:7])] if d and len(str(d)) >= 7 else ""))
+    conn.create_function("DATEADD", 3, lambda part, n, d: (datetime.datetime.strptime(str(d)[:10], '%Y-%m-%d') + datetime.timedelta(days=int(n)*30)).strftime('%Y-%m-%d') if d else "")
     conn.create_function("GETDATE", 0, lambda: datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     conn.create_function("ISNULL", 2, lambda a, b: b if a is None else a)
     conn.create_function("YEAR", 1, lambda d: int(str(d)[:4]) if d else None)
