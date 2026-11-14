@@ -1,7 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from database import get_db_connection
 from functools import wraps
-import pyodbc
+try:
+    import pyodbc
+except ImportError:
+    import sqlite3 as pyodbc
 import os
 import re
 from werkzeug.utils import secure_filename
